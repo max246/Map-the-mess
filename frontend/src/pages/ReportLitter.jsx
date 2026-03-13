@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import api from '../api/client'
 
 export default function ReportLitter() {
   const [description, setDescription] = useState('')
   const [photo, setPhoto] = useState(null)
   const [location, setLocation] = useState(null)
   const [locating, setLocating] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   // Get user's current location
   const getLocation = () => {
@@ -21,10 +23,30 @@ export default function ReportLitter() {
     )
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: POST to /api/reports
-    alert('Report submitted! (API not connected yet)')
+    if (!location) {
+      alert('Please share your location before submitting.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await api.post('/reports/', {
+        latitude: location.lat,
+        longitude: location.lng,
+        description,
+        photo_url: null
+      })
+      alert('Report submitted successfully!')
+      setDescription('')
+      setPhoto(null)
+      setLocation(null)
+    } catch (err) {
+      alert('Failed to submit report. Please try again.')
+      console.error(err)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -77,9 +99,10 @@ export default function ReportLitter() {
 
         <button
           type="submit"
-          className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-lg transition"
+          disabled={submitting}
+          className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
         >
-          Submit Report
+          {submitting ? 'Submitting...' : 'Submit Report'}
         </button>
       </form>
     </div>
