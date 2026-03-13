@@ -1,16 +1,20 @@
 import { useState, useRef } from 'react'
-import { getReports } from '../api/endpoints/reports/reports'
+import { Link } from 'react-router-dom'
+import axios from 'axios'
 import LocationPicker from '../components/LocationPicker'
 import { autosuggest } from '../api/w3w'
-
-const { createReportApiReportsPost } = getReports()
+import { useAuth } from '../context/AuthContext'
 
 export default function ReportLitter() {
+  const { token } = useAuth()
   const [description, setDescription] = useState('')
-  const [photo, setPhoto] = useState(null)
+  const [photos, setPhotos] = useState([])
+  const [photoPreviews, setPhotoPreviews] = useState([])
   const [location, setLocation] = useState(null)
+  const photoInputRef = useRef(null)
   const [locating, setLocating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submittedReportId, setSubmittedReportId] = useState(null)
   const [words, setWords] = useState('')
   const [wordsInput, setWordsInput] = useState('')
   const [suggestions, setSuggestions] = useState([])
@@ -56,6 +60,28 @@ export default function ReportLitter() {
     setShowSuggestions(false)
   }
 
+  const handlePhotos = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    setPhotos(prev => [...prev, ...files])
+
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreviews(prev => [...prev, reader.result])
+      }
+      reader.readAsDataURL(file)
+    })
+
+    photoInputRef.current.value = ''
+  }
+
+  const removePhoto = (index) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index))
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!location) {
@@ -64,19 +90,18 @@ export default function ReportLitter() {
     }
     setSubmitting(true)
     try {
-      await createReportApiReportsPost({
-        latitude: location.lat,
-        longitude: location.lng,
-        description,
-        photo_url: null,
-        what3words: words || null
-      })
-      alert('Report submitted successfully!')
-      setDescription('')
-      setPhoto(null)
-      setLocation(null)
-      setWords('')
-      setWordsInput('')
+      const formData = new FormData()
+      formData.append('latitude', location.lat)
+      formData.append('longitude', location.lng)
+      formData.append('description', description)
+      if (words) formData.append('what3words', words)
+      photos.forEach(file => formData.append('images', file))
+
+      const headers = { 'Content-Type': 'multipart/form-data' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const res = await axios.post('/api/reports/', formData, { headers })
+      setSubmittedReportId(res.data.id)
     } catch (err) {
       alert('Failed to submit report. Please try again.')
       console.error(err)
@@ -85,21 +110,84 @@ export default function ReportLitter() {
     }
   }
 
+  if (submittedReportId) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <div className="text-6xl mb-6">🎉</div>
+        <h1 className="text-2xl font-bold mb-3">Thanks for helping!</h1>
+        <p className="text-gray-600 mb-8">
+          Your report has been submitted successfully. Together we can make our community cleaner.
+        </p>
+        <div className="flex flex-col gap-3 items-center">
+          <Link
+            to={`/report/${submittedReportId}`}
+            className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 px-6 rounded-lg transition inline-block"
+          >
+            View your report
+          </Link>
+          <button
+            onClick={() => {
+              setSubmittedReportId(null)
+              setDescription('')
+              setPhotos([])
+              setPhotoPreviews([])
+              setLocation(null)
+              setWords('')
+              setWordsInput('')
+            }}
+            className="text-brand underline text-sm"
+          >
+            Submit another report
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">📸 Report Litter</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <label className="flex flex-col gap-1">
-          <span className="font-medium">Photo</span>
+        <div className="flex flex-col gap-1">
+          <span className="font-medium">Photos</span>
           <input
+            ref={photoInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
-            onChange={(e) => setPhoto(e.target.files[0])}
-            className="border rounded p-2"
+            multiple
+            onChange={handlePhotos}
+            className="hidden"
           />
-        </label>
+          {photoPreviews.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              {photoPreviews.map((preview, i) => (
+                <div key={i} className="relative">
+                  <img
+                    src={preview}
+                    alt={`Upload ${i + 1}`}
+                    className="w-full h-24 rounded-lg object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-opacity-70"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => photoInputRef.current.click()}
+            className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
+          >
+            <span className="text-2xl mb-1">+</span>
+            <span className="text-sm">{photoPreviews.length > 0 ? 'Add more photos' : 'Click to upload photos'}</span>
+          </button>
+        </div>
 
         <label className="flex flex-col gap-1">
           <span className="font-medium">Description</span>

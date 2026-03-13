@@ -3,6 +3,21 @@ import { useNavigate } from 'react-router-dom'
 import { Popup } from 'react-leaflet'
 import { reverseGeocode } from '../api/geocode'
 
+function getPopupImage(report) {
+  const images = report.images || []
+  if (images.length === 0) return null
+
+  if (report.status === 'cleaned') {
+    const resolvedImages = images.filter(img => img.image_type === 'resolved')
+    if (resolvedImages.length > 0) {
+      return resolvedImages[resolvedImages.length - 1]
+    }
+  }
+
+  const reportImages = images.filter(img => img.image_type === 'report')
+  return reportImages[0] || images[0]
+}
+
 export default function ReportPopup({ report }) {
   const navigate = useNavigate()
   const [address, setAddress] = useState(null)
@@ -13,13 +28,15 @@ export default function ReportPopup({ report }) {
       .catch(() => {})
   }, [report.latitude, report.longitude])
 
+  const image = getPopupImage(report)
+
   return (
     <Popup>
       <div style={{ minWidth: '200px' }}>
-        {/* Image placeholder */}
-        {report.photo_url ? (
+        {/* Image */}
+        {image ? (
           <img
-            src={report.photo_url}
+            src={`/api/reports/images/${image.url}`}
             alt="Report"
             style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }}
           />

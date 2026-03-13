@@ -1,57 +1,115 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
-const links = [
+const publicLinks = [
   { to: '/', label: 'Home' },
   { to: '/map', label: 'Map' },
   { to: '/report', label: 'Report Litter' },
-  { to: '/volunteers', label: 'Volunteers' }
 ]
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const { isLoggedIn, canManageUsers, user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const isVolunteer = isLoggedIn && !canManageUsers
+
+  const handleLogout = () => {
+    logout()
+    setOpen(false)
+    navigate('/')
+  }
+
+  const navLink = (to, label, onClick) => (
+    <Link
+      key={to}
+      to={to}
+      onClick={onClick}
+      className={`hover:underline ${pathname === to ? 'font-semibold underline' : ''}`}
+    >
+      {label}
+    </Link>
+  )
+
+  const mobileLink = (to, label) => (
+    <Link
+      key={to}
+      to={to}
+      onClick={() => setOpen(false)}
+      className={`block py-2 px-3 rounded ${pathname === to ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
+    >
+      {label}
+    </Link>
+  )
 
   return (
     <nav className="bg-brand text-white shadow-md">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Logo */}
         <Link to="/" className="text-xl font-bold tracking-tight">
           🗺️ Map the Mess
         </Link>
 
-        {/* Desktop links */}
-        <div className="hidden md:flex gap-6">
-          {links.map(l => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className={`hover:underline ${pathname === l.to ? 'font-semibold underline' : ''}`}
+        {/* Desktop */}
+        <div className="hidden md:flex gap-6 items-center">
+          {publicLinks.map(l => navLink(l.to, l.label))}
+          {isLoggedIn && isVolunteer && navLink('/volunteers', 'Dashboard')}
+          {isLoggedIn && canManageUsers && (
+            <>
+              {navLink('/volunteers', 'Volunteers')}
+              {navLink('/admin', 'Admin')}
+            </>
+          )}
+          {isLoggedIn ? (
+            <button
+              onClick={handleLogout}
+              className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm transition"
             >
-              {l.label}
-            </Link>
-          ))}
+              Logout
+            </button>
+          ) : (
+            <>
+              {navLink('/login', 'Login')}
+              <Link
+                to="/register"
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm transition"
+              >
+                Register
+              </Link>
+            </>
+          )}
         </div>
 
-        {/* Mobile hamburger */}
         <button className="md:hidden text-2xl" onClick={() => setOpen(!open)}>
           {open ? '✕' : '☰'}
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile */}
       {open && (
         <div className="md:hidden px-4 pb-4 flex flex-col gap-2">
-          {links.map(l => (
-            <Link
-              key={l.to}
-              to={l.to}
-              onClick={() => setOpen(false)}
-              className={`block py-2 px-3 rounded ${pathname === l.to ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
+          {publicLinks.map(l => mobileLink(l.to, l.label))}
+          {isLoggedIn && isVolunteer && mobileLink('/volunteers', 'Dashboard')}
+          {isLoggedIn && canManageUsers && (
+            <>
+              {mobileLink('/volunteers', 'Volunteers')}
+              {mobileLink('/admin', 'Admin')}
+            </>
+          )}
+          {isLoggedIn ? (
+            <button
+              onClick={handleLogout}
+              className="block py-2 px-3 rounded text-left hover:bg-brand-dark"
             >
-              {l.label}
-            </Link>
-          ))}
+              Logout
+            </button>
+          ) : (
+            <>
+              {mobileLink('/login', 'Login')}
+              {mobileLink('/register', 'Register')}
+            </>
+          )}
         </div>
       )}
     </nav>

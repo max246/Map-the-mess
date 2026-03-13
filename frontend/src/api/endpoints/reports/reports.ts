@@ -13,8 +13,10 @@ import type {
 } from 'axios';
 
 import type {
+  BodyAddImageApiReportsReportIdImagesPost,
+  BodyCreateReportApiReportsPost,
   ListReportsApiReportsGetParams,
-  ReportCreate,
+  ReportImageRead,
   ReportRead
 } from '../../model';
 
@@ -22,6 +24,17 @@ import type {
 
 
   export const getReports = (axiosInstance: AxiosInstance = axios) => {
+/**
+ * Serve an uploaded image by filename.
+ * @summary Serve Image
+ */
+const serveImageApiReportsImagesFilenameGet = (
+    filename: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+    return axiosInstance.get(
+      `/api/reports/images/${filename}`,options
+    );
+  }
 /**
  * List all reports, optionally filtered by status.
  * @summary List Reports
@@ -36,15 +49,27 @@ const listReportsApiReportsGet = (
     );
   }
 /**
- * Create a new litter report.
+ * Create a new litter report with optional image uploads.
  * @summary Create Report
  */
 const createReportApiReportsPost = (
-    reportCreate: ReportCreate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ReportRead>> => {
+    bodyCreateReportApiReportsPost: BodyCreateReportApiReportsPost, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ReportRead>> => {const formData = new FormData();
+formData.append(`latitude`, bodyCreateReportApiReportsPost.latitude.toString())
+formData.append(`longitude`, bodyCreateReportApiReportsPost.longitude.toString())
+if(bodyCreateReportApiReportsPost.description !== undefined) {
+ formData.append(`description`, bodyCreateReportApiReportsPost.description);
+ }
+if(bodyCreateReportApiReportsPost.what3words !== undefined && bodyCreateReportApiReportsPost.what3words !== null) {
+ formData.append(`what3words`, bodyCreateReportApiReportsPost.what3words);
+ }
+if(bodyCreateReportApiReportsPost.images !== undefined) {
+ bodyCreateReportApiReportsPost.images.forEach(value => formData.append(`images`, value));
+ }
+
     return axiosInstance.post(
       `/api/reports/`,
-      reportCreate,options
+      formData,options
     );
   }
 /**
@@ -58,7 +83,34 @@ const getReportApiReportsReportIdGet = (
     );
   }
 /**
- * Mark a report as cleaned.
+ * Delete a report. Requires moderator or admin role.
+ * @summary Delete Report
+ */
+const deleteReportApiReportsReportIdDelete = (
+    reportId: number, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    return axiosInstance.delete(
+      `/api/reports/${reportId}`,options
+    );
+  }
+/**
+ * Upload an image and attach it to an existing report.
+ * @summary Add Image
+ */
+const addImageApiReportsReportIdImagesPost = (
+    reportId: number,
+    bodyAddImageApiReportsReportIdImagesPost: BodyAddImageApiReportsReportIdImagesPost, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ReportImageRead>> => {const formData = new FormData();
+formData.append(`image_type`, bodyAddImageApiReportsReportIdImagesPost.image_type);
+formData.append(`file`, bodyAddImageApiReportsReportIdImagesPost.file);
+
+    return axiosInstance.post(
+      `/api/reports/${reportId}/images`,
+      formData,options
+    );
+  }
+/**
+ * Mark a report as cleaned. Attaches the user id if authenticated.
  * @summary Mark Cleaned
  */
 const markCleanedApiReportsReportIdCleanPatch = (
@@ -68,8 +120,23 @@ const markCleanedApiReportsReportIdCleanPatch = (
       `/api/reports/${reportId}/clean`,undefined,options
     );
   }
-return {listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,markCleanedApiReportsReportIdCleanPatch}};
+/**
+ * Set a report back to pending. Requires moderator or admin role.
+ * @summary Mark Unresolved
+ */
+const markUnresolvedApiReportsReportIdUnresolvePatch = (
+    reportId: number, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ReportRead>> => {
+    return axiosInstance.patch(
+      `/api/reports/${reportId}/unresolve`,undefined,options
+    );
+  }
+return {serveImageApiReportsImagesFilenameGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch}};
+export type ServeImageApiReportsImagesFilenameGetResult = AxiosResponse<unknown>
 export type ListReportsApiReportsGetResult = AxiosResponse<ReportRead[]>
 export type CreateReportApiReportsPostResult = AxiosResponse<ReportRead>
 export type GetReportApiReportsReportIdGetResult = AxiosResponse<ReportRead>
+export type DeleteReportApiReportsReportIdDeleteResult = AxiosResponse<void>
+export type AddImageApiReportsReportIdImagesPostResult = AxiosResponse<ReportImageRead>
 export type MarkCleanedApiReportsReportIdCleanPatchResult = AxiosResponse<ReportRead>
+export type MarkUnresolvedApiReportsReportIdUnresolvePatchResult = AxiosResponse<ReportRead>
