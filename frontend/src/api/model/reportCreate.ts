@@ -11,4 +11,5 @@ export interface ReportCreate {
   longitude: number;
   description?: string;
   photo_url?: string | null;
+  what3words?: string | null;
 }

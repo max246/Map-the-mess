@@ -10,6 +10,7 @@ class ReportCreate(BaseModel):
     longitude: float
     description: str = ""
     photo_url: Optional[str] = None
+    what3words: Optional[str] = None
 
 
 class ReportRead(ReportCreate):
