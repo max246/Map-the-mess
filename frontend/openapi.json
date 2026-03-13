@@ -339,6 +339,17 @@
               }
             ],
             "title": "Photo Url"
+          },
+          "what3words": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What3Words"
           }
         },
         "type": "object",
@@ -373,6 +384,17 @@
               }
             ],
             "title": "Photo Url"
+          },
+          "what3words": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What3Words"
           },
           "id": {
             "type": "integer",

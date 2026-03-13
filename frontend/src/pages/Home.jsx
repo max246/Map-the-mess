@@ -1,6 +1,30 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { getReports } from '../api/endpoints/reports/reports'
+import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
+
+const { listReportsApiReportsGet } = getReports()
+const { listVolunteersApiVolunteersGet } = getVolunteers()
 
 export default function Home() {
+  const [stats, setStats] = useState({ reports: 0, cleaned: 0, volunteers: 0 })
+  const [reports, setReports] = useState([])
+
+  useEffect(() => {
+    Promise.all([
+      listReportsApiReportsGet(),
+      listVolunteersApiVolunteersGet()
+    ]).then(([reportsRes, volunteersRes]) => {
+      const data = reportsRes.data
+      setReports(data)
+      setStats({
+        reports: data.length,
+        cleaned: data.filter(r => r.status === 'cleaned').length,
+        volunteers: Array.isArray(volunteersRes.data) ? volunteersRes.data.length : 0
+      })
+    }).catch(console.error)
+  }, [])
+
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 py-16 md:py-24">
       <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -26,12 +50,37 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Quick stats placeholder */}
+      {/* Recent reports */}
+      {reports.length > 0 && (
+        <div className="mt-12 w-full max-w-2xl text-left">
+          <h2 className="text-xl font-bold mb-4">Recent Reports</h2>
+          <ul className="divide-y divide-gray-200 bg-white rounded-lg shadow">
+            {reports.slice(0, 10).map((r) => (
+              <li key={r.id} className="px-4 py-3">
+                <Link to={`/report/${r.id}`} className="flex items-center justify-between hover:bg-gray-50 -mx-4 -my-3 px-4 py-3 rounded">
+                  <div>
+                    <span className="mr-2">{r.status === 'cleaned' ? '✅' : '🔴'}</span>
+                    <span>{r.description || 'No description'}</span>
+                    {r.what3words && (
+                      <span className="ml-2 text-xs text-brand font-medium">/// {r.what3words}</span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {new Date(r.created_at).toLocaleDateString()}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Quick stats */}
       <div className="mt-16 grid grid-cols-3 gap-8 text-center">
         {[
-          ['📍', 'Reports', '0'],
-          ['🧹', 'Cleaned', '0'],
-          ['👷', 'Volunteers', '0']
+          ['📍', 'Reports', stats.reports],
+          ['🧹', 'Cleaned', stats.cleaned],
+          ['👷', 'Volunteers', stats.volunteers]
         ].map(([icon, label, count]) => (
           <div key={label}>
             <div className="text-3xl">{icon}</div>

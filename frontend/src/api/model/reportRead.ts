@@ -11,6 +11,7 @@ export interface ReportRead {
   longitude: number;
   description?: string;
   photo_url?: string | null;
+  what3words?: string | null;
   id: number;
   status: string;
   created_at: string;

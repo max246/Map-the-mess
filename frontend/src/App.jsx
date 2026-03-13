@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import ReportLitter from './pages/ReportLitter'
 import MapView from './pages/MapView'
 import VolunteerDashboard from './pages/VolunteerDashboard'
+import ReportDetail from './pages/ReportDetail'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/report" element={<ReportLitter />} />
           <Route path="/map" element={<MapView />} />
+          <Route path="/report/:id" element={<ReportDetail />} />
           <Route path="/volunteers" element={<VolunteerDashboard />} />
         </Routes>
       </main>

@@ -20,5 +20,6 @@ class Report(Base):
     longitude = Column(Float, nullable=False)
     description = Column(String, default="")
     photo_url = Column(String, nullable=True)
+    what3words = Column(String, nullable=True)
     status = Column(Enum(ReportStatus), default=ReportStatus.pending)
     created_at = Column(DateTime, default=datetime.utcnow)
