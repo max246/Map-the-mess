@@ -12,30 +12,104 @@ import type {
   AxiosResponse
 } from 'axios';
 
+import type {
+  ForgotPassword,
+  ResetPassword,
+  Token,
+  UserCreate,
+  UserLogin,
+  UserRead,
+  UserUpdateType
+} from '../../model';
+
 
 
 
   export const getAuth = (axiosInstance: AxiosInstance = axios) => {
 /**
+ * List all users. Requires admin access.
+ * @summary List Users
+ */
+const listUsersApiAuthUsersGet = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<UserRead[]>> => {
+    return axiosInstance.get(
+      `/api/auth/users`,options
+    );
+  }
+/**
  * @summary Register
  */
 const registerApiAuthRegisterPost = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
+    userCreate: UserCreate, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<UserRead>> => {
     return axiosInstance.post(
-      `/api/auth/register`,undefined,options
+      `/api/auth/register`,
+      userCreate,options
     );
   }
 /**
  * @summary Login
  */
 const loginApiAuthLoginPost = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
+    userLogin: UserLogin, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Token>> => {
     return axiosInstance.post(
-      `/api/auth/login`,undefined,options
+      `/api/auth/login`,
+      userLogin,options
     );
   }
-return {registerApiAuthRegisterPost,loginApiAuthLoginPost}};
-export type RegisterApiAuthRegisterPostResult = AxiosResponse<unknown>
-export type LoginApiAuthLoginPostResult = AxiosResponse<unknown>
+/**
+ * @summary Update User Type
+ */
+const updateUserTypeApiAuthUsersUserIdTypePatch = (
+    userId: number,
+    userUpdateType: UserUpdateType, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<UserRead>> => {
+    return axiosInstance.patch(
+      `/api/auth/users/${userId}/type`,
+      userUpdateType,options
+    );
+  }
+/**
+ * @summary Delete User
+ */
+const deleteUserApiAuthUsersUserIdDelete = (
+    userId: number, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    return axiosInstance.delete(
+      `/api/auth/users/${userId}`,options
+    );
+  }
+/**
+ * Generate a password reset token for the given email.
+ * @summary Forgot Password
+ */
+const forgotPasswordApiAuthForgotPasswordPost = (
+    forgotPassword: ForgotPassword, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+    return axiosInstance.post(
+      `/api/auth/forgot-password`,
+      forgotPassword,options
+    );
+  }
+/**
+ * Reset a user's password using a valid reset token.
+ * @summary Reset Password
+ */
+const resetPasswordApiAuthResetPasswordPost = (
+    resetPassword: ResetPassword, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+    return axiosInstance.post(
+      `/api/auth/reset-password`,
+      resetPassword,options
+    );
+  }
+return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+export type ListUsersApiAuthUsersGetResult = AxiosResponse<UserRead[]>
+export type RegisterApiAuthRegisterPostResult = AxiosResponse<UserRead>
+export type LoginApiAuthLoginPostResult = AxiosResponse<Token>
+export type UpdateUserTypeApiAuthUsersUserIdTypePatchResult = AxiosResponse<UserRead>
+export type DeleteUserApiAuthUsersUserIdDeleteResult = AxiosResponse<void>
+export type ForgotPasswordApiAuthForgotPasswordPostResult = AxiosResponse<unknown>
+export type ResetPasswordApiAuthResetPasswordPostResult = AxiosResponse<unknown>

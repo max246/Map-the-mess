@@ -5,14 +5,18 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: 0.1.0
  */
+import type { ReportImageRead } from './reportImageRead';
 
 export interface ReportRead {
+  id: number;
   latitude: number;
   longitude: number;
-  description?: string;
-  photo_url?: string | null;
+  description: string;
   what3words?: string | null;
-  id: number;
+  created_by_user_id?: number | null;
+  resolved_by_user_id?: number | null;
+  resolved_at?: string | null;
   status: string;
   created_at: string;
+  images?: ReportImageRead[];
 }

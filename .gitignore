@@ -6,3 +6,4 @@ __pycache__/
 venv/
 *.db
 .DS_Store
+images/

@@ -6,10 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ReportCreate {
-  latitude: number;
-  longitude: number;
-  description?: string;
-  photo_url?: string | null;
-  what3words?: string | null;
+export interface UserLogin {
+  email: string;
+  password: string;
 }
