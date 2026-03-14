@@ -16,7 +16,7 @@ export default function VolunteerDashboard() {
     if (tab === 'unresolved') {
       setLoading(true)
       listReportsApiReportsGet({ status: 'pending' })
-        .then(data => setPendingReports(data))
+        .then((data) => setPendingReports(data))
         .catch(() => setPendingReports([]))
         .finally(() => setLoading(false))
     }
@@ -65,15 +65,14 @@ export default function VolunteerDashboard() {
             <p className="mb-1">No planned cleanups yet.</p>
             <p className="text-sm">
               Browse the{' '}
-              <button
-                onClick={() => setTab('unresolved')}
-                className="text-brand underline"
-              >
+              <button onClick={() => setTab('unresolved')} className="text-brand underline">
                 unresolved reports
-              </button>
-              {' '}or head to the{' '}
-              <Link to="/map" className="text-brand underline">map</Link>
-              {' '}to find litter near you.
+              </button>{' '}
+              or head to the{' '}
+              <Link to="/map" className="text-brand underline">
+                map
+              </Link>{' '}
+              to find litter near you.
             </p>
           </div>
         </div>
@@ -91,8 +90,8 @@ export default function VolunteerDashboard() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {pendingReports.map(report => {
-                const firstImage = report.images?.find(img => img.image_type === 'report')
+              {pendingReports.map((report) => {
+                const firstImage = report.images?.find((img) => img.image_type === 'report')
                 return (
                   <Link
                     key={report.id}
@@ -127,7 +126,9 @@ export default function VolunteerDashboard() {
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         {new Date(report.created_at).toLocaleDateString('en-GB', {
-                          day: 'numeric', month: 'short', year: 'numeric'
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
                         })}
                         {report.what3words && (
                           <span className="ml-2 text-brand">/// {report.what3words}</span>

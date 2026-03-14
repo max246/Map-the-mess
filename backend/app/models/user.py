@@ -22,5 +22,5 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     full_name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
-    user_type = Column(Enum(UserType), default=UserType.volunteer, nullable=False)
+    user_type: Column[UserType] = Column(Enum(UserType), default=UserType.volunteer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

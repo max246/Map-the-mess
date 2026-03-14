@@ -17,8 +17,10 @@ export async function reverseGeocode(lat, lng) {
     displayName: [
       addr.road || addr.pedestrian || addr.footway || '',
       addr.city || addr.town || addr.village || addr.hamlet || '',
-      addr.postcode || ''
-    ].filter(Boolean).join(', ')
+      addr.postcode || '',
+    ]
+      .filter(Boolean)
+      .join(', '),
   }
   cache.set(key, result)
   return result

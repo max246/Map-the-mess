@@ -29,7 +29,8 @@ export default function ForgotPassword() {
         <div className="text-5xl mb-4">📧</div>
         <h1 className="text-2xl font-bold mb-3">Check your email</h1>
         <p className="text-gray-600 mb-6">
-          If an account exists for <span className="font-medium">{email}</span>, we've sent password reset instructions.
+          If an account exists for <span className="font-medium">{email}</span>, we've sent password
+          reset instructions.
         </p>
         <Link to="/login" className="text-brand font-medium hover:underline">
           Back to login

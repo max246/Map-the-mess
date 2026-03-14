@@ -53,7 +53,7 @@ export default function Navbar() {
 
         {/* Desktop */}
         <div className="hidden md:flex gap-6 items-center">
-          {publicLinks.map(l => navLink(l.to, l.label))}
+          {publicLinks.map((l) => navLink(l.to, l.label))}
           {isLoggedIn && isVolunteer && navLink('/volunteers', 'Dashboard')}
           {isLoggedIn && canManageUsers && (
             <>
@@ -89,7 +89,7 @@ export default function Navbar() {
       {/* Mobile */}
       {open && (
         <div className="md:hidden px-4 pb-4 flex flex-col gap-2">
-          {publicLinks.map(l => mobileLink(l.to, l.label))}
+          {publicLinks.map((l) => mobileLink(l.to, l.label))}
           {isLoggedIn && isVolunteer && mobileLink('/volunteers', 'Dashboard')}
           {isLoggedIn && canManageUsers && (
             <>

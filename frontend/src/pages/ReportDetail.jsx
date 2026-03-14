@@ -27,8 +27,9 @@ export default function ReportDetail() {
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
 
   const fetchReport = () => {
-    api.get(`/api/reports/${id}`)
-      .then(res => {
+    api
+      .get(`/api/reports/${id}`)
+      .then((res) => {
         setReport(res.data)
         return reverseGeocode(res.data.latitude, res.data.longitude)
       })
@@ -36,11 +37,13 @@ export default function ReportDetail() {
       .catch(() => setError('Report not found'))
   }
 
-  useEffect(() => { fetchReport() }, [id])
+  useEffect(() => {
+    fetchReport()
+  }, [id])
 
   // Build image URLs from report.images array
-  const reportImages = report?.images?.filter(img => img.image_type === 'report') || []
-  const resolvedImages = report?.images?.filter(img => img.image_type === 'resolved') || []
+  const reportImages = report?.images?.filter((img) => img.image_type === 'report') || []
+  const resolvedImages = report?.images?.filter((img) => img.image_type === 'resolved') || []
   const allPhotos = [...reportImages, ...resolvedImages]
 
   const imageUrl = (img) => `${API_BASE_URL}/api/reports/images/${img.url}`
@@ -49,12 +52,12 @@ export default function ReportDetail() {
     const files = Array.from(e.target.files)
     if (files.length === 0) return
 
-    setResolvePhotos(prev => [...prev, ...files])
+    setResolvePhotos((prev) => [...prev, ...files])
 
-    files.forEach(file => {
+    files.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
-        setResolvePhotoPreviews(prev => [...prev, reader.result])
+        setResolvePhotoPreviews((prev) => [...prev, reader.result])
       }
       reader.readAsDataURL(file)
     })
@@ -63,8 +66,8 @@ export default function ReportDetail() {
   }
 
   const removeResolvePhoto = (index) => {
-    setResolvePhotos(prev => prev.filter((_, i) => i !== index))
-    setResolvePhotoPreviews(prev => prev.filter((_, i) => i !== index))
+    setResolvePhotos((prev) => prev.filter((_, i) => i !== index))
+    setResolvePhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleResolve = async (e) => {
@@ -85,13 +88,13 @@ export default function ReportDetail() {
         formData.append('file', file)
         formData.append('image_type', 'resolved')
         await api.post(`/api/reports/${id}/images`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data', ...authHeaders }
+          headers: { 'Content-Type': 'multipart/form-data', ...authHeaders },
         })
       }
 
       // Mark as cleaned
       const res = await api.patch(`/api/reports/${id}/clean`, undefined, {
-        headers: authHeaders
+        headers: authHeaders,
       })
       setReport(res.data)
       setShowResolveForm(false)
@@ -111,7 +114,7 @@ export default function ReportDetail() {
   const handleUnresolve = async () => {
     try {
       const res = await api.patch(`/api/reports/${id}/unresolve`, undefined, {
-        headers: authHeaders
+        headers: authHeaders,
       })
       setReport(res.data)
     } catch {
@@ -135,17 +138,15 @@ export default function ReportDetail() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <p className="text-xl text-gray-500">{error}</p>
-        <Link to="/map" className="text-brand underline mt-4 inline-block">Back to map</Link>
+        <Link to="/map" className="text-brand underline mt-4 inline-block">
+          Back to map
+        </Link>
       </div>
     )
   }
 
   if (!report) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center text-gray-400">
-        Loading...
-      </div>
-    )
+    return <div className="max-w-2xl mx-auto px-4 py-16 text-center text-gray-400">Loading...</div>
   }
 
   return (
@@ -159,8 +160,13 @@ export default function ReportDetail() {
       </h1>
 
       <p className="text-sm text-gray-400 mb-6">
-        Reported on {new Date(report.created_at).toLocaleDateString('en-GB', {
-          day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        Reported on{' '}
+        {new Date(report.created_at).toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
         })}
       </p>
 
@@ -187,10 +193,16 @@ export default function ReportDetail() {
                     key={img.id}
                     onClick={() => setActivePhoto(i)}
                     className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
-                      i === activePhoto ? 'border-brand' : 'border-transparent opacity-60 hover:opacity-100'
+                      i === activePhoto
+                        ? 'border-brand'
+                        : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={imageUrl(img)} alt={`Thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={imageUrl(img)}
+                      alt={`Thumbnail ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                     {img.image_type === 'resolved' && (
                       <span className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-center text-[8px] leading-tight py-0.5">
                         Resolved
@@ -270,9 +282,15 @@ export default function ReportDetail() {
           {report.resolved_at && (
             <div>
               <span className="text-gray-500">Resolved on</span>
-              <p>{new Date(report.resolved_at).toLocaleDateString('en-GB', {
-                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              })}</p>
+              <p>
+                {new Date(report.resolved_at).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
             </div>
           )}
         </div>
@@ -331,7 +349,9 @@ export default function ReportDetail() {
                   className="w-full h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
                 >
                   <span className="text-2xl mb-1">+</span>
-                  <span className="text-xs">{resolvePhotoPreviews.length > 0 ? 'Add more photos' : 'Click to upload photos'}</span>
+                  <span className="text-xs">
+                    {resolvePhotoPreviews.length > 0 ? 'Add more photos' : 'Click to upload photos'}
+                  </span>
                 </button>
               </div>
 
@@ -396,9 +416,7 @@ export default function ReportDetail() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold text-green-800 mb-1">Resolved</h2>
-              <p className="text-sm text-green-700">
-                This report has been marked as cleaned.
-              </p>
+              <p className="text-sm text-green-700">This report has been marked as cleaned.</p>
             </div>
             {canManageUsers && (
               <button
