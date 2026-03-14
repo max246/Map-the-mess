@@ -5,25 +5,25 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: 0.1.0
  */
-import axios from 'axios';
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import { customInstance } from '../../client';
 
 
 
-
-  export const getDefault = (axiosInstance: AxiosInstance = axios) => {
+  export const getDefault = () => {
 /**
  * @summary Root
  */
 const rootGet = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
-    return axiosInstance.get(
-      `/`,options
-    );
-  }
-return {}};
+    
+ ) => {
+      return customInstance<unknown>(
+      {url: `/`, method: 'GET'
+    },
+      );
+    }
+  return {}};
+
+type AwaitedInput<T> = PromiseLike<T> | T;
+
+    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
+

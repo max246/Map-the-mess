@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useMemo } from 'react'
-import axios from 'axios'
+import api from '../api/client'
 
 const AuthContext = createContext(null)
 
@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
   const user = useMemo(() => (token ? decodeToken(token) : null), [token])
 
   const login = async (email, password) => {
-    const res = await axios.post('/api/auth/login', { email, password })
+    const res = await api.post('/api/auth/login', { email, password })
     const t = res.data.access_token
     localStorage.setItem('token', t)
     setToken(t)
@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
   }
 
   const register = async (email, fullName, password) => {
-    const res = await axios.post('/api/auth/register', {
+    const res = await api.post('/api/auth/register', {
       email,
       full_name: fullName,
       password
@@ -35,12 +35,12 @@ export function AuthProvider({ children }) {
   }
 
   const forgotPassword = async (email) => {
-    const res = await axios.post('/api/auth/forgot-password', { email })
+    const res = await api.post('/api/auth/forgot-password', { email })
     return res.data
   }
 
   const resetPassword = async (resetToken, newPassword) => {
-    const res = await axios.post('/api/auth/reset-password', {
+    const res = await api.post('/api/auth/reset-password', {
       token: resetToken,
       new_password: newPassword
     })

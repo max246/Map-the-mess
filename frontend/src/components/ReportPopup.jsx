@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Popup } from 'react-leaflet'
 import { reverseGeocode } from '../api/geocode'
+import { API_BASE_URL } from '../api/client'
 
 function getPopupImage(report) {
   const images = report.images || []
@@ -36,7 +37,7 @@ export default function ReportPopup({ report }) {
         {/* Image */}
         {image ? (
           <img
-            src={`/api/reports/images/${image.url}`}
+            src={`${API_BASE_URL}/api/reports/images/${image.url}`}
             alt="Report"
             style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }}
           />

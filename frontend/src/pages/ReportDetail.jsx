@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import axios from 'axios'
+import api, { API_BASE_URL } from '../api/client'
 import { reverseGeocode } from '../api/geocode'
 import { useAuth } from '../context/AuthContext'
 
@@ -27,7 +27,7 @@ export default function ReportDetail() {
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
 
   const fetchReport = () => {
-    axios.get(`/api/reports/${id}`)
+    api.get(`/api/reports/${id}`)
       .then(res => {
         setReport(res.data)
         return reverseGeocode(res.data.latitude, res.data.longitude)
@@ -43,7 +43,7 @@ export default function ReportDetail() {
   const resolvedImages = report?.images?.filter(img => img.image_type === 'resolved') || []
   const allPhotos = [...reportImages, ...resolvedImages]
 
-  const imageUrl = (img) => `/api/reports/images/${img.url}`
+  const imageUrl = (img) => `${API_BASE_URL}/api/reports/images/${img.url}`
 
   const handleResolvePhotos = (e) => {
     const files = Array.from(e.target.files)
@@ -84,13 +84,13 @@ export default function ReportDetail() {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('image_type', 'resolved')
-        await axios.post(`/api/reports/${id}/images`, formData, {
+        await api.post(`/api/reports/${id}/images`, formData, {
           headers: { 'Content-Type': 'multipart/form-data', ...authHeaders }
         })
       }
 
       // Mark as cleaned
-      const res = await axios.patch(`/api/reports/${id}/clean`, undefined, {
+      const res = await api.patch(`/api/reports/${id}/clean`, undefined, {
         headers: authHeaders
       })
       setReport(res.data)
@@ -110,7 +110,7 @@ export default function ReportDetail() {
 
   const handleUnresolve = async () => {
     try {
-      const res = await axios.patch(`/api/reports/${id}/unresolve`, undefined, {
+      const res = await api.patch(`/api/reports/${id}/unresolve`, undefined, {
         headers: authHeaders
       })
       setReport(res.data)
@@ -123,7 +123,7 @@ export default function ReportDetail() {
     if (!confirm('Are you sure you want to delete this report? This cannot be undone.')) return
     setDeleting(true)
     try {
-      await axios.delete(`/api/reports/${id}`, { headers: authHeaders })
+      await api.delete(`/api/reports/${id}`, { headers: authHeaders })
       navigate('/admin')
     } catch {
       alert('Failed to delete report.')

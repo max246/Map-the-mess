@@ -5,13 +5,6 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: 0.1.0
  */
-import axios from 'axios';
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
-
 import type {
   ForgotPassword,
   ResetPassword,
@@ -22,94 +15,112 @@ import type {
   UserUpdateType
 } from '../../model';
 
+import { customInstance } from '../../client';
 
 
 
-  export const getAuth = (axiosInstance: AxiosInstance = axios) => {
+  export const getAuth = () => {
 /**
  * List all users. Requires admin access.
  * @summary List Users
  */
 const listUsersApiAuthUsersGet = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserRead[]>> => {
-    return axiosInstance.get(
-      `/api/auth/users`,options
-    );
-  }
-/**
+    
+ ) => {
+      return customInstance<UserRead[]>(
+      {url: `/api/auth/users`, method: 'GET'
+    },
+      );
+    }
+  /**
  * @summary Register
  */
 const registerApiAuthRegisterPost = (
-    userCreate: UserCreate, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserRead>> => {
-    return axiosInstance.post(
-      `/api/auth/register`,
-      userCreate,options
-    );
-  }
-/**
+    userCreate: UserCreate,
+ ) => {
+      return customInstance<UserRead>(
+      {url: `/api/auth/register`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: userCreate
+    },
+      );
+    }
+  /**
  * @summary Login
  */
 const loginApiAuthLoginPost = (
-    userLogin: UserLogin, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Token>> => {
-    return axiosInstance.post(
-      `/api/auth/login`,
-      userLogin,options
-    );
-  }
-/**
+    userLogin: UserLogin,
+ ) => {
+      return customInstance<Token>(
+      {url: `/api/auth/login`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: userLogin
+    },
+      );
+    }
+  /**
  * @summary Update User Type
  */
 const updateUserTypeApiAuthUsersUserIdTypePatch = (
     userId: number,
-    userUpdateType: UserUpdateType, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserRead>> => {
-    return axiosInstance.patch(
-      `/api/auth/users/${userId}/type`,
-      userUpdateType,options
-    );
-  }
-/**
+    userUpdateType: UserUpdateType,
+ ) => {
+      return customInstance<UserRead>(
+      {url: `/api/auth/users/${userId}/type`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: userUpdateType
+    },
+      );
+    }
+  /**
  * @summary Delete User
  */
 const deleteUserApiAuthUsersUserIdDelete = (
-    userId: number, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    return axiosInstance.delete(
-      `/api/auth/users/${userId}`,options
-    );
-  }
-/**
+    userId: number,
+ ) => {
+      return customInstance<void>(
+      {url: `/api/auth/users/${userId}`, method: 'DELETE'
+    },
+      );
+    }
+  /**
  * Generate a password reset token for the given email.
  * @summary Forgot Password
  */
 const forgotPasswordApiAuthForgotPasswordPost = (
-    forgotPassword: ForgotPassword, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
-    return axiosInstance.post(
-      `/api/auth/forgot-password`,
-      forgotPassword,options
-    );
-  }
-/**
+    forgotPassword: ForgotPassword,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/auth/forgot-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: forgotPassword
+    },
+      );
+    }
+  /**
  * Reset a user's password using a valid reset token.
  * @summary Reset Password
  */
 const resetPasswordApiAuthResetPasswordPost = (
-    resetPassword: ResetPassword, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
-    return axiosInstance.post(
-      `/api/auth/reset-password`,
-      resetPassword,options
-    );
-  }
-return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
-export type ListUsersApiAuthUsersGetResult = AxiosResponse<UserRead[]>
-export type RegisterApiAuthRegisterPostResult = AxiosResponse<UserRead>
-export type LoginApiAuthLoginPostResult = AxiosResponse<Token>
-export type UpdateUserTypeApiAuthUsersUserIdTypePatchResult = AxiosResponse<UserRead>
-export type DeleteUserApiAuthUsersUserIdDeleteResult = AxiosResponse<void>
-export type ForgotPasswordApiAuthForgotPasswordPostResult = AxiosResponse<unknown>
-export type ResetPasswordApiAuthResetPasswordPostResult = AxiosResponse<unknown>
+    resetPassword: ResetPassword,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/auth/reset-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resetPassword
+    },
+      );
+    }
+  return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+
+type AwaitedInput<T> = PromiseLike<T> | T;
+
+    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
+
+export type ListUsersApiAuthUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listUsersApiAuthUsersGet']>>>
+export type RegisterApiAuthRegisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['registerApiAuthRegisterPost']>>>
+export type LoginApiAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginApiAuthLoginPost']>>>
+export type UpdateUserTypeApiAuthUsersUserIdTypePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['updateUserTypeApiAuthUsersUserIdTypePatch']>>>
+export type DeleteUserApiAuthUsersUserIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deleteUserApiAuthUsersUserIdDelete']>>>
+export type ForgotPasswordApiAuthForgotPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['forgotPasswordApiAuthForgotPasswordPost']>>>
+export type ResetPasswordApiAuthResetPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resetPasswordApiAuthResetPasswordPost']>>>

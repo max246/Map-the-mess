@@ -5,37 +5,38 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: 0.1.0
  */
-import axios from 'axios';
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import { customInstance } from '../../client';
 
 
 
-
-  export const getVolunteers = (axiosInstance: AxiosInstance = axios) => {
+  export const getVolunteers = () => {
 /**
  * @summary List Volunteers
  */
 const listVolunteersApiVolunteersGet = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
-    return axiosInstance.get(
-      `/api/volunteers/`,options
-    );
-  }
-/**
+    
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/volunteers/`, method: 'GET'
+    },
+      );
+    }
+  /**
  * @summary Claim Report
  */
 const claimReportApiVolunteersClaimReportIdPost = (
-    reportId: number, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
-    return axiosInstance.post(
-      `/api/volunteers/claim/${reportId}`,undefined,options
-    );
-  }
-return {listVolunteersApiVolunteersGet,claimReportApiVolunteersClaimReportIdPost}};
-export type ListVolunteersApiVolunteersGetResult = AxiosResponse<unknown>
-export type ClaimReportApiVolunteersClaimReportIdPostResult = AxiosResponse<unknown>
+    reportId: number,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/volunteers/claim/${reportId}`, method: 'POST'
+    },
+      );
+    }
+  return {listVolunteersApiVolunteersGet,claimReportApiVolunteersClaimReportIdPost}};
+
+type AwaitedInput<T> = PromiseLike<T> | T;
+
+    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
+
+export type ListVolunteersApiVolunteersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['listVolunteersApiVolunteersGet']>>>
+export type ClaimReportApiVolunteersClaimReportIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['claimReportApiVolunteersClaimReportIdPost']>>>

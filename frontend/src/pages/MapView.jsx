@@ -14,7 +14,7 @@ export default function MapView() {
 
   useEffect(() => {
     listReportsApiReportsGet()
-      .then(res => setReports(res.data))
+      .then(data => setReports(data))
       .catch(console.error)
   }, [])
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api/client'
 import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
 
@@ -19,7 +19,7 @@ export default function Admin() {
   const fetchReports = () => {
     setLoading(true)
     listReportsApiReportsGet(statusFilter ? { status: statusFilter } : undefined)
-      .then(res => setReports(res.data))
+      .then(data => setReports(data))
       .catch(() => setReports([]))
       .finally(() => setLoading(false))
   }
@@ -30,7 +30,7 @@ export default function Admin() {
     if (!confirm(`Are you sure you want to delete report #${reportId}?`)) return
     setDeletingId(reportId)
     try {
-      await axios.delete(`/api/reports/${reportId}`, {
+      await api.delete(`/api/reports/${reportId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setReports(prev => prev.filter(r => r.id !== reportId))

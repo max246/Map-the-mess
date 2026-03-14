@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
 
 const ROLES = ['superuser', 'admin', 'moderator', 'volunteer']
@@ -16,7 +16,7 @@ export default function UserManagement() {
 
   useEffect(() => {
     if (!token) return
-    axios.get('/api/auth/users', authHeaders)
+    api.get('/api/auth/users', authHeaders)
       .then(res => setUsers(res.data))
       .catch(() => setError('Failed to load users.'))
       .finally(() => setLoading(false))
@@ -29,7 +29,7 @@ export default function UserManagement() {
     setUpdating(userId)
     setError('')
     try {
-      const res = await axios.patch(
+      const res = await api.patch(
         `/api/auth/users/${userId}/type`,
         { user_type: newRole },
         authHeaders
@@ -47,7 +47,7 @@ export default function UserManagement() {
     if (!confirm(`Are you sure you want to delete user ${email}?`)) return
     setError('')
     try {
-      await axios.delete(`/api/auth/users/${userId}`, authHeaders)
+      await api.delete(`/api/auth/users/${userId}`, authHeaders)
       setUsers(prev => prev.filter(u => u.id !== userId))
     } catch (err) {
       const detail = err.response?.data?.detail
