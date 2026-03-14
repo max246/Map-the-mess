@@ -16,8 +16,9 @@ export default function UserManagement() {
 
   useEffect(() => {
     if (!token) return
-    api.get('/api/auth/users', authHeaders)
-      .then(res => setUsers(res.data))
+    api
+      .get('/api/auth/users', authHeaders)
+      .then((res) => setUsers(res.data))
       .catch(() => setError('Failed to load users.'))
       .finally(() => setLoading(false))
   }, [token])
@@ -34,7 +35,7 @@ export default function UserManagement() {
         { user_type: newRole },
         authHeaders
       )
-      setUsers(prev => prev.map(u => u.id === userId ? res.data : u))
+      setUsers((prev) => prev.map((u) => (u.id === userId ? res.data : u)))
     } catch (err) {
       const detail = err.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Failed to update user role.')
@@ -48,7 +49,7 @@ export default function UserManagement() {
     setError('')
     try {
       await api.delete(`/api/auth/users/${userId}`, authHeaders)
-      setUsers(prev => prev.filter(u => u.id !== userId))
+      setUsers((prev) => prev.filter((u) => u.id !== userId))
     } catch (err) {
       const detail = err.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Failed to delete user.')
@@ -91,7 +92,7 @@ export default function UserManagement() {
                 </td>
               </tr>
             ) : (
-              users.map(user => (
+              users.map((user) => (
                 <tr key={user.id} className="border-b last:border-b-0 hover:bg-gray-50">
                   <td className="px-4 py-3 font-mono text-gray-700">#{user.id}</td>
                   <td className="px-4 py-3 text-gray-700">{user.full_name}</td>
@@ -107,13 +108,13 @@ export default function UserManagement() {
                         user.user_type === 'superuser'
                           ? 'bg-red-50 border-red-200 text-red-700'
                           : user.user_type === 'admin'
-                          ? 'bg-purple-50 border-purple-200 text-purple-700'
-                          : user.user_type === 'moderator'
-                          ? 'bg-blue-50 border-blue-200 text-blue-700'
-                          : 'bg-gray-50 border-gray-200 text-gray-700'
+                            ? 'bg-purple-50 border-purple-200 text-purple-700'
+                            : user.user_type === 'moderator'
+                              ? 'bg-blue-50 border-blue-200 text-blue-700'
+                              : 'bg-gray-50 border-gray-200 text-gray-700'
                       }`}
                     >
-                      {ROLES.map(role => (
+                      {ROLES.map((role) => (
                         <option key={role} value={role}>
                           {role.charAt(0).toUpperCase() + role.slice(1)}
                         </option>
@@ -122,7 +123,9 @@ export default function UserManagement() {
                   </td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                     {new Date(user.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric', month: 'short', year: 'numeric'
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
                     })}
                   </td>
                   <td className="px-4 py-3">

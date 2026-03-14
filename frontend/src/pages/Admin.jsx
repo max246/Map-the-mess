@@ -19,21 +19,23 @@ export default function Admin() {
   const fetchReports = () => {
     setLoading(true)
     listReportsApiReportsGet(statusFilter ? { status: statusFilter } : undefined)
-      .then(data => setReports(data))
+      .then((data) => setReports(data))
       .catch(() => setReports([]))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchReports() }, [statusFilter])
+  useEffect(() => {
+    fetchReports()
+  }, [statusFilter])
 
   const handleDelete = async (reportId) => {
     if (!confirm(`Are you sure you want to delete report #${reportId}?`)) return
     setDeletingId(reportId)
     try {
       await api.delete(`/api/reports/${reportId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
-      setReports(prev => prev.filter(r => r.id !== reportId))
+      setReports((prev) => prev.filter((r) => r.id !== reportId))
     } catch {
       alert('Failed to delete report.')
     } finally {
@@ -59,17 +61,18 @@ export default function Admin() {
         <div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Logged in as <span className="font-medium text-gray-700">{user?.email}</span>
-            {' '}&middot;{' '}
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-              user?.userType === 'superuser'
-                ? 'bg-red-100 text-red-700'
-                : user?.userType === 'admin'
-                ? 'bg-purple-100 text-purple-700'
-                : user?.userType === 'moderator'
-                ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-700'
-            }`}>
+            Logged in as <span className="font-medium text-gray-700">{user?.email}</span> &middot;{' '}
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                user?.userType === 'superuser'
+                  ? 'bg-red-100 text-red-700'
+                  : user?.userType === 'admin'
+                    ? 'bg-purple-100 text-purple-700'
+                    : user?.userType === 'moderator'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-700'
+              }`}
+            >
               {user?.userType?.charAt(0).toUpperCase() + user?.userType?.slice(1)}
             </span>
           </p>
@@ -87,10 +90,13 @@ export default function Admin() {
       {/* Filters */}
       <div className="flex items-center gap-3 mb-4">
         <span className="text-sm text-gray-500">Filter by status:</span>
-        {['', 'pending', 'cleaned'].map(s => (
+        {['', 'pending', 'cleaned'].map((s) => (
           <button
             key={s}
-            onClick={() => { setStatusFilter(s); setPage(1) }}
+            onClick={() => {
+              setStatusFilter(s)
+              setPage(1)
+            }}
             className={`text-sm px-3 py-1 rounded-full border transition ${
               statusFilter === s
                 ? 'bg-brand text-white border-brand'
@@ -132,15 +138,17 @@ export default function Admin() {
                 </td>
               </tr>
             ) : (
-              paginated.map(report => (
+              paginated.map((report) => (
                 <tr key={report.id} className="border-b last:border-b-0 hover:bg-gray-50">
                   <td className="px-4 py-3 font-mono text-gray-700">#{report.id}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                      report.status === 'cleaned'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        report.status === 'cleaned'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}
+                    >
                       {report.status === 'cleaned' ? 'Cleaned' : 'Pending'}
                     </span>
                   </td>
@@ -152,7 +160,9 @@ export default function Admin() {
                   </td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                     {new Date(report.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric', month: 'short', year: 'numeric'
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
                     })}
                   </td>
                   <td className="px-4 py-3">
@@ -185,13 +195,13 @@ export default function Admin() {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={safeCurrentPage === 1}
             className="px-3 py-1.5 rounded border border-gray-300 text-sm disabled:opacity-30 hover:bg-gray-50 transition"
           >
             Previous
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
               onClick={() => setPage(p)}
@@ -205,7 +215,7 @@ export default function Admin() {
             </button>
           ))}
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={safeCurrentPage === totalPages}
             className="px-3 py-1.5 rounded border border-gray-300 text-sm disabled:opacity-30 hover:bg-gray-50 transition"
           >

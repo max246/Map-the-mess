@@ -116,11 +116,13 @@ def create_report(
 
     for file in images:
         filename = _save_upload(file)
-        db.add(ReportImage(
-            report_id=report.id,
-            url=filename,
-            image_type=ImageType.report,
-        ))
+        db.add(
+            ReportImage(
+                report_id=report.id,
+                url=filename,
+                image_type=ImageType.report,
+            )
+        )
 
     db.commit()
     db.refresh(report)

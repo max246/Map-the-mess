@@ -42,7 +42,7 @@ export default function ReportLitter() {
 
     if (value.includes('.') && value.length >= 4) {
       suggestTimeout.current = setTimeout(() => {
-        autosuggest(value, location).then(results => {
+        autosuggest(value, location).then((results) => {
           setSuggestions(results)
           setShowSuggestions(results.length > 0)
         })
@@ -64,12 +64,12 @@ export default function ReportLitter() {
     const files = Array.from(e.target.files)
     if (files.length === 0) return
 
-    setPhotos(prev => [...prev, ...files])
+    setPhotos((prev) => [...prev, ...files])
 
-    files.forEach(file => {
+    files.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
-        setPhotoPreviews(prev => [...prev, reader.result])
+        setPhotoPreviews((prev) => [...prev, reader.result])
       }
       reader.readAsDataURL(file)
     })
@@ -78,8 +78,8 @@ export default function ReportLitter() {
   }
 
   const removePhoto = (index) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index))
-    setPhotoPreviews(prev => prev.filter((_, i) => i !== index))
+    setPhotos((prev) => prev.filter((_, i) => i !== index))
+    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e) => {
@@ -95,7 +95,7 @@ export default function ReportLitter() {
       formData.append('longitude', location.lng)
       formData.append('description', description)
       if (words) formData.append('what3words', words)
-      photos.forEach(file => formData.append('images', file))
+      photos.forEach((file) => formData.append('images', file))
 
       const headers = { 'Content-Type': 'multipart/form-data' }
       if (token) headers['Authorization'] = `Bearer ${token}`
@@ -185,7 +185,9 @@ export default function ReportLitter() {
             className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
           >
             <span className="text-2xl mb-1">+</span>
-            <span className="text-sm">{photoPreviews.length > 0 ? 'Add more photos' : 'Click to upload photos'}</span>
+            <span className="text-sm">
+              {photoPreviews.length > 0 ? 'Add more photos' : 'Click to upload photos'}
+            </span>
           </button>
         </div>
 
@@ -209,7 +211,9 @@ export default function ReportLitter() {
               </p>
 
               <div className="mb-2 relative">
-                <span className="font-medium text-sm block mb-1">what3words <span className="text-gray-400 font-normal">(optional)</span></span>
+                <span className="font-medium text-sm block mb-1">
+                  what3words <span className="text-gray-400 font-normal">(optional)</span>
+                </span>
                 <div className="flex items-center gap-2">
                   <span className="text-brand font-medium text-sm">///</span>
                   <input
@@ -242,7 +246,9 @@ export default function ReportLitter() {
                         className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
                       >
                         <span className="text-brand font-medium text-sm">/// {s.words}</span>
-                        <span className="text-xs text-gray-400 ml-2">{s.nearestPlace}, {s.country}</span>
+                        <span className="text-xs text-gray-400 ml-2">
+                          {s.nearestPlace}, {s.country}
+                        </span>
                       </li>
                     ))}
                   </ul>

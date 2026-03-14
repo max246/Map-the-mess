@@ -9,13 +9,13 @@ function getPopupImage(report) {
   if (images.length === 0) return null
 
   if (report.status === 'cleaned') {
-    const resolvedImages = images.filter(img => img.image_type === 'resolved')
+    const resolvedImages = images.filter((img) => img.image_type === 'resolved')
     if (resolvedImages.length > 0) {
       return resolvedImages[resolvedImages.length - 1]
     }
   }
 
-  const reportImages = images.filter(img => img.image_type === 'report')
+  const reportImages = images.filter((img) => img.image_type === 'report')
   return reportImages[0] || images[0]
 }
 
@@ -39,15 +39,29 @@ export default function ReportPopup({ report }) {
           <img
             src={`${API_BASE_URL}/api/reports/images/${image.url}`}
             alt="Report"
-            style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }}
+            style={{
+              width: '100%',
+              height: '120px',
+              objectFit: 'cover',
+              borderRadius: '4px',
+              marginBottom: '8px',
+            }}
           />
         ) : (
-          <div style={{
-            width: '100%', height: '120px', backgroundColor: '#f3f4f6',
-            borderRadius: '4px', marginBottom: '8px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#9ca3af', fontSize: '24px'
-          }}>
+          <div
+            style={{
+              width: '100%',
+              height: '120px',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '4px',
+              marginBottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#9ca3af',
+              fontSize: '24px',
+            }}
+          >
             📷
           </div>
         )}
@@ -75,9 +89,16 @@ export default function ReportPopup({ report }) {
         <button
           onClick={() => navigate(`/report/${report.id}`)}
           style={{
-            marginTop: '10px', width: '100%', padding: '6px',
-            backgroundColor: '#2563eb', color: 'white', border: 'none',
-            borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600
+            marginTop: '10px',
+            width: '100%',
+            padding: '6px',
+            backgroundColor: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 600,
           }}
         >
           Open Report

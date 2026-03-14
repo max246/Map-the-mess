@@ -12,8 +12,13 @@ from app.config import SECRET_KEY
 from app.database import get_db
 from app.models.user import User, UserType
 from app.schemas.user import (
-    UserCreate, UserLogin, UserRead, UserUpdateType,
-    ForgotPassword, ResetPassword, Token,
+    UserCreate,
+    UserLogin,
+    UserRead,
+    UserUpdateType,
+    ForgotPassword,
+    ResetPassword,
+    Token,
 )
 
 router = APIRouter()
@@ -33,9 +38,7 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-) -> User:
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token",
@@ -187,7 +190,10 @@ def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)):
         algorithm=ALGORITHM,
     )
     # TODO: send reset_token via email instead of returning it directly
-    return {"message": "If the email exists, a reset token has been generated", "reset_token": reset_token}
+    return {
+        "message": "If the email exists, a reset token has been generated",
+        "reset_token": reset_token,
+    }
 
 
 @router.post("/reset-password")
@@ -217,3 +223,6 @@ def reset_password(payload: ResetPassword, db: Session = Depends(get_db)):
     user.hashed_password = pwd_context.hash(payload.new_password)
     db.commit()
     return {"message": "Password has been reset successfully"}
+
+
+blak

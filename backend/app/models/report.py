@@ -27,6 +27,12 @@ class Report(Base):
     status = Column(Enum(ReportStatus), default=ReportStatus.pending)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    created_by = relationship("User", foreign_keys=[created_by_user_id], backref="created_reports", lazy="joined")
-    resolved_by = relationship("User", foreign_keys=[resolved_by_user_id], backref="resolved_reports", lazy="joined")
-    images = relationship("ReportImage", backref="report", cascade="all, delete-orphan", lazy="joined")
+    created_by = relationship(
+        "User", foreign_keys=[created_by_user_id], backref="created_reports", lazy="joined"
+    )
+    resolved_by = relationship(
+        "User", foreign_keys=[resolved_by_user_id], backref="resolved_reports", lazy="joined"
+    )
+    images = relationship(
+        "ReportImage", backref="report", cascade="all, delete-orphan", lazy="joined"
+    )

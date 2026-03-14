@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
     const res = await api.post('/api/auth/register', {
       email,
       full_name: fullName,
-      password
+      password,
     })
     return res.data
   }
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
   const resetPassword = async (resetToken, newPassword) => {
     const res = await api.post('/api/auth/reset-password', {
       token: resetToken,
-      new_password: newPassword
+      new_password: newPassword,
     })
     return res.data
   }
@@ -58,10 +58,21 @@ export function AuthProvider({ children }) {
   const canManageUsers = isAdmin || isModerator
 
   return (
-    <AuthContext.Provider value={{
-      token, user, isLoggedIn, isAdmin, isModerator, canManageUsers,
-      login, register, forgotPassword, resetPassword, logout
-    }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        isLoggedIn,
+        isAdmin,
+        isModerator,
+        canManageUsers,
+        login,
+        register,
+        forgotPassword,
+        resetPassword,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
