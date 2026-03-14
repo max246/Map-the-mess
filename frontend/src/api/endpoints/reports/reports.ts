@@ -5,13 +5,6 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: 0.1.0
  */
-import axios from 'axios';
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
-
 import type {
   BodyAddImageApiReportsReportIdImagesPost,
   BodyCreateReportApiReportsPost,
@@ -20,41 +13,43 @@ import type {
   ReportRead
 } from '../../model';
 
+import { customInstance } from '../../client';
 
 
 
-  export const getReports = (axiosInstance: AxiosInstance = axios) => {
+  export const getReports = () => {
 /**
  * Serve an uploaded image by filename.
  * @summary Serve Image
  */
 const serveImageApiReportsImagesFilenameGet = (
-    filename: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<unknown>> => {
-    return axiosInstance.get(
-      `/api/reports/images/${filename}`,options
-    );
-  }
-/**
+    filename: string,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/reports/images/${filename}`, method: 'GET'
+    },
+      );
+    }
+  /**
  * List all reports, optionally filtered by status.
  * @summary List Reports
  */
 const listReportsApiReportsGet = (
-    params?: ListReportsApiReportsGetParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ReportRead[]>> => {
-    return axiosInstance.get(
-      `/api/reports/`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: ListReportsApiReportsGetParams,
+ ) => {
+      return customInstance<ReportRead[]>(
+      {url: `/api/reports/`, method: 'GET',
+        params
+    },
+      );
+    }
+  /**
  * Create a new litter report with optional image uploads.
  * @summary Create Report
  */
 const createReportApiReportsPost = (
-    bodyCreateReportApiReportsPost: BodyCreateReportApiReportsPost, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ReportRead>> => {const formData = new FormData();
+    bodyCreateReportApiReportsPost: BodyCreateReportApiReportsPost,
+ ) => {const formData = new FormData();
 formData.append(`latitude`, bodyCreateReportApiReportsPost.latitude.toString())
 formData.append(`longitude`, bodyCreateReportApiReportsPost.longitude.toString())
 if(bodyCreateReportApiReportsPost.description !== undefined) {
@@ -67,76 +62,87 @@ if(bodyCreateReportApiReportsPost.images !== undefined) {
  bodyCreateReportApiReportsPost.images.forEach(value => formData.append(`images`, value));
  }
 
-    return axiosInstance.post(
-      `/api/reports/`,
-      formData,options
-    );
-  }
-/**
+      return customInstance<ReportRead>(
+      {url: `/api/reports/`, method: 'POST',
+       data: formData
+    },
+      );
+    }
+  /**
  * @summary Get Report
  */
 const getReportApiReportsReportIdGet = (
-    reportId: number, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ReportRead>> => {
-    return axiosInstance.get(
-      `/api/reports/${reportId}`,options
-    );
-  }
-/**
+    reportId: number,
+ ) => {
+      return customInstance<ReportRead>(
+      {url: `/api/reports/${reportId}`, method: 'GET'
+    },
+      );
+    }
+  /**
  * Delete a report. Requires moderator or admin role.
  * @summary Delete Report
  */
 const deleteReportApiReportsReportIdDelete = (
-    reportId: number, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    return axiosInstance.delete(
-      `/api/reports/${reportId}`,options
-    );
-  }
-/**
+    reportId: number,
+ ) => {
+      return customInstance<void>(
+      {url: `/api/reports/${reportId}`, method: 'DELETE'
+    },
+      );
+    }
+  /**
  * Upload an image and attach it to an existing report.
  * @summary Add Image
  */
 const addImageApiReportsReportIdImagesPost = (
     reportId: number,
-    bodyAddImageApiReportsReportIdImagesPost: BodyAddImageApiReportsReportIdImagesPost, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ReportImageRead>> => {const formData = new FormData();
+    bodyAddImageApiReportsReportIdImagesPost: BodyAddImageApiReportsReportIdImagesPost,
+ ) => {const formData = new FormData();
 formData.append(`image_type`, bodyAddImageApiReportsReportIdImagesPost.image_type);
 formData.append(`file`, bodyAddImageApiReportsReportIdImagesPost.file);
 
-    return axiosInstance.post(
-      `/api/reports/${reportId}/images`,
-      formData,options
-    );
-  }
-/**
+      return customInstance<ReportImageRead>(
+      {url: `/api/reports/${reportId}/images`, method: 'POST',
+       data: formData
+    },
+      );
+    }
+  /**
  * Mark a report as cleaned. Attaches the user id if authenticated.
  * @summary Mark Cleaned
  */
 const markCleanedApiReportsReportIdCleanPatch = (
-    reportId: number, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ReportRead>> => {
-    return axiosInstance.patch(
-      `/api/reports/${reportId}/clean`,undefined,options
-    );
-  }
-/**
+    reportId: number,
+ ) => {
+      return customInstance<ReportRead>(
+      {url: `/api/reports/${reportId}/clean`, method: 'PATCH'
+    },
+      );
+    }
+  /**
  * Set a report back to pending. Requires moderator or admin role.
  * @summary Mark Unresolved
  */
 const markUnresolvedApiReportsReportIdUnresolvePatch = (
-    reportId: number, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ReportRead>> => {
-    return axiosInstance.patch(
-      `/api/reports/${reportId}/unresolve`,undefined,options
-    );
-  }
-return {serveImageApiReportsImagesFilenameGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch}};
-export type ServeImageApiReportsImagesFilenameGetResult = AxiosResponse<unknown>
-export type ListReportsApiReportsGetResult = AxiosResponse<ReportRead[]>
-export type CreateReportApiReportsPostResult = AxiosResponse<ReportRead>
-export type GetReportApiReportsReportIdGetResult = AxiosResponse<ReportRead>
-export type DeleteReportApiReportsReportIdDeleteResult = AxiosResponse<void>
-export type AddImageApiReportsReportIdImagesPostResult = AxiosResponse<ReportImageRead>
-export type MarkCleanedApiReportsReportIdCleanPatchResult = AxiosResponse<ReportRead>
-export type MarkUnresolvedApiReportsReportIdUnresolvePatchResult = AxiosResponse<ReportRead>
+    reportId: number,
+ ) => {
+      return customInstance<ReportRead>(
+      {url: `/api/reports/${reportId}/unresolve`, method: 'PATCH'
+    },
+      );
+    }
+  return {serveImageApiReportsImagesFilenameGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch}};
+
+type AwaitedInput<T> = PromiseLike<T> | T;
+
+    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
+
+export type ServeImageApiReportsImagesFilenameGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['serveImageApiReportsImagesFilenameGet']>>>
+export type ListReportsApiReportsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listReportsApiReportsGet']>>>
+export type CreateReportApiReportsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['createReportApiReportsPost']>>>
+export type GetReportApiReportsReportIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['getReportApiReportsReportIdGet']>>>
+export type DeleteReportApiReportsReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteReportApiReportsReportIdDelete']>>>
+export type AddImageApiReportsReportIdImagesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['addImageApiReportsReportIdImagesPost']>>>
+export type MarkCleanedApiReportsReportIdCleanPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markCleanedApiReportsReportIdCleanPatch']>>>
+export type MarkUnresolvedApiReportsReportIdUnresolvePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markUnresolvedApiReportsReportIdUnresolvePatch']>>>

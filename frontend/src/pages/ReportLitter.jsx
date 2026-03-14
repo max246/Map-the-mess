@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api/client'
 import LocationPicker from '../components/LocationPicker'
 import { autosuggest } from '../api/w3w'
 import { useAuth } from '../context/AuthContext'
@@ -100,7 +100,7 @@ export default function ReportLitter() {
       const headers = { 'Content-Type': 'multipart/form-data' }
       if (token) headers['Authorization'] = `Bearer ${token}`
 
-      const res = await axios.post('/api/reports/', formData, { headers })
+      const res = await api.post('/api/reports/', formData, { headers })
       setSubmittedReportId(res.data.id)
     } catch (err) {
       alert('Failed to submit report. Please try again.')

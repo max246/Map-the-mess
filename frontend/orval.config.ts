@@ -9,6 +9,13 @@ export default defineConfig({
       client: "axios",
       mode: "tags-split",
       clean: true,
+      override: {
+        mutator: {
+          path: "./src/api/client.js",
+          name: "customInstance",
+        },
+      },
+
     },
   },
 });

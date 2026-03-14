@@ -14,13 +14,12 @@ export default function Home() {
     Promise.all([
       listReportsApiReportsGet(),
       listVolunteersApiVolunteersGet()
-    ]).then(([reportsRes, volunteersRes]) => {
-      const data = reportsRes.data
-      setReports(data)
+    ]).then(([reportsData, volunteersData]) => {
+      setReports(reportsData)
       setStats({
-        reports: data.length,
-        cleaned: data.filter(r => r.status === 'cleaned').length,
-        volunteers: Array.isArray(volunteersRes.data) ? volunteersRes.data.length : 0
+        reports: reportsData.length,
+        cleaned: reportsData.filter(r => r.status === 'cleaned').length,
+        volunteers: Array.isArray(volunteersData) ? volunteersData.length : 0
       })
     }).catch(console.error)
   }, [])

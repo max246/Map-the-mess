@@ -1,9 +1,12 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
 __pycache__/
 *.pyc
 venv/
 *.db
 .DS_Store
 images/
+*.pem
