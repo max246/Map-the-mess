@@ -21,5 +21,5 @@ class ReportImage(Base):
         Integer, ForeignKey("reports.id", ondelete="CASCADE"), nullable=False, index=True
     )
     url = Column(String, nullable=False)
-    image_type = Column(Enum(ImageType), nullable=False)
+    image_type: Column[ImageType] = Column(Enum(ImageType), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

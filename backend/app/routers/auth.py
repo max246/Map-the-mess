@@ -143,7 +143,7 @@ def update_user_type(
             detail="Cannot change superuser type",
         )
 
-    target_user.user_type = new_type
+    target_user.user_type = new_type  # type: ignore[assignment]
     db.commit()
     db.refresh(target_user)
     return target_user
@@ -223,6 +223,3 @@ def reset_password(payload: ResetPassword, db: Session = Depends(get_db)):
     user.hashed_password = pwd_context.hash(payload.new_password)
     db.commit()
     return {"message": "Password has been reset successfully"}
-
-
-blak

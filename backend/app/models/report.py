@@ -24,7 +24,7 @@ class Report(Base):
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     resolved_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
-    status = Column(Enum(ReportStatus), default=ReportStatus.pending)
+    status: Column[ReportStatus] = Column(Enum(ReportStatus), default=ReportStatus.pending)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     created_by = relationship(
