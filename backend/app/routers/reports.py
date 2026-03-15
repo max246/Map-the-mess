@@ -58,14 +58,14 @@ def _save_upload(file: UploadFile) -> tuple[str, str]:
 
     # Full-HD version
     full = img.copy()
-    full.thumbnail(MAX_IMAGE_SIZE, Image.LANCZOS)
+    full.thumbnail(MAX_IMAGE_SIZE, Image.Resampling.LANCZOS)
     base = uuid.uuid4().hex
     filename = f"{base}.jpg"
     full.save(os.path.join(IMAGES_DIR, filename), format="JPEG", quality=85, optimize=True)
 
     # Thumbnail
     thumb = img.copy()
-    thumb.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
+    thumb.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
     thumb_filename = f"{base}_thumb.jpg"
     thumb.save(os.path.join(IMAGES_DIR, thumb_filename), format="JPEG", quality=80, optimize=True)
 
@@ -166,7 +166,9 @@ def add_image(
 
     validated_type = _validate_image_type(image_type)
     filename, thumb_filename = _save_upload(file)
-    image = ReportImage(report_id=report_id, url=filename, thumbnail_url=thumb_filename, image_type=validated_type)
+    image = ReportImage(
+        report_id=report_id, url=filename, thumbnail_url=thumb_filename, image_type=validated_type
+    )
     db.add(image)
     db.commit()
     db.refresh(image)
