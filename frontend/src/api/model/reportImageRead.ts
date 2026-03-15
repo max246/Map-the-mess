@@ -9,6 +9,7 @@
 export interface ReportImageRead {
   id: number;
   url: string;
+  thumbnail_url?: string | null;
   image_type: string;
   created_at: string;
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
-import { API_BASE_URL } from '../api/client'
+import { thumbnailUrl } from '../api/client'
 
 const { listReportsApiReportsGet } = getReports()
 
@@ -102,7 +102,7 @@ export default function VolunteerDashboard() {
                     <div className="w-24 h-24 flex-shrink-0 bg-gray-100">
                       {firstImage ? (
                         <img
-                          src={`${API_BASE_URL}/api/reports/images/${firstImage.url}`}
+                          src={thumbnailUrl(firstImage)}
                           alt=""
                           className="w-full h-full object-cover"
                         />

@@ -26,7 +26,10 @@ services:
       - db
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ""
     restart: unless-stopped
     ports:
       - "3000:80"

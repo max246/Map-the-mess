@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class ReportImageRead(BaseModel):
     id: int
     url: str
+    thumbnail_url: Optional[str] = None
     image_type: str
     created_at: datetime
 
