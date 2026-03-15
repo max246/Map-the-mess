@@ -3,8 +3,10 @@
 import os
 import uuid
 from datetime import datetime, timezone
+from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from PIL import Image
 from fastapi.responses import FileResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -20,7 +22,9 @@ from app.schemas.report import ReportRead, ReportImageRead
 
 router = APIRouter()
 
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+MAX_IMAGE_SIZE = (1920, 1080)
+THUMBNAIL_SIZE = (400, 400)
 
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
@@ -35,19 +39,37 @@ def _validate_image_type(raw: str) -> ImageType:
         )
 
 
-def _save_upload(file: UploadFile) -> str:
-    """Save an uploaded file to IMAGES_DIR and return the filename."""
+def _save_upload(file: UploadFile) -> tuple[str, str]:
+    """Save an uploaded file as an optimised Full-HD JPEG + thumbnail. Returns (filename, thumb_filename)."""
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
             detail=f"File type not allowed. Must be one of: {', '.join(ALLOWED_EXTENSIONS)}",
         )
-    filename = f"{uuid.uuid4().hex}{ext}"
-    path = os.path.join(IMAGES_DIR, filename)
-    with open(path, "wb") as f:
-        f.write(file.file.read())
-    return filename
+
+    try:
+        img = Image.open(BytesIO(file.file.read()))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Unable to read image file")
+
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+
+    # Full-HD version
+    full = img.copy()
+    full.thumbnail(MAX_IMAGE_SIZE, Image.LANCZOS)
+    base = uuid.uuid4().hex
+    filename = f"{base}.jpg"
+    full.save(os.path.join(IMAGES_DIR, filename), format="JPEG", quality=85, optimize=True)
+
+    # Thumbnail
+    thumb = img.copy()
+    thumb.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
+    thumb_filename = f"{base}_thumb.jpg"
+    thumb.save(os.path.join(IMAGES_DIR, thumb_filename), format="JPEG", quality=80, optimize=True)
+
+    return filename, thumb_filename
 
 
 def _get_optional_user(request: Request, db: Session = Depends(get_db)) -> User | None:
@@ -115,11 +137,12 @@ def create_report(
     db.flush()
 
     for file in images:
-        filename = _save_upload(file)
+        filename, thumb_filename = _save_upload(file)
         db.add(
             ReportImage(
                 report_id=report.id,
                 url=filename,
+                thumbnail_url=thumb_filename,
                 image_type=ImageType.report,
             )
         )
@@ -142,8 +165,8 @@ def add_image(
         raise HTTPException(status_code=404, detail="Report not found")
 
     validated_type = _validate_image_type(image_type)
-    filename = _save_upload(file)
-    image = ReportImage(report_id=report_id, url=filename, image_type=validated_type)
+    filename, thumb_filename = _save_upload(file)
+    image = ReportImage(report_id=report_id, url=filename, thumbnail_url=thumb_filename, image_type=validated_type)
     db.add(image)
     db.commit()
     db.refresh(image)
@@ -199,8 +222,10 @@ def delete_report(
         raise HTTPException(status_code=404, detail="Report not found")
     # Remove image files from disk
     for img in report.images:
-        path = os.path.join(IMAGES_DIR, img.url)
-        if os.path.isfile(path):
-            os.remove(path)
+        for fname in (img.url, img.thumbnail_url):
+            if fname:
+                path = os.path.join(IMAGES_DIR, fname)
+                if os.path.isfile(path):
+                    os.remove(path)
     db.delete(report)
     db.commit()

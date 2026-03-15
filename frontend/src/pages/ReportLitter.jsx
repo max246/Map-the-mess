@@ -159,36 +159,42 @@ export default function ReportLitter() {
             onChange={handlePhotos}
             className="hidden"
           />
-          {photoPreviews.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-2">
+          {photoPreviews.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => photoInputRef.current.click()}
+              className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
+            >
+              <span className="text-2xl mb-1">+</span>
+              <span className="text-sm">Click to upload photos</span>
+            </button>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {photoPreviews.map((preview, i) => (
-                <div key={i} className="relative">
+                <div key={i} className="relative flex-shrink-0 w-20 h-20">
                   <img
                     src={preview}
                     alt={`Upload ${i + 1}`}
-                    className="w-full h-24 rounded-lg object-cover"
+                    className="w-full h-full rounded-lg object-cover"
                   />
                   <button
                     type="button"
                     onClick={() => removePhoto(i)}
-                    className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-opacity-70"
+                    className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-opacity-70"
                   >
                     X
                   </button>
                 </div>
               ))}
+              <button
+                type="button"
+                onClick={() => photoInputRef.current.click()}
+                className="flex-shrink-0 w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
+              >
+                <span className="text-xl">+</span>
+              </button>
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => photoInputRef.current.click()}
-            className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
-          >
-            <span className="text-2xl mb-1">+</span>
-            <span className="text-sm">
-              {photoPreviews.length > 0 ? 'Add more photos' : 'Click to upload photos'}
-            </span>
-          </button>
         </div>
 
         <label className="flex flex-col gap-1">

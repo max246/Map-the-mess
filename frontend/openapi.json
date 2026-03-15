@@ -833,6 +833,17 @@
             "type": "string",
             "title": "Url"
           },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
           "image_type": {
             "type": "string",
             "title": "Image Type"

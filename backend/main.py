@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
 
-from app.config import SUPERUSER_EMAIL, SUPERUSER_PASSWORD, SUPERUSER_FULL_NAME
+from app.config import DEBUG, SUPERUSER_EMAIL, SUPERUSER_PASSWORD, SUPERUSER_FULL_NAME
 from app.database import SessionLocal
 from app.models.user import User, UserType
 from app.routers import reports, auth, volunteers
@@ -52,6 +52,9 @@ app = FastAPI(
     description="Backend for the community litter reporting platform",
     version="0.1.0",
     lifespan=lifespan,
+    docs_url="/docs" if DEBUG else None,
+    redoc_url="/redoc" if DEBUG else None,
+    openapi_url="/openapi.json" if DEBUG else None,
 )
 
 # CORS — allow frontend dev server

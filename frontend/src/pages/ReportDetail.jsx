@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import api, { API_BASE_URL } from '../api/client'
+import api, { imageUrl, thumbnailUrl } from '../api/client'
 import { reverseGeocode } from '../api/geocode'
 import { useAuth } from '../context/AuthContext'
 
@@ -22,6 +22,7 @@ export default function ReportDetail() {
   const [resolvePhotoPreviews, setResolvePhotoPreviews] = useState([])
   const [resolving, setResolving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(null)
   const fileInputRef = useRef(null)
 
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
@@ -46,7 +47,18 @@ export default function ReportDetail() {
   const resolvedImages = report?.images?.filter((img) => img.image_type === 'resolved') || []
   const allPhotos = [...reportImages, ...resolvedImages]
 
-  const imageUrl = (img) => `${API_BASE_URL}/api/reports/images/${img.url}`
+  useEffect(() => {
+    if (lightboxIndex === null) return
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setLightboxIndex(null)
+      if (e.key === 'ArrowLeft')
+        setLightboxIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length)
+      if (e.key === 'ArrowRight')
+        setLightboxIndex((prev) => (prev + 1) % allPhotos.length)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [lightboxIndex, allPhotos.length])
 
   const handleResolvePhotos = (e) => {
     const files = Array.from(e.target.files)
@@ -178,7 +190,8 @@ export default function ReportDetail() {
               <img
                 src={imageUrl(allPhotos[activePhoto])}
                 alt={`Report photo ${activePhoto + 1}`}
-                className="w-full rounded-lg object-cover max-h-96"
+                className="w-full rounded-lg object-cover max-h-96 cursor-pointer"
+                onClick={() => setLightboxIndex(activePhoto)}
               />
               {allPhotos[activePhoto].image_type === 'resolved' && (
                 <span className="absolute top-2 left-2 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
@@ -199,7 +212,7 @@ export default function ReportDetail() {
                     }`}
                   >
                     <img
-                      src={imageUrl(img)}
+                      src={thumbnailUrl(img)}
                       alt={`Thumbnail ${i + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -222,6 +235,58 @@ export default function ReportDetail() {
           </div>
         )}
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 text-white text-3xl font-bold hover:text-gray-300 z-10"
+          >
+            X
+          </button>
+
+          {allPhotos.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex((lightboxIndex - 1 + allPhotos.length) % allPhotos.length)
+                }}
+                className="absolute left-4 text-white text-4xl font-bold hover:text-gray-300 z-10"
+              >
+                ‹
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex((lightboxIndex + 1) % allPhotos.length)
+                }}
+                className="absolute right-4 text-white text-4xl font-bold hover:text-gray-300 z-10"
+              >
+                ›
+              </button>
+            </>
+          )}
+
+          <img
+            src={imageUrl(allPhotos[lightboxIndex])}
+            alt={`Full size photo ${lightboxIndex + 1}`}
+            className="max-w-full max-h-full object-contain p-4"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <div className="absolute bottom-4 text-white text-sm">
+            {lightboxIndex + 1} / {allPhotos.length}
+            {allPhotos[lightboxIndex].image_type === 'resolved' && (
+              <span className="ml-2 bg-green-600 text-xs px-2 py-0.5 rounded">Resolved</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Details */}
       <div className="bg-white rounded-lg shadow p-5 mb-6">
