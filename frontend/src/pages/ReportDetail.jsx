@@ -53,8 +53,7 @@ export default function ReportDetail() {
       if (e.key === 'Escape') setLightboxIndex(null)
       if (e.key === 'ArrowLeft')
         setLightboxIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length)
-      if (e.key === 'ArrowRight')
-        setLightboxIndex((prev) => (prev + 1) % allPhotos.length)
+      if (e.key === 'ArrowRight') setLightboxIndex((prev) => (prev + 1) % allPhotos.length)
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
