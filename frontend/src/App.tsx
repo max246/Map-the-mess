@@ -19,7 +19,8 @@ function App() {
   const [version, setVersion] = useState<string | null>(null)
 
   useEffect(() => {
-    api.get('/backend/')
+    api
+      .get('/backend/')
       .then((res) => setVersion(res.data.version))
       .catch(() => {})
   }, [])
@@ -43,11 +44,7 @@ function App() {
             <Route path="/admin/users" element={<UserManagement />} />
           </Routes>
         </main>
-        {version && (
-          <footer className="text-center text-xs text-gray-400 py-3">
-            v{version}
-          </footer>
-        )}
+        {version && <footer className="text-center text-xs text-gray-400 py-3">v{version}</footer>}
       </div>
     </AuthProvider>
   )

@@ -21,10 +21,7 @@ function ZoomMarker({ report }: { report: ReportRead }) {
   }
 
   return (
-    <Marker
-      position={[report.latitude, report.longitude]}
-      eventHandlers={{ click: handleClick }}
-    >
+    <Marker position={[report.latitude, report.longitude]} eventHandlers={{ click: handleClick }}>
       <ReportPopup report={report} />
     </Marker>
   )

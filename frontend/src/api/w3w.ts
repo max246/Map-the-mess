@@ -6,7 +6,10 @@ export interface W3WSuggestion {
   country: string
 }
 
-async function autosuggest(input: string, focus?: { lat: number; lng: number } | null): Promise<W3WSuggestion[]> {
+async function autosuggest(
+  input: string,
+  focus?: { lat: number; lng: number } | null
+): Promise<W3WSuggestion[]> {
   if (!W3W_API_KEY || !input) return []
   const params = new URLSearchParams({ input, key: W3W_API_KEY })
   if (focus) {
