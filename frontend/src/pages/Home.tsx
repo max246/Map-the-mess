@@ -5,20 +5,20 @@ import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
-const { listVolunteersApiVolunteersGet } = getVolunteers()
+const { volunteerCountApiVolunteersCountGet } = getVolunteers()
 
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, cleaned: 0, volunteers: 0 })
   const [reports, setReports] = useState<ReportRead[]>([])
 
   useEffect(() => {
-    Promise.all([listReportsApiReportsGet(), listVolunteersApiVolunteersGet()])
-      .then(([reportsData, volunteersData]) => {
+    Promise.all([listReportsApiReportsGet(), volunteerCountApiVolunteersCountGet()])
+      .then(([reportsData, countData]) => {
         setReports(reportsData)
         setStats({
           reports: reportsData.length,
           cleaned: reportsData.filter((r) => r.status === 'cleaned').length,
-          volunteers: Array.isArray(volunteersData) ? volunteersData.length : 0,
+          volunteers: (countData as { count: number })?.count ?? 0,
         })
       })
       .catch(console.error)
@@ -84,7 +84,7 @@ export default function Home() {
           ['🧹', 'Cleaned', stats.cleaned],
           ['👷', 'Volunteers', stats.volunteers],
         ].map(([icon, label, count]) => (
-          <div key={label}>
+          <div key={label as string}>
             <div className="text-3xl">{icon}</div>
             <div className="text-2xl font-bold">{count}</div>
             <div className="text-gray-500 text-sm">{label}</div>

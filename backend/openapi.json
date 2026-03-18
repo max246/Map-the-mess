@@ -3,7 +3,7 @@
   "info": {
     "title": "Map the Mess API",
     "description": "Backend for the community litter reporting platform",
-    "version": "dev"
+    "version": "0.1.0"
   },
   "paths": {
     "/api/reports/images/{filename}": {
@@ -697,13 +697,14 @@
         }
       }
     },
-    "/api/volunteers/": {
+    "/api/volunteers/count": {
       "get": {
         "tags": [
           "Volunteers"
         ],
-        "summary": "List Volunteers",
-        "operationId": "list_volunteers_api_volunteers__get",
+        "summary": "Volunteer Count",
+        "description": "Return the total number of registered volunteers.",
+        "operationId": "volunteer_count_api_volunteers_count_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -716,13 +717,80 @@
         }
       }
     },
-    "/api/volunteers/claim/{report_id}": {
+    "/api/volunteers/favourites": {
+      "get": {
+        "tags": [
+          "Volunteers"
+        ],
+        "summary": "List Favourites",
+        "description": "List the current user's favourite reports, optionally filtered by status.",
+        "operationId": "list_favourites_api_volunteers_favourites_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by report status: pending or cleaned",
+              "title": "Status"
+            },
+            "description": "Filter by report status: pending or cleaned"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportRead"
+                  },
+                  "title": "Response List Favourites Api Volunteers Favourites Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/volunteers/favourites/{report_id}": {
       "post": {
         "tags": [
           "Volunteers"
         ],
-        "summary": "Claim Report",
-        "operationId": "claim_report_api_volunteers_claim__report_id__post",
+        "summary": "Add Favourite",
+        "description": "Star a report to add it to the user's planned cleanups.",
+        "operationId": "add_favourite_api_volunteers_favourites__report_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "report_id",
@@ -735,13 +803,52 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Volunteers"
+        ],
+        "summary": "Remove Favourite",
+        "description": "Remove a report from the user's planned cleanups.",
+        "operationId": "remove_favourite_api_volunteers_favourites__report_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
