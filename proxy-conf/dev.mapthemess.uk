@@ -1,1 +1,3 @@
 client_max_body_size 50m;
+auth_basic "Dev Environment";
+auth_basic_user_file /etc/nginx/htpasswd.dev;

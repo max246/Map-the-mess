@@ -60,3 +60,17 @@ Per-vhost config files in `proxy-conf/` are mounted into the nginx-proxy contain
 - `proxy-conf/dev.mapthemess.uk` — dev
 
 If you get `413 Content Too Large` errors, check both levels are configured.
+
+### Password protecting the dev site
+
+The dev environment is behind basic auth. The htpasswd file is not committed to git — you need to create it manually on the dev EC2:
+
+```bash
+echo -n '<username>:' > proxy-conf/htpasswd.dev && openssl passwd -apr1 '<password>' >> proxy-conf/htpasswd.dev
+```
+
+Then restart nginx-proxy:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d nginx-proxy
+```

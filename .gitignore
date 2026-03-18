@@ -10,3 +10,4 @@ venv/
 .DS_Store
 images/
 *.pem
+proxy-conf/htpasswd.*

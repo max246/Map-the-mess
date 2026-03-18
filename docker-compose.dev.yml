@@ -57,6 +57,7 @@ services:
       - certs:/etc/nginx/certs
       - vhost:/etc/nginx/vhost.d
       - ./proxy-conf/dev.mapthemess.uk:/etc/nginx/vhost.d/dev.mapthemess.uk:ro
+      - ./proxy-conf/htpasswd.dev:/etc/nginx/htpasswd.dev:ro
       - html:/usr/share/nginx/html
     environment:
       TRUST_DOWNSTREAM_PROXY: "false"
