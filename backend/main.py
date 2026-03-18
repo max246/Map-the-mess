@@ -31,7 +31,7 @@ def _seed_superuser() -> None:
         user = User(
             email=SUPERUSER_EMAIL,
             full_name=SUPERUSER_FULL_NAME,
-            hashed_password=pwd_context.hash(SUPERUSER_PASSWORD),
+            hashed_password=SUPERUSER_PASSWORD,
             user_type=UserType.superuser,
         )
         db.add(user)
