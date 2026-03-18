@@ -28,8 +28,10 @@ def list_favourites(
     current_user: User = Depends(get_current_user),
 ):
     """List the current user's favourite reports, optionally filtered by status."""
-    q = db.query(Report).join(Favourite, Favourite.report_id == Report.id).filter(
-        Favourite.user_id == current_user.id
+    q = (
+        db.query(Report)
+        .join(Favourite, Favourite.report_id == Report.id)
+        .filter(Favourite.user_id == current_user.id)
     )
     if status:
         q = q.filter(Report.status == status)

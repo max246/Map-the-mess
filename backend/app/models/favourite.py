@@ -13,7 +13,9 @@ class Favourite(Base):
     __table_args__ = (UniqueConstraint("user_id", "report_id", name="uq_user_report"),)
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     report_id = Column(
         Integer, ForeignKey("reports.id", ondelete="CASCADE"), nullable=False, index=True
     )
