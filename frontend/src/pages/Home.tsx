@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
+import type { ReportRead } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
 const { listVolunteersApiVolunteersGet } = getVolunteers()
 
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, cleaned: 0, volunteers: 0 })
-  const [reports, setReports] = useState([])
+  const [reports, setReports] = useState<ReportRead[]>([])
 
   useEffect(() => {
     Promise.all([listReportsApiReportsGet(), listVolunteersApiVolunteersGet()])

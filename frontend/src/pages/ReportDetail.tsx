@@ -1,29 +1,33 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import api, { imageUrl, thumbnailUrl } from '../api/client'
 import { reverseGeocode } from '../api/geocode'
 import { useAuth } from '../context/AuthContext'
+import { getReports } from '../api/endpoints/reports/reports'
+import type { ReportRead, ReportImageRead } from '../api/model'
+
+const { deleteImageApiReportsImagesImageIdDelete } = getReports()
 
 export default function ReportDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { token, canManageUsers, isLoggedIn } = useAuth()
-  const [report, setReport] = useState(null)
-  const [address, setAddress] = useState(null)
-  const [error, setError] = useState(null)
+  const [report, setReport] = useState<ReportRead | null>(null)
+  const [address, setAddress] = useState<{ displayName: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [activePhoto, setActivePhoto] = useState(0)
 
   // Resolve form state
   const [showResolveForm, setShowResolveForm] = useState(false)
   const [resolverName, setResolverName] = useState('')
   const [resolverEmail, setResolverEmail] = useState('')
-  const [resolvePhotos, setResolvePhotos] = useState([])
-  const [resolvePhotoPreviews, setResolvePhotoPreviews] = useState([])
+  const [resolvePhotos, setResolvePhotos] = useState<File[]>([])
+  const [resolvePhotoPreviews, setResolvePhotoPreviews] = useState<string[]>([])
   const [resolving, setResolving] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [lightboxIndex, setLightboxIndex] = useState(null)
-  const fileInputRef = useRef(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
 
@@ -45,22 +49,22 @@ export default function ReportDetail() {
   // Build image URLs from report.images array
   const reportImages = report?.images?.filter((img) => img.image_type === 'report') || []
   const resolvedImages = report?.images?.filter((img) => img.image_type === 'resolved') || []
-  const allPhotos = [...reportImages, ...resolvedImages]
+  const allPhotos: ReportImageRead[] = [...reportImages, ...resolvedImages]
 
   useEffect(() => {
     if (lightboxIndex === null) return
-    const handleKey = (e) => {
+    const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setLightboxIndex(null)
       if (e.key === 'ArrowLeft')
-        setLightboxIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length)
-      if (e.key === 'ArrowRight') setLightboxIndex((prev) => (prev + 1) % allPhotos.length)
+        setLightboxIndex((prev) => ((prev ?? 0) - 1 + allPhotos.length) % allPhotos.length)
+      if (e.key === 'ArrowRight') setLightboxIndex((prev) => ((prev ?? 0) + 1) % allPhotos.length)
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [lightboxIndex, allPhotos.length])
 
-  const handleResolvePhotos = (e) => {
-    const files = Array.from(e.target.files)
+  const handleResolvePhotos = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
     setResolvePhotos((prev) => [...prev, ...files])
@@ -68,20 +72,20 @@ export default function ReportDetail() {
     files.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
-        setResolvePhotoPreviews((prev) => [...prev, reader.result])
+        setResolvePhotoPreviews((prev) => [...prev, reader.result as string])
       }
       reader.readAsDataURL(file)
     })
 
-    fileInputRef.current.value = ''
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const removeResolvePhoto = (index) => {
+  const removeResolvePhoto = (index: number) => {
     setResolvePhotos((prev) => prev.filter((_, i) => i !== index))
     setResolvePhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleResolve = async (e) => {
+  const handleResolve = async (e: FormEvent) => {
     e.preventDefault()
     if (resolvePhotos.length === 0) {
       alert('Please upload at least one photo.')
@@ -130,6 +134,17 @@ export default function ReportDetail() {
       setReport(res.data)
     } catch {
       alert('Failed to unresolve report.')
+    }
+  }
+
+  const handleDeleteImage = async (imageId: number) => {
+    if (!confirm('Are you sure you want to delete this image?')) return
+    try {
+      await deleteImageApiReportsImagesImageIdDelete(imageId)
+      setActivePhoto(0)
+      fetchReport()
+    } catch {
+      alert('Failed to delete image.')
     }
   }
 
@@ -196,6 +211,17 @@ export default function ReportDetail() {
                 <span className="absolute top-2 left-2 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
                   Resolved
                 </span>
+              )}
+              {canManageUsers && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteImage(allPhotos[activePhoto].id)
+                  }}
+                  className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-2 py-1 rounded transition"
+                >
+                  Delete
+                </button>
               )}
             </div>
             {allPhotos.length > 1 && (
@@ -409,7 +435,7 @@ export default function ReportDetail() {
                 )}
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current.click()}
+                  onClick={() => fileInputRef.current?.click()}
                   className="w-full h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
                 >
                   <span className="text-2xl mb-1">+</span>

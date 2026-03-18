@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Map the Mess API
  * Backend for the community litter reporting platform
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: dev
  */
 
 export interface BodyCreateReportApiReportsPost {
@@ -11,5 +11,5 @@ export interface BodyCreateReportApiReportsPost {
   longitude: number;
   description?: string;
   what3words?: string | null;
-  images?: Blob[];
+  image?: Blob | null;
 }

@@ -13,7 +13,7 @@ export default function ResetPassword() {
   const [success, setSuccess] = useState(false)
   const { resetPassword } = useAuth()
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 

@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
 
-from app.config import DEBUG, SUPERUSER_EMAIL, SUPERUSER_PASSWORD, SUPERUSER_FULL_NAME
+from app.config import APP_VERSION, DEBUG, SUPERUSER_EMAIL, SUPERUSER_PASSWORD, SUPERUSER_FULL_NAME
 from app.database import SessionLocal
 from app.models.user import User, UserType
 from app.routers import reports, auth, volunteers
@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Map the Mess API",
     description="Backend for the community litter reporting platform",
-    version="0.1.0",
+    version=APP_VERSION,
     lifespan=lifespan,
     docs_url="/docs" if DEBUG else None,
     redoc_url="/redoc" if DEBUG else None,
@@ -79,4 +79,4 @@ app.include_router(volunteers.router, prefix="/api/volunteers", tags=["Volunteer
 
 @app.get("/")
 def root():
-    return {"message": "Map the Mess API is running 🗺️"}
+    return {"message": "Map the Mess API is running 🗺️", "version": APP_VERSION}

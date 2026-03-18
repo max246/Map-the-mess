@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Map the Mess API
  * Backend for the community litter reporting platform
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: dev
  */
 import { customInstance } from '../../client';
 
@@ -33,10 +33,5 @@ const claimReportApiVolunteersClaimReportIdPost = (
       );
     }
   return {listVolunteersApiVolunteersGet,claimReportApiVolunteersClaimReportIdPost}};
-
-type AwaitedInput<T> = PromiseLike<T> | T;
-
-    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
-
 export type ListVolunteersApiVolunteersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['listVolunteersApiVolunteersGet']>>>
 export type ClaimReportApiVolunteersClaimReportIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['claimReportApiVolunteersClaimReportIdPost']>>>

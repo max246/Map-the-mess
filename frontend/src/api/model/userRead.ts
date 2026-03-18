@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Map the Mess API
  * Backend for the community litter reporting platform
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: dev
  */
 
 export interface UserRead {

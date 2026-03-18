@@ -1,26 +1,29 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/client'
 import LocationPicker from '../components/LocationPicker'
 import { autosuggest } from '../api/w3w'
+import type { W3WSuggestion } from '../api/w3w'
 import { useAuth } from '../context/AuthContext'
+import { getReports } from '../api/endpoints/reports/reports'
+
+const { createReportApiReportsPost, addImageApiReportsReportIdImagesPost } = getReports()
 
 export default function ReportLitter() {
   const { token } = useAuth()
   const [description, setDescription] = useState('')
-  const [photos, setPhotos] = useState([])
-  const [photoPreviews, setPhotoPreviews] = useState([])
-  const [location, setLocation] = useState(null)
-  const photoInputRef = useRef(null)
+  const [photos, setPhotos] = useState<File[]>([])
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const [locating, setLocating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [submittedReportId, setSubmittedReportId] = useState(null)
+  const [submittedReportId, setSubmittedReportId] = useState<number | null>(null)
   const [words, setWords] = useState('')
   const [wordsInput, setWordsInput] = useState('')
-  const [suggestions, setSuggestions] = useState([])
+  const [suggestions, setSuggestions] = useState<W3WSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const suggestTimeout = useRef(null)
-  const blurTimeout = useRef(null)
+  const suggestTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const getLocation = () => {
     setLocating(true)
@@ -36,9 +39,9 @@ export default function ReportLitter() {
     )
   }
 
-  const handleWordsInput = (value) => {
+  const handleWordsInput = (value: string) => {
     setWordsInput(value)
-    clearTimeout(suggestTimeout.current)
+    if (suggestTimeout.current) clearTimeout(suggestTimeout.current)
 
     if (value.includes('.') && value.length >= 4) {
       suggestTimeout.current = setTimeout(() => {
@@ -53,15 +56,15 @@ export default function ReportLitter() {
     }
   }
 
-  const selectSuggestion = (suggestion) => {
+  const selectSuggestion = (suggestion: W3WSuggestion) => {
     setWords(suggestion.words)
     setWordsInput(suggestion.words)
     setSuggestions([])
     setShowSuggestions(false)
   }
 
-  const handlePhotos = (e) => {
-    const files = Array.from(e.target.files)
+  const handlePhotos = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
     setPhotos((prev) => [...prev, ...files])
@@ -69,20 +72,20 @@ export default function ReportLitter() {
     files.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
-        setPhotoPreviews((prev) => [...prev, reader.result])
+        setPhotoPreviews((prev) => [...prev, reader.result as string])
       }
       reader.readAsDataURL(file)
     })
 
-    photoInputRef.current.value = ''
+    if (photoInputRef.current) photoInputRef.current.value = ''
   }
 
-  const removePhoto = (index) => {
+  const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index))
     setPhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!location) {
       alert('Please share your location before submitting.')
@@ -90,18 +93,24 @@ export default function ReportLitter() {
     }
     setSubmitting(true)
     try {
-      const formData = new FormData()
-      formData.append('latitude', location.lat)
-      formData.append('longitude', location.lng)
-      formData.append('description', description)
-      if (words) formData.append('what3words', words)
-      photos.forEach((file) => formData.append('images', file))
+      // Create report with first image (if any)
+      const report = await createReportApiReportsPost({
+        latitude: location.lat,
+        longitude: location.lng,
+        description,
+        what3words: words || undefined,
+        image: photos[0] ?? undefined,
+      })
 
-      const headers = { 'Content-Type': 'multipart/form-data' }
-      if (token) headers['Authorization'] = `Bearer ${token}`
+      // Upload remaining images via the add-image endpoint
+      for (const file of photos.slice(1)) {
+        await addImageApiReportsReportIdImagesPost(report.id, {
+          image_type: 'report',
+          file,
+        })
+      }
 
-      const res = await api.post('/api/reports/', formData, { headers })
-      setSubmittedReportId(res.data.id)
+      setSubmittedReportId(report.id)
     } catch (err) {
       alert('Failed to submit report. Please try again.')
       console.error(err)
@@ -162,7 +171,7 @@ export default function ReportLitter() {
           {photoPreviews.length === 0 ? (
             <button
               type="button"
-              onClick={() => photoInputRef.current.click()}
+              onClick={() => photoInputRef.current?.click()}
               className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
             >
               <span className="text-2xl mb-1">+</span>
@@ -188,7 +197,7 @@ export default function ReportLitter() {
               ))}
               <button
                 type="button"
-                onClick={() => photoInputRef.current.click()}
+                onClick={() => photoInputRef.current?.click()}
                 className="flex-shrink-0 w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition"
               >
                 <span className="text-xl">+</span>
@@ -246,7 +255,7 @@ export default function ReportLitter() {
                       <li
                         key={s.words}
                         onMouseDown={() => {
-                          clearTimeout(blurTimeout.current)
+                          if (blurTimeout.current) clearTimeout(blurTimeout.current)
                           selectSuggestion(s)
                         }}
                         className="px-3 py-2 hover:bg-gray-50 cursor-pointer"

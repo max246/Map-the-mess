@@ -25,6 +25,8 @@ jobs:
         with:
           context: ./backend
           push: true
+          build-args: |
+            APP_VERSION=${{ github.event.release.tag_name }}
           tags: |
             max246/map-the-mess-backend:latest
             max246/map-the-mess-backend:${{ github.event.release.tag_name }}

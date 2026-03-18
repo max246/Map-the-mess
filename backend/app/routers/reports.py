@@ -120,11 +120,11 @@ def create_report(
     longitude: float = Form(...),
     description: str = Form(""),
     what3words: Optional[str] = Form(None),
-    images: List[UploadFile] = File([]),
+    image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
 ):
-    """Create a new litter report with optional image uploads."""
+    """Create a new litter report with an optional image. Use POST /{report_id}/images for additional images."""
     report = Report(
         latitude=latitude,
         longitude=longitude,
@@ -136,8 +136,8 @@ def create_report(
     db.add(report)
     db.flush()
 
-    for file in images:
-        filename, thumb_filename = _save_upload(file)
+    if image:
+        filename, thumb_filename = _save_upload(image)
         db.add(
             ReportImage(
                 report_id=report.id,
@@ -210,6 +210,48 @@ def mark_unresolved(
     db.commit()
     db.refresh(report)
     return report
+
+
+@router.delete("/images/{image_id}", status_code=204)
+def delete_image(
+    image_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_moderator_or_admin),
+):
+    """Delete an image. If it was a resolved image, re-open the report to pending."""
+    image = db.query(ReportImage).get(image_id)
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    report = db.query(Report).get(image.report_id)
+    was_resolved_image = image.image_type == ImageType.resolved
+
+    # Remove files from disk
+    for fname in (image.url, image.thumbnail_url):
+        if fname:
+            path = os.path.join(IMAGES_DIR, fname)
+            if os.path.isfile(path):
+                os.remove(path)
+
+    db.delete(image)
+
+    # If we deleted a resolved image and no other resolved images remain, re-open the report
+    if was_resolved_image and report:
+        remaining = (
+            db.query(ReportImage)
+            .filter(
+                ReportImage.report_id == report.id,
+                ReportImage.id != image_id,
+                ReportImage.image_type == ImageType.resolved,
+            )
+            .count()
+        )
+        if remaining == 0:
+            report.status = ReportStatus.pending
+            report.resolved_at = None
+            report.resolved_by_user_id = None
+
+    db.commit()
 
 
 @router.delete("/{report_id}", status_code=204)

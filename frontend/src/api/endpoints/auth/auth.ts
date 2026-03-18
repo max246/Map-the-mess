@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Map the Mess API
  * Backend for the community litter reporting platform
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: dev
  */
 import type {
   ForgotPassword,
@@ -112,11 +112,6 @@ const resetPasswordApiAuthResetPasswordPost = (
       );
     }
   return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
-
-type AwaitedInput<T> = PromiseLike<T> | T;
-
-    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
-
 export type ListUsersApiAuthUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listUsersApiAuthUsersGet']>>>
 export type RegisterApiAuthRegisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['registerApiAuthRegisterPost']>>>
 export type LoginApiAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginApiAuthLoginPost']>>>
