@@ -13,3 +13,4 @@ IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 SUPERUSER_EMAIL = os.getenv("SUPERUSER_EMAIL", "")
 SUPERUSER_PASSWORD = os.getenv("SUPERUSER_PASSWORD", "")
 SUPERUSER_FULL_NAME = os.getenv("SUPERUSER_FULL_NAME", "Super User")
+APP_VERSION = os.getenv("APP_VERSION", "dev")

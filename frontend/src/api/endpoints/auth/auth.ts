@@ -112,11 +112,6 @@ const resetPasswordApiAuthResetPasswordPost = (
       );
     }
   return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
-
-type AwaitedInput<T> = PromiseLike<T> | T;
-
-    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
-
 export type ListUsersApiAuthUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listUsersApiAuthUsersGet']>>>
 export type RegisterApiAuthRegisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['registerApiAuthRegisterPost']>>>
 export type LoginApiAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginApiAuthLoginPost']>>>

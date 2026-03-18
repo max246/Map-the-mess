@@ -12,7 +12,7 @@ export default function Register() {
   const { register, login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -31,8 +31,8 @@ export default function Register() {
       await register(email, fullName, password)
       await login(email, password)
       navigate('/admin')
-    } catch (err) {
-      const detail = err.response?.data?.detail
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Registration failed. Please try again.')
     } finally {
       setLoading(false)

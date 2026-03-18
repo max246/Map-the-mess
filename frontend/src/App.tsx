@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/Navbar'
@@ -12,8 +13,18 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
 import UserManagement from './pages/UserManagement'
+import api from './api/client'
 
 function App() {
+  const [version, setVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    api
+      .get('/backend/')
+      .then((res) => setVersion(res.data.version))
+      .catch(() => {})
+  }, [])
+
   return (
     <AuthProvider>
       <div className="min-h-screen flex flex-col">
@@ -33,6 +44,7 @@ function App() {
             <Route path="/admin/users" element={<UserManagement />} />
           </Routes>
         </main>
+        {version && <footer className="text-center text-xs text-gray-400 py-3">v{version}</footer>}
       </div>
     </AuthProvider>
   )

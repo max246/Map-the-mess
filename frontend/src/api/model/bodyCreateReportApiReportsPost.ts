@@ -11,5 +11,5 @@ export interface BodyCreateReportApiReportsPost {
   longitude: number;
   description?: string;
   what3words?: string | null;
-  images?: Blob[];
+  image?: Blob | null;
 }

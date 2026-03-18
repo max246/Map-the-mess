@@ -3,13 +3,14 @@ import { Link, Navigate } from 'react-router-dom'
 import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
+import type { ReportRead } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
 
 export default function VolunteerDashboard() {
   const { isLoggedIn, user } = useAuth()
   const [tab, setTab] = useState('planned')
-  const [pendingReports, setPendingReports] = useState([])
+  const [pendingReports, setPendingReports] = useState<ReportRead[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

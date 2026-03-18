@@ -105,7 +105,7 @@
           "Reports"
         ],
         "summary": "Create Report",
-        "description": "Create a new litter report with optional image uploads.",
+        "description": "Create a new litter report with an optional image. Use POST /{report_id}/images for additional images.",
         "operationId": "create_report_api_reports__post",
         "requestBody": {
           "required": true,
@@ -352,6 +352,47 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/images/{image_id}": {
+      "delete": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Delete Image",
+        "description": "Delete an image. If it was a resolved image, re-open the report to pending.",
+        "operationId": "delete_image_api_reports_images__image_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -779,14 +820,17 @@
             ],
             "title": "What3Words"
           },
-          "images": {
-            "items": {
-              "type": "string",
-              "format": "binary"
-            },
-            "type": "array",
-            "title": "Images",
-            "default": []
+          "image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image"
           }
         },
         "type": "object",

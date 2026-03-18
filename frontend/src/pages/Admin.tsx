@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import api from '../api/client'
 import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
+import type { ReportRead } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
 
@@ -10,11 +11,11 @@ const PAGE_SIZE = 10
 
 export default function Admin() {
   const { isLoggedIn, canManageUsers, user, token } = useAuth()
-  const [reports, setReports] = useState([])
+  const [reports, setReports] = useState<ReportRead[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
-  const [deletingId, setDeletingId] = useState(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const fetchReports = () => {
     setLoading(true)
@@ -28,7 +29,7 @@ export default function Admin() {
     fetchReports()
   }, [statusFilter])
 
-  const handleDelete = async (reportId) => {
+  const handleDelete = async (reportId: number) => {
     if (!confirm(`Are you sure you want to delete report #${reportId}?`)) return
     setDeletingId(reportId)
     try {
@@ -73,7 +74,7 @@ export default function Admin() {
                       : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {user?.userType?.charAt(0).toUpperCase() + user?.userType?.slice(1)}
+              {(user?.userType?.charAt(0).toUpperCase() ?? '') + (user?.userType?.slice(1) ?? '')}
             </span>
           </p>
         </div>

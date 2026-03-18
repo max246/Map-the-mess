@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import type { UserRead } from '../api/model'
 
 const ROLES = ['superuser', 'admin', 'moderator', 'volunteer']
 
 export default function UserManagement() {
   const { isLoggedIn, canManageUsers, token } = useAuth()
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState<UserRead[]>([])
   const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState(null)
+  const [updating, setUpdating] = useState<number | null>(null)
   const [error, setError] = useState('')
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
@@ -26,7 +27,7 @@ export default function UserManagement() {
   if (!isLoggedIn) return <Navigate to="/login" replace />
   if (!canManageUsers) return <Navigate to="/volunteers" replace />
 
-  const handleRoleChange = async (userId, newRole) => {
+  const handleRoleChange = async (userId: number, newRole: string) => {
     setUpdating(userId)
     setError('')
     try {
@@ -36,22 +37,22 @@ export default function UserManagement() {
         authHeaders
       )
       setUsers((prev) => prev.map((u) => (u.id === userId ? res.data : u)))
-    } catch (err) {
-      const detail = err.response?.data?.detail
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Failed to update user role.')
     } finally {
       setUpdating(null)
     }
   }
 
-  const handleDelete = async (userId, email) => {
+  const handleDelete = async (userId: number, email: string) => {
     if (!confirm(`Are you sure you want to delete user ${email}?`)) return
     setError('')
     try {
       await api.delete(`/api/auth/users/${userId}`, authHeaders)
       setUsers((prev) => prev.filter((u) => u.id !== userId))
-    } catch (err) {
-      const detail = err.response?.data?.detail
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Failed to delete user.')
     }
   }

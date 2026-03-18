@@ -44,7 +44,7 @@ const listReportsApiReportsGet = (
       );
     }
   /**
- * Create a new litter report with optional image uploads.
+ * Create a new litter report with an optional image. Use POST /{report_id}/images for additional images.
  * @summary Create Report
  */
 const createReportApiReportsPost = (
@@ -58,8 +58,8 @@ if(bodyCreateReportApiReportsPost.description !== undefined) {
 if(bodyCreateReportApiReportsPost.what3words !== undefined && bodyCreateReportApiReportsPost.what3words !== null) {
  formData.append(`what3words`, bodyCreateReportApiReportsPost.what3words);
  }
-if(bodyCreateReportApiReportsPost.images !== undefined) {
- bodyCreateReportApiReportsPost.images.forEach(value => formData.append(`images`, value));
+if(bodyCreateReportApiReportsPost.image !== undefined && bodyCreateReportApiReportsPost.image !== null) {
+ formData.append(`image`, bodyCreateReportApiReportsPost.image);
  }
 
       return customInstance<ReportRead>(
@@ -132,12 +132,19 @@ const markUnresolvedApiReportsReportIdUnresolvePatch = (
     },
       );
     }
-  return {serveImageApiReportsImagesFilenameGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch}};
-
-type AwaitedInput<T> = PromiseLike<T> | T;
-
-    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
-
+  /**
+ * Delete an image. If it was a resolved image, re-open the report to pending.
+ * @summary Delete Image
+ */
+const deleteImageApiReportsImagesImageIdDelete = (
+    imageId: number,
+ ) => {
+      return customInstance<void>(
+      {url: `/api/reports/images/${imageId}`, method: 'DELETE'
+    },
+      );
+    }
+  return {serveImageApiReportsImagesFilenameGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete}};
 export type ServeImageApiReportsImagesFilenameGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['serveImageApiReportsImagesFilenameGet']>>>
 export type ListReportsApiReportsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listReportsApiReportsGet']>>>
 export type CreateReportApiReportsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['createReportApiReportsPost']>>>
@@ -146,3 +153,4 @@ export type DeleteReportApiReportsReportIdDeleteResult = NonNullable<Awaited<Ret
 export type AddImageApiReportsReportIdImagesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['addImageApiReportsReportIdImagesPost']>>>
 export type MarkCleanedApiReportsReportIdCleanPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markCleanedApiReportsReportIdCleanPatch']>>>
 export type MarkUnresolvedApiReportsReportIdUnresolvePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markUnresolvedApiReportsReportIdUnresolvePatch']>>>
+export type DeleteImageApiReportsImagesImageIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteImageApiReportsImagesImageIdDelete']>>>

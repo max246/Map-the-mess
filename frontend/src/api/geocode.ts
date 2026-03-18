@@ -1,8 +1,15 @@
-const cache = new Map()
+interface GeocodedAddress {
+  road: string
+  city: string
+  postcode: string
+  displayName: string
+}
 
-export async function reverseGeocode(lat, lng) {
+const cache = new Map<string, GeocodedAddress>()
+
+export async function reverseGeocode(lat: number, lng: number): Promise<GeocodedAddress> {
   const key = `${lat.toFixed(5)},${lng.toFixed(5)}`
-  if (cache.has(key)) return cache.get(key)
+  if (cache.has(key)) return cache.get(key)!
 
   const res = await fetch(
     `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
@@ -10,7 +17,7 @@ export async function reverseGeocode(lat, lng) {
   )
   const data = await res.json()
   const addr = data.address || {}
-  const result = {
+  const result: GeocodedAddress = {
     road: addr.road || addr.pedestrian || addr.footway || '',
     city: addr.city || addr.town || addr.village || addr.hamlet || '',
     postcode: addr.postcode || '',

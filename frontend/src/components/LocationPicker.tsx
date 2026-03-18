@@ -1,8 +1,19 @@
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
-import { useState, useRef, useMemo } from 'react'
+import { useRef, useMemo } from 'react'
+import L from 'leaflet'
 
-function DraggableMarker({ position, onMove }) {
-  const markerRef = useRef(null)
+interface Position {
+  lat: number
+  lng: number
+}
+
+interface LocationPickerProps {
+  position: Position
+  onMove: (pos: Position) => void
+}
+
+function DraggableMarker({ position, onMove }: LocationPickerProps) {
+  const markerRef = useRef<L.Marker>(null)
 
   const eventHandlers = useMemo(
     () => ({
@@ -34,7 +45,7 @@ function DraggableMarker({ position, onMove }) {
   )
 }
 
-export default function LocationPicker({ position, onMove }) {
+export default function LocationPicker({ position, onMove }: LocationPickerProps) {
   return (
     <div className="h-64 rounded-lg overflow-hidden border">
       <MapContainer center={[position.lat, position.lng]} zoom={16} className="h-full w-full">

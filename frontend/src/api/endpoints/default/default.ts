@@ -22,8 +22,3 @@ const rootGet = (
       );
     }
   return {}};
-
-type AwaitedInput<T> = PromiseLike<T> | T;
-
-    type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
-

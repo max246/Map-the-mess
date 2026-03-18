@@ -22,7 +22,7 @@ export default function Navbar() {
     navigate('/')
   }
 
-  const navLink = (to, label, onClick) => (
+  const navLink = (to: string, label: string, onClick?: () => void) => (
     <Link
       key={to}
       to={to}
@@ -33,7 +33,7 @@ export default function Navbar() {
     </Link>
   )
 
-  const mobileLink = (to, label) => (
+  const mobileLink = (to: string, label: string) => (
     <Link
       key={to}
       to={to}
