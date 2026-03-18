@@ -23,6 +23,8 @@ services:
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
       SUPERUSER_FULL_NAME: ${SUPERUSER_FULL_NAME:-Super User}
+    volumes:
+      - ./data/images:/app/images
     ports:
       - "8000:8000"
     depends_on:

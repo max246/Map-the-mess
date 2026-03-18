@@ -5,33 +5,67 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: 0.1.0
  */
+import type {
+  ListFavouritesApiVolunteersFavouritesGetParams,
+  ReportRead
+} from '../../model';
+
 import { customInstance } from '../../client';
 
 
 
   export const getVolunteers = () => {
 /**
- * @summary List Volunteers
+ * Return the total number of registered volunteers.
+ * @summary Volunteer Count
  */
-const listVolunteersApiVolunteersGet = (
+const volunteerCountApiVolunteersCountGet = (
     
  ) => {
       return customInstance<unknown>(
-      {url: `/api/volunteers/`, method: 'GET'
+      {url: `/api/volunteers/count`, method: 'GET'
     },
       );
     }
   /**
- * @summary Claim Report
+ * List the current user's favourite reports, optionally filtered by status.
+ * @summary List Favourites
  */
-const claimReportApiVolunteersClaimReportIdPost = (
-    reportId: number,
+const listFavouritesApiVolunteersFavouritesGet = (
+    params?: ListFavouritesApiVolunteersFavouritesGetParams,
  ) => {
-      return customInstance<unknown>(
-      {url: `/api/volunteers/claim/${reportId}`, method: 'POST'
+      return customInstance<ReportRead[]>(
+      {url: `/api/volunteers/favourites`, method: 'GET',
+        params
     },
       );
     }
-  return {listVolunteersApiVolunteersGet,claimReportApiVolunteersClaimReportIdPost}};
-export type ListVolunteersApiVolunteersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['listVolunteersApiVolunteersGet']>>>
-export type ClaimReportApiVolunteersClaimReportIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['claimReportApiVolunteersClaimReportIdPost']>>>
+  /**
+ * Star a report to add it to the user's planned cleanups.
+ * @summary Add Favourite
+ */
+const addFavouriteApiVolunteersFavouritesReportIdPost = (
+    reportId: number,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/volunteers/favourites/${reportId}`, method: 'POST'
+    },
+      );
+    }
+  /**
+ * Remove a report from the user's planned cleanups.
+ * @summary Remove Favourite
+ */
+const removeFavouriteApiVolunteersFavouritesReportIdDelete = (
+    reportId: number,
+ ) => {
+      return customInstance<void>(
+      {url: `/api/volunteers/favourites/${reportId}`, method: 'DELETE'
+    },
+      );
+    }
+  return {volunteerCountApiVolunteersCountGet,listFavouritesApiVolunteersFavouritesGet,addFavouriteApiVolunteersFavouritesReportIdPost,removeFavouriteApiVolunteersFavouritesReportIdDelete}};
+export type VolunteerCountApiVolunteersCountGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['volunteerCountApiVolunteersCountGet']>>>
+export type ListFavouritesApiVolunteersFavouritesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['listFavouritesApiVolunteersFavouritesGet']>>>
+export type AddFavouriteApiVolunteersFavouritesReportIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['addFavouriteApiVolunteersFavouritesReportIdPost']>>>
+export type RemoveFavouriteApiVolunteersFavouritesReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['removeFavouriteApiVolunteersFavouritesReportIdDelete']>>>

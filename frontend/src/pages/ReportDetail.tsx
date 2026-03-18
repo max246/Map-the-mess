@@ -5,9 +5,16 @@ import api, { imageUrl, thumbnailUrl } from '../api/client'
 import { reverseGeocode } from '../api/geocode'
 import { useAuth } from '../context/AuthContext'
 import { getReports } from '../api/endpoints/reports/reports'
+import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead, ReportImageRead } from '../api/model'
 
-const { deleteImageApiReportsImagesImageIdDelete } = getReports()
+const { deleteImageApiReportsImagesImageIdDelete, addImageApiReportsReportIdImagesPost } =
+  getReports()
+const {
+  listFavouritesApiVolunteersFavouritesGet,
+  addFavouriteApiVolunteersFavouritesReportIdPost,
+  removeFavouriteApiVolunteersFavouritesReportIdDelete,
+} = getVolunteers()
 
 export default function ReportDetail() {
   const { id } = useParams()
@@ -27,7 +34,10 @@ export default function ReportDetail() {
   const [resolving, setResolving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [isFavourite, setIsFavourite] = useState(false)
+  const [addingPhoto, setAddingPhoto] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const addPhotoInputRef = useRef<HTMLInputElement>(null)
 
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
 
@@ -45,6 +55,28 @@ export default function ReportDetail() {
   useEffect(() => {
     fetchReport()
   }, [id])
+
+  useEffect(() => {
+    if (!isLoggedIn || !id) return
+    listFavouritesApiVolunteersFavouritesGet()
+      .then((favs) => setIsFavourite(favs.some((r) => r.id === Number(id))))
+      .catch(() => {})
+  }, [id, isLoggedIn])
+
+  const toggleFavourite = async () => {
+    if (!id) return
+    try {
+      if (isFavourite) {
+        await removeFavouriteApiVolunteersFavouritesReportIdDelete(Number(id))
+        setIsFavourite(false)
+      } else {
+        await addFavouriteApiVolunteersFavouritesReportIdPost(Number(id))
+        setIsFavourite(true)
+      }
+    } catch {
+      alert('Failed to update favourite.')
+    }
+  }
 
   // Build image URLs from report.images array
   const reportImages = report?.images?.filter((img) => img.image_type === 'report') || []
@@ -148,6 +180,26 @@ export default function ReportDetail() {
     }
   }
 
+  const handleAddPhotos = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0 || !id) return
+    setAddingPhoto(true)
+    try {
+      for (const file of files) {
+        await addImageApiReportsReportIdImagesPost(Number(id), {
+          image_type: 'report',
+          file,
+        })
+      }
+      fetchReport()
+    } catch {
+      alert('Failed to upload image.')
+    } finally {
+      setAddingPhoto(false)
+      if (addPhotoInputRef.current) addPhotoInputRef.current.value = ''
+    }
+  }
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this report? This cannot be undone.')) return
     setDeleting(true)
@@ -181,9 +233,24 @@ export default function ReportDetail() {
         ← Back to map
       </Link>
 
-      <h1 className="text-2xl font-bold mb-2">
-        {report.status === 'cleaned' ? '✅' : '🔴'} Report #{report.id}
-      </h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold">
+          {report.status === 'cleaned' ? '✅' : '🔴'} Report #{report.id}
+        </h1>
+        {isLoggedIn && (
+          <button
+            onClick={toggleFavourite}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+              isFavourite
+                ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
+                : 'bg-white border-gray-300 text-gray-500 hover:border-yellow-400 hover:text-yellow-600'
+            }`}
+          >
+            <span className="text-lg">{isFavourite ? '★' : '☆'}</span>
+            {isFavourite ? 'Starred' : 'Star'}
+          </button>
+        )}
+      </div>
 
       <p className="text-sm text-gray-400 mb-6">
         Reported on{' '}
@@ -224,41 +291,61 @@ export default function ReportDetail() {
                 </button>
               )}
             </div>
-            {allPhotos.length > 1 && (
-              <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-                {allPhotos.map((img, i) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setActivePhoto(i)}
-                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
-                      i === activePhoto
-                        ? 'border-brand'
-                        : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <img
-                      src={thumbnailUrl(img)}
-                      alt={`Thumbnail ${i + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {img.image_type === 'resolved' && (
-                      <span className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-center text-[8px] leading-tight py-0.5">
-                        Resolved
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+              {allPhotos.map((img, i) => (
+                <button
+                  key={img.id}
+                  onClick={() => setActivePhoto(i)}
+                  className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
+                    i === activePhoto
+                      ? 'border-brand'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img
+                    src={thumbnailUrl(img)}
+                    alt={`Thumbnail ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {img.image_type === 'resolved' && (
+                    <span className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-center text-[8px] leading-tight py-0.5">
+                      Resolved
+                    </span>
+                  )}
+                </button>
+              ))}
+              {report.status !== 'cleaned' && (
+                <button
+                  onClick={() => addPhotoInputRef.current?.click()}
+                  disabled={addingPhoto}
+                  className="flex-shrink-0 w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-brand hover:text-brand transition disabled:opacity-50"
+                >
+                  {addingPhoto ? '...' : '+'}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+          <div
+            className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 cursor-pointer hover:bg-gray-200 transition"
+            onClick={() => report.status !== 'cleaned' && addPhotoInputRef.current?.click()}
+          >
             <div className="text-center">
               <span className="text-4xl block mb-2">📷</span>
-              <span className="text-sm">No photo uploaded</span>
+              <span className="text-sm">
+                {report.status !== 'cleaned' ? 'Click to add a photo' : 'No photo uploaded'}
+              </span>
             </div>
           </div>
         )}
+        <input
+          ref={addPhotoInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleAddPhotos}
+          className="hidden"
+        />
       </div>
 
       {/* Lightbox */}

@@ -10,6 +10,7 @@ export * from './bodyAddImageApiReportsReportIdImagesPost';
 export * from './bodyCreateReportApiReportsPost';
 export * from './forgotPassword';
 export * from './hTTPValidationError';
+export * from './listFavouritesApiVolunteersFavouritesGetParams';
 export * from './listReportsApiReportsGetParams';
 export * from './reportImageRead';
 export * from './reportRead';

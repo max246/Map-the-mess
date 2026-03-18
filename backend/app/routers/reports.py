@@ -26,6 +26,10 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 MAX_IMAGE_SIZE = (1920, 1080)
 THUMBNAIL_SIZE = (400, 400)
 
+# Bounding box for the UK (including Northern Ireland)
+UK_LAT_MIN, UK_LAT_MAX = 49.9, 60.9
+UK_LON_MIN, UK_LON_MAX = -8.2, 1.8
+
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
@@ -125,6 +129,9 @@ def create_report(
     current_user: User | None = Depends(_get_optional_user),
 ):
     """Create a new litter report with an optional image. Use POST /{report_id}/images for additional images."""
+    if not (UK_LAT_MIN <= latitude <= UK_LAT_MAX and UK_LON_MIN <= longitude <= UK_LON_MAX):
+        raise HTTPException(status_code=400, detail="Coordinates must be within the UK")
+
     report = Report(
         latitude=latitude,
         longitude=longitude,

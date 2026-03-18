@@ -1,15 +1,74 @@
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
+import L from 'leaflet'
 import { useState, useEffect } from 'react'
 import { getReports } from '../api/endpoints/reports/reports'
+import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
+import { useAuth } from '../context/AuthContext'
 import ReportPopup from '../components/ReportPopup'
 import type { ReportRead } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
+const { listFavouritesApiVolunteersFavouritesGet } = getVolunteers()
 
 // Default centre: somewhere in Britain
 const UK_CENTER: [number, number] = [53.5, -1.5]
 const MIN_ZOOM_ON_CLICK = 15
+
+function createPinIcon(color: string) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="5" fill="#fff"/>
+  </svg>`
+  return L.icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(svg)}`,
+    iconSize: [28, 42],
+    iconAnchor: [14, 42],
+    popupAnchor: [0, -42],
+  })
+}
+
+const pendingIcon = createPinIcon('#ef4444')
+const cleanedIcon = createPinIcon('#22c55e')
+
+type Filter = 'all' | 'unresolved' | 'resolved' | 'favourites'
+
+const FILTERS: { key: Filter; label: string; auth?: boolean }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'unresolved', label: 'Unresolved' },
+  { key: 'resolved', label: 'Resolved' },
+  { key: 'favourites', label: 'Favourites', auth: true },
+]
+
+function LocateButton() {
+  const map = useMap()
+  const [locating, setLocating] = useState(false)
+
+  const handleLocate = () => {
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        map.flyTo([pos.coords.latitude, pos.coords.longitude], 15)
+        setLocating(false)
+      },
+      () => {
+        alert('Could not get your location. Please allow location access.')
+        setLocating(false)
+      }
+    )
+  }
+
+  return (
+    <button
+      onClick={handleLocate}
+      disabled={locating}
+      className="absolute bottom-6 right-3 z-[1000] bg-white shadow-lg rounded-lg w-10 h-10 flex items-center justify-center text-lg hover:bg-gray-50 transition disabled:opacity-50 border border-gray-300"
+      title="Centre on my location"
+    >
+      {locating ? '...' : '📍'}
+    </button>
+  )
+}
 
 function ZoomMarker({ report }: { report: ReportRead }) {
   const map = useMap()
@@ -21,33 +80,72 @@ function ZoomMarker({ report }: { report: ReportRead }) {
   }
 
   return (
-    <Marker position={[report.latitude, report.longitude]} eventHandlers={{ click: handleClick }}>
+    <Marker
+      position={[report.latitude, report.longitude]}
+      icon={report.status === 'cleaned' ? cleanedIcon : pendingIcon}
+      eventHandlers={{ click: handleClick }}
+    >
       <ReportPopup report={report} />
     </Marker>
   )
 }
 
 export default function MapView() {
-  const [reports, setReports] = useState<ReportRead[]>([])
+  const { isLoggedIn } = useAuth()
+  const [allReports, setAllReports] = useState<ReportRead[]>([])
+  const [favouriteIds, setFavouriteIds] = useState<Set<number>>(new Set())
+  const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {
     listReportsApiReportsGet()
-      .then((data) => setReports(data))
+      .then((data) => setAllReports(data))
       .catch(console.error)
   }, [])
 
+  useEffect(() => {
+    if (!isLoggedIn) return
+    listFavouritesApiVolunteersFavouritesGet()
+      .then((data) => setFavouriteIds(new Set(data.map((r) => r.id))))
+      .catch(() => {})
+  }, [isLoggedIn])
+
+  const filteredReports = allReports.filter((r) => {
+    if (filter === 'unresolved') return r.status !== 'cleaned'
+    if (filter === 'resolved') return r.status === 'cleaned'
+    if (filter === 'favourites') return favouriteIds.has(r.id)
+    return true
+  })
+
+  const visibleFilters = FILTERS.filter((f) => !f.auth || isLoggedIn)
+
   return (
-    <div className="h-[calc(100vh-64px)]">
+    <div className="h-[calc(100vh-64px)] relative">
+      {/* Filter bar */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex gap-1 bg-white rounded-lg shadow-lg p-1">
+        {visibleFilters.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+              filter === f.key ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <MapContainer center={UK_CENTER} zoom={6} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MarkerClusterGroup chunkedLoading>
-          {reports.map((r) => (
+          {filteredReports.map((r) => (
             <ZoomMarker key={r.id} report={r} />
           ))}
         </MarkerClusterGroup>
+        <LocateButton />
       </MapContainer>
     </div>
   )

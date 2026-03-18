@@ -111,8 +111,13 @@ export default function ReportLitter() {
       }
 
       setSubmittedReportId(report.id)
-    } catch (err) {
-      alert('Failed to submit report. Please try again.')
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 400) {
+        alert('Location must be within the United Kingdom.')
+      } else {
+        alert('Failed to submit report. Please try again.')
+      }
       console.error(err)
     } finally {
       setSubmitting(false)
