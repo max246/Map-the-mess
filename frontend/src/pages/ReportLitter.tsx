@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom'
 import LocationPicker from '../components/LocationPicker'
 import { autosuggest } from '../api/w3w'
 import type { W3WSuggestion } from '../api/w3w'
-import { useAuth } from '../context/AuthContext'
 import { getReports } from '../api/endpoints/reports/reports'
 
 const { createReportApiReportsPost, addImageApiReportsReportIdImagesPost } = getReports()
 
 export default function ReportLitter() {
-  const { token } = useAuth()
   const [description, setDescription] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])

@@ -127,6 +127,14 @@ export default function VolunteerDashboard() {
     }
   }, [tab])
 
+  const PAGE_SIZE = 10
+  const [page, setPage] = useState(1)
+
+  // Reset page when switching tabs
+  useEffect(() => {
+    setPage(1)
+  }, [tab])
+
   const handleToggleFavourite = async (reportId: number, star: boolean) => {
     try {
       if (star) {
@@ -158,17 +166,10 @@ export default function VolunteerDashboard() {
     { key: 'resolved', label: 'Resolved Reports' },
   ]
 
-  const PAGE_SIZE = 10
-  const [page, setPage] = useState(1)
   const displayedReports = tab === 'favourites' ? favourites : reports
   const totalPages = Math.max(1, Math.ceil(displayedReports.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const paginated = displayedReports.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-
-  // Reset page when switching tabs
-  useEffect(() => {
-    setPage(1)
-  }, [tab])
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">

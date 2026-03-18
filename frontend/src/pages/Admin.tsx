@@ -27,6 +27,7 @@ export default function Admin() {
 
   useEffect(() => {
     fetchReports()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter])
 
   const handleDelete = async (reportId: number) => {

@@ -18,7 +18,7 @@ export default function UserManagement() {
   useEffect(() => {
     if (!token) return
     api
-      .get('/api/auth/users', authHeaders)
+      .get('/api/auth/users')
       .then((res) => setUsers(res.data))
       .catch(() => setError('Failed to load users.'))
       .finally(() => setLoading(false))

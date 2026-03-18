@@ -11,7 +11,7 @@ const publicLinks = [
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
-  const { isLoggedIn, canManageUsers, user, logout } = useAuth()
+  const { isLoggedIn, canManageUsers, logout } = useAuth()
   const navigate = useNavigate()
 
   const isVolunteer = isLoggedIn && !canManageUsers
