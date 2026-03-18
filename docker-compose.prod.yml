@@ -49,6 +49,7 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - certs:/etc/nginx/certs
       - vhost:/etc/nginx/vhost.d
+      - ./proxy-conf/mapthemess.uk:/etc/nginx/vhost.d/mapthemess.uk:ro
       - html:/usr/share/nginx/html
     environment:
       TRUST_DOWNSTREAM_PROXY: "false"
