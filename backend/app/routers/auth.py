@@ -95,7 +95,7 @@ def _send_verification_email(user: User) -> None:
     <p>This link expires in 48 hours.</p>
     <p>If you didn't create this account, you can ignore this email.</p>
     """
-    send_email(user.email, "Verify your email — Map the Mess", html)
+    send_email(str(user.email), "Verify your email — Map the Mess", html)
 
 
 @router.get("/users", response_model=list[UserRead])
@@ -152,7 +152,7 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if user.is_verified:
         return {"message": "Email already verified"}
 
-    user.is_verified = True
+    user.is_verified = True  # type: ignore[assignment]
     db.commit()
     return {"message": "Email verified successfully"}
 
@@ -269,7 +269,7 @@ def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)):
     <p>This link expires in {RESET_TOKEN_EXPIRE_MINUTES} minutes.</p>
     <p>If you didn't request this, you can ignore this email.</p>
     """
-    send_email(user.email, "Password reset — Map the Mess", html)
+    send_email(str(user.email), "Password reset — Map the Mess", html)
     return {"message": "If the email exists, a reset link has been sent"}
 
 
