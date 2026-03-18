@@ -3,7 +3,7 @@
   "info": {
     "title": "Map the Mess API",
     "description": "Backend for the community litter reporting platform",
-    "version": "dev"
+    "version": "0.1.0"
   },
   "paths": {
     "/api/reports/images/{filename}": {
