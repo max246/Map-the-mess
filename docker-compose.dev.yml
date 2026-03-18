@@ -31,9 +31,6 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
       FRONTEND_URL: https://dev.mapthemess.uk
-      VIRTUAL_HOST: api.dev.mapthemess.uk
-      VIRTUAL_PORT: "8000"
-      LETSENCRYPT_HOST: api.dev.mapthemess.uk
     depends_on:
       - db
 
@@ -59,7 +56,7 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - certs:/etc/nginx/certs
       - vhost:/etc/nginx/vhost.d
-      - ./proxy-conf/api.dev.mapthemess.uk:/etc/nginx/vhost.d/api.dev.mapthemess.uk:ro
+      - ./proxy-conf/dev.mapthemess.uk:/etc/nginx/vhost.d/dev.mapthemess.uk:ro
       - html:/usr/share/nginx/html
     environment:
       TRUST_DOWNSTREAM_PROXY: "false"
