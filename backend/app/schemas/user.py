@@ -20,6 +20,7 @@ class UserRead(BaseModel):
     id: int
     email: str
     full_name: str
+    is_verified: bool
     user_type: str
     created_at: datetime
 

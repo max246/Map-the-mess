@@ -8,7 +8,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from app.config import SECRET_KEY
+from app.config import SECRET_KEY, FRONTEND_URL
+from app.email import send_email
 from app.database import get_db
 from app.models.user import User, UserType
 from app.schemas.user import (
@@ -26,6 +27,7 @@ router = APIRouter()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 RESET_TOKEN_EXPIRE_MINUTES = 15
+VERIFY_TOKEN_EXPIRE_HOURS = 48
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -76,6 +78,26 @@ def require_moderator_or_admin(current_user: User = Depends(get_current_user)) -
     return current_user
 
 
+def _send_verification_email(user: User) -> None:
+    """Generate a verification token and email it to the user."""
+    expire = datetime.now(timezone.utc) + timedelta(hours=VERIFY_TOKEN_EXPIRE_HOURS)
+    token = jwt.encode(
+        {"sub": user.email, "purpose": "email-verification", "exp": expire},
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+    verify_url = f"{FRONTEND_URL}/verify-email?token={token}"
+    html = f"""
+    <h2>Welcome to Map the Mess!</h2>
+    <p>Hi {user.full_name},</p>
+    <p>Please verify your email address by clicking the link below:</p>
+    <p><a href="{verify_url}">Verify my email</a></p>
+    <p>This link expires in 48 hours.</p>
+    <p>If you didn't create this account, you can ignore this email.</p>
+    """
+    send_email(user.email, "Verify your email — Map the Mess", html)
+
+
 @router.get("/users", response_model=list[UserRead])
 def list_users(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
     """List all users. Requires admin access."""
@@ -99,7 +121,50 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    _send_verification_email(user)
     return user
+
+
+@router.get("/verify")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    """Verify a user's email address using the token from the verification email."""
+    try:
+        data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if data.get("purpose") != "email-verification":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification token",
+            )
+        email = data.get("sub")
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token",
+        )
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification token",
+        )
+
+    if user.is_verified:
+        return {"message": "Email already verified"}
+
+    user.is_verified = True
+    db.commit()
+    return {"message": "Email verified successfully"}
+
+
+@router.post("/resend-verification")
+def resend_verification(payload: ForgotPassword, db: Session = Depends(get_db)):
+    """Resend the verification email. Uses ForgotPassword schema (just an email field)."""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user and not user.is_verified:
+        _send_verification_email(user)
+    # Don't reveal whether the user exists
+    return {"message": "If the email exists and is unverified, a verification email has been sent"}
 
 
 @router.post("/login", response_model=Token)
@@ -109,6 +174,12 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
+        )
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Please check your inbox.",
         )
 
     token = create_access_token({"sub": user.email, "type": user.user_type.value})
@@ -189,11 +260,17 @@ def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)):
         SECRET_KEY,
         algorithm=ALGORITHM,
     )
-    # TODO: send reset_token via email instead of returning it directly
-    return {
-        "message": "If the email exists, a reset token has been generated",
-        "reset_token": reset_token,
-    }
+    reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
+    html = f"""
+    <h2>Password Reset — Map the Mess</h2>
+    <p>Hi {user.full_name},</p>
+    <p>You requested a password reset. Click the link below to set a new password:</p>
+    <p><a href="{reset_url}">Reset my password</a></p>
+    <p>This link expires in {RESET_TOKEN_EXPIRE_MINUTES} minutes.</p>
+    <p>If you didn't request this, you can ignore this email.</p>
+    """
+    send_email(user.email, "Password reset — Map the Mess", html)
+    return {"message": "If the email exists, a reset link has been sent"}
 
 
 @router.post("/reset-password")

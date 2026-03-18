@@ -21,3 +21,4 @@ export * from './userLogin';
 export * from './userRead';
 export * from './userUpdateType';
 export * from './validationError';
+export * from './verifyEmailApiAuthVerifyGetParams';

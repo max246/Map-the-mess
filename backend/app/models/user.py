@@ -3,7 +3,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Enum
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, Enum
 
 from app.database import Base
 
@@ -22,5 +22,6 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     full_name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
     user_type: Column[UserType] = Column(Enum(UserType), default=UserType.volunteer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
