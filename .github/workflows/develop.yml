@@ -36,6 +36,6 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_URL=https://api.dev.mapthemess.uk
+            VITE_API_URL=
           tags: |
             max246/map-the-mess-frontend:develop
