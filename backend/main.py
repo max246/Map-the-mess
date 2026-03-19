@@ -28,7 +28,7 @@ def _seed_superuser() -> None:
         if existing:
             updated = False
             if existing.hashed_password != SUPERUSER_PASSWORD:
-                existing.hashed_password = SUPERUSER_PASSWORD
+                existing.hashed_password = SUPERUSER_PASSWORD  # type: ignore[assignment]
                 updated = True
             if not existing.is_verified:
                 existing.is_verified = True  # type: ignore[assignment]
