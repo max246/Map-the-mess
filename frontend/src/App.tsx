@@ -14,6 +14,7 @@ import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
 import UserManagement from './pages/UserManagement'
 import VerifyEmail from './pages/VerifyEmail'
+import Contact from './pages/Contact'
 import api from './api/client'
 
 function App() {
@@ -44,9 +45,21 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
-        {version && <footer className="text-center text-xs text-gray-400 py-3">v{version}</footer>}
+        {version && (
+          <footer className="text-center text-xs text-gray-400 py-3">
+            <a
+              href={`https://github.com/max246/Map-the-mess/releases/tag/v${version}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+            >
+              v{version}
+            </a>
+          </footer>
+        )}
       </div>
     </AuthProvider>
   )
