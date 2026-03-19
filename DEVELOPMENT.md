@@ -19,18 +19,35 @@ When you publish a GitHub release from `main`, a GitHub Actions workflow automat
 - Pushes them to Docker Hub with two tags: `latest` and the release tag
 - The frontend build passes `VITE_API_URL=https://api.mapthemess.uk` as a build argument
 
+## Superuser Password
+
+The `SUPERUSER_PASSWORD` env var expects a bcrypt hash, not a plain text password. To generate one:
+
+```bash
+cd backend
+python utils/hash_password.py "your-password-here"
+```
+
+Copy the output and set it in your `.env` file:
+
+```
+SUPERUSER_PASSWORD=$2b$12$...the-hash...
+```
+
+If the superuser already exists in the database, you'll need to delete the existing record for it to be re-created with the new hash on next startup.
+
 ## Dev Environment (develop branch)
 
 When a PR is merged into the `develop` branch, a GitHub Actions workflow automatically builds and pushes Docker images tagged as `develop`.
 
 ### How it works
-
 - The workflow is defined in `.github/workflows/develop.yml`
 - It triggers on every push to `develop`
 - Builds both images with the `develop` tag (e.g. `max246/map-the-mess-backend:develop`)
 - The frontend is built with an empty `VITE_API_URL` (uses relative URLs via the frontend nginx proxy)
 - The backend version is set to `develop-<commit-sha>`
 - Watchtower on the dev EC2 auto-pulls new images within 5 minutes
+
 
 ### Dev EC2 setup
 
@@ -74,3 +91,4 @@ Then restart nginx-proxy:
 ```bash
 docker compose -f docker-compose.dev.yml up -d nginx-proxy
 ```
+
