@@ -17,8 +17,15 @@ export default function Login() {
     try {
       await login(email, password)
       navigate('/admin')
-    } catch {
-      setError('Invalid email or password.')
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      if (typeof detail === 'string' && detail.toLowerCase().includes('verify')) {
+        setError(
+          'Please verify your email before logging in. Check your inbox for the verification link.'
+        )
+      } else {
+        setError('Invalid email or password.')
+      }
     } finally {
       setLoading(false)
     }

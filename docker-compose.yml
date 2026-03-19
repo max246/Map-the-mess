@@ -23,6 +23,12 @@ services:
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
       SUPERUSER_FULL_NAME: ${SUPERUSER_FULL_NAME:-Super User}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     volumes:
       - ./data/images:/app/images
     ports:

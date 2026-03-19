@@ -13,6 +13,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
 import UserManagement from './pages/UserManagement'
+import VerifyEmail from './pages/VerifyEmail'
 import api from './api/client'
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
             <Route path="/volunteers" element={<VolunteerDashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Admin />} />

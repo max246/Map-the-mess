@@ -6,11 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UserRead {
-  id: number;
-  email: string;
-  full_name: string;
-  is_verified: boolean;
-  user_type: string;
-  created_at: string;
-}
+export type VerifyEmailApiAuthVerifyGetParams = {
+token: string;
+};

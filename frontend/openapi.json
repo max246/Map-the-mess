@@ -479,6 +479,87 @@
         }
       }
     },
+    "/api/auth/verify": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify Email",
+        "description": "Verify a user's email address using the token from the verification email.",
+        "operationId": "verify_email_api_auth_verify_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/resend-verification": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Resend Verification",
+        "description": "Resend the verification email. Uses ForgotPassword schema (just an email field).",
+        "operationId": "resend_verification_api_auth_resend_verification_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -1199,6 +1280,10 @@
             "type": "string",
             "title": "Full Name"
           },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified"
+          },
           "user_type": {
             "type": "string",
             "title": "User Type"
@@ -1214,6 +1299,7 @@
           "id",
           "email",
           "full_name",
+          "is_verified",
           "user_type",
           "created_at"
         ],

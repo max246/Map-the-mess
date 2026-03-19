@@ -32,6 +32,7 @@ def _seed_superuser() -> None:
             email=SUPERUSER_EMAIL,
             full_name=SUPERUSER_FULL_NAME,
             hashed_password=SUPERUSER_PASSWORD,
+            is_verified=True,
             user_type=UserType.superuser,
         )
         db.add(user)
