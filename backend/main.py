@@ -26,12 +26,24 @@ def _seed_superuser() -> None:
     try:
         existing = db.query(User).filter(User.email == SUPERUSER_EMAIL).first()
         if existing:
-            logger.info("Superuser already exists, skipping creation")
+            updated = False
+            if existing.hashed_password != SUPERUSER_PASSWORD:
+                existing.hashed_password = SUPERUSER_PASSWORD  # type: ignore[assignment]
+                updated = True
+            if not existing.is_verified:
+                existing.is_verified = True  # type: ignore[assignment]
+                updated = True
+            if updated:
+                db.commit()
+                logger.info("Superuser updated: %s", SUPERUSER_EMAIL)
+            else:
+                logger.info("Superuser already exists, skipping creation")
             return
         user = User(
             email=SUPERUSER_EMAIL,
             full_name=SUPERUSER_FULL_NAME,
-            hashed_password=pwd_context.hash(SUPERUSER_PASSWORD),
+            hashed_password=SUPERUSER_PASSWORD,
+            is_verified=True,
             user_type=UserType.superuser,
         )
         db.add(user)

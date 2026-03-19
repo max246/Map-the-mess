@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Register() {
@@ -9,8 +9,8 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { register, login } = useAuth()
-  const navigate = useNavigate()
+  const [registered, setRegistered] = useState(false)
+  const { register } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,14 +29,29 @@ export default function Register() {
     setLoading(true)
     try {
       await register(email, fullName, password)
-      await login(email, password)
-      navigate('/admin')
+      setRegistered(true)
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (registered) {
+    return (
+      <div className="max-w-sm mx-auto px-4 py-16 text-center">
+        <div className="text-5xl mb-4">📧</div>
+        <h1 className="text-2xl font-bold mb-3">Check your email</h1>
+        <p className="text-gray-600 mb-6">
+          We've sent a verification link to <span className="font-medium">{email}</span>. Please
+          click the link to verify your account before logging in.
+        </p>
+        <Link to="/login" className="text-brand font-medium hover:underline">
+          Go to login
+        </Link>
+      </div>
+    )
   }
 
   return (

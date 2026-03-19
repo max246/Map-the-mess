@@ -12,7 +12,8 @@ import type {
   UserCreate,
   UserLogin,
   UserRead,
-  UserUpdateType
+  UserUpdateType,
+  VerifyEmailApiAuthVerifyGetParams
 } from '../../model';
 
 import { customInstance } from '../../client';
@@ -42,6 +43,33 @@ const registerApiAuthRegisterPost = (
       {url: `/api/auth/register`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: userCreate
+    },
+      );
+    }
+  /**
+ * Verify a user's email address using the token from the verification email.
+ * @summary Verify Email
+ */
+const verifyEmailApiAuthVerifyGet = (
+    params: VerifyEmailApiAuthVerifyGetParams,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/auth/verify`, method: 'GET',
+        params
+    },
+      );
+    }
+  /**
+ * Resend the verification email. Uses ForgotPassword schema (just an email field).
+ * @summary Resend Verification
+ */
+const resendVerificationApiAuthResendVerificationPost = (
+    forgotPassword: ForgotPassword,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/auth/resend-verification`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: forgotPassword
     },
       );
     }
@@ -111,9 +139,11 @@ const resetPasswordApiAuthResetPasswordPost = (
     },
       );
     }
-  return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+  return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
 export type ListUsersApiAuthUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listUsersApiAuthUsersGet']>>>
 export type RegisterApiAuthRegisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['registerApiAuthRegisterPost']>>>
+export type VerifyEmailApiAuthVerifyGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['verifyEmailApiAuthVerifyGet']>>>
+export type ResendVerificationApiAuthResendVerificationPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resendVerificationApiAuthResendVerificationPost']>>>
 export type LoginApiAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginApiAuthLoginPost']>>>
 export type UpdateUserTypeApiAuthUsersUserIdTypePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['updateUserTypeApiAuthUsersUserIdTypePatch']>>>
 export type DeleteUserApiAuthUsersUserIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deleteUserApiAuthUsersUserIdDelete']>>>
