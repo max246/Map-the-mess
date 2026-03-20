@@ -5,17 +5,62 @@ import VolunteerDashboard from '../VolunteerDashboard'
 
 /* ── mock data ─────────────────────────────────────────── */
 const FAVOURITES = [
-  { id: 1, description: 'Bottles on path', status: 'reported', latitude: 51.5, longitude: -0.1, created_at: '2026-01-01T00:00:00Z', what3words: 'fill.count.soap', images: [{ id: 10, image_type: 'report', path: 'img/10.jpg' }] },
-  { id: 2, description: 'Wrappers in alley', status: 'cleaned', latitude: 52.0, longitude: -1.0, created_at: '2026-01-05T00:00:00Z', what3words: '', images: [] },
+  {
+    id: 1,
+    description: 'Bottles on path',
+    status: 'reported',
+    latitude: 51.5,
+    longitude: -0.1,
+    created_at: '2026-01-01T00:00:00Z',
+    what3words: 'fill.count.soap',
+    images: [{ id: 10, image_type: 'report', path: 'img/10.jpg' }],
+  },
+  {
+    id: 2,
+    description: 'Wrappers in alley',
+    status: 'cleaned',
+    latitude: 52.0,
+    longitude: -1.0,
+    created_at: '2026-01-05T00:00:00Z',
+    what3words: '',
+    images: [],
+  },
 ]
 
 const UNRESOLVED = [
-  { id: 3, description: 'Cans near bus stop', status: 'reported', latitude: 53.0, longitude: -2.0, created_at: '2026-01-10T00:00:00Z', what3words: '', images: [] },
-  { id: 4, description: 'Litter under bridge', status: 'reported', latitude: 54.0, longitude: -1.5, created_at: '2026-01-12T00:00:00Z', what3words: 'word.one.two', images: [] },
+  {
+    id: 3,
+    description: 'Cans near bus stop',
+    status: 'reported',
+    latitude: 53.0,
+    longitude: -2.0,
+    created_at: '2026-01-10T00:00:00Z',
+    what3words: '',
+    images: [],
+  },
+  {
+    id: 4,
+    description: 'Litter under bridge',
+    status: 'reported',
+    latitude: 54.0,
+    longitude: -1.5,
+    created_at: '2026-01-12T00:00:00Z',
+    what3words: 'word.one.two',
+    images: [],
+  },
 ]
 
 const RESOLVED = [
-  { id: 5, description: 'Park cleaned up', status: 'cleaned', latitude: 51.0, longitude: -0.5, created_at: '2026-01-02T00:00:00Z', what3words: '', images: [] },
+  {
+    id: 5,
+    description: 'Park cleaned up',
+    status: 'cleaned',
+    latitude: 51.0,
+    longitude: -0.5,
+    created_at: '2026-01-02T00:00:00Z',
+    what3words: '',
+    images: [],
+  },
 ]
 
 /* ── mocks ────────────────────────────────────────────── */
@@ -33,8 +78,10 @@ jest.mock('../../api/endpoints/reports/reports', () => ({
 jest.mock('../../api/endpoints/volunteers/volunteers', () => ({
   getVolunteers: () => ({
     listFavouritesApiVolunteersFavouritesGet: (...args: unknown[]) => mockListFavourites(...args),
-    addFavouriteApiVolunteersFavouritesReportIdPost: (...args: unknown[]) => mockAddFavourite(...args),
-    removeFavouriteApiVolunteersFavouritesReportIdDelete: (...args: unknown[]) => mockRemoveFavourite(...args),
+    addFavouriteApiVolunteersFavouritesReportIdPost: (...args: unknown[]) =>
+      mockAddFavourite(...args),
+    removeFavouriteApiVolunteersFavouritesReportIdDelete: (...args: unknown[]) =>
+      mockRemoveFavourite(...args),
   }),
 }))
 
@@ -53,7 +100,7 @@ function renderDashboard() {
   return render(
     <MemoryRouter>
       <VolunteerDashboard />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -155,7 +202,9 @@ describe('VolunteerDashboard', () => {
   it('links reports to detail page', async () => {
     renderDashboard()
     await screen.findByText('Bottles on path')
-    const links = screen.getAllByRole('link').filter((a) => a.getAttribute('href')?.startsWith('/report/'))
+    const links = screen
+      .getAllByRole('link')
+      .filter((a) => a.getAttribute('href')?.startsWith('/report/'))
     expect(links.some((a) => a.getAttribute('href') === '/report/1')).toBe(true)
     expect(links.some((a) => a.getAttribute('href') === '/report/2')).toBe(true)
   })

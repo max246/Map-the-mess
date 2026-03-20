@@ -6,7 +6,7 @@ function renderDisclaimer() {
   return render(
     <MemoryRouter>
       <Disclaimer />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -37,7 +37,9 @@ describe('Disclaimer', () => {
   it('covers personal safety and no liability for injury', () => {
     renderDisclaimer()
     expect(screen.getByText('Personal Safety')).toBeInTheDocument()
-    expect(screen.getByText(/Volunteering to pick up litter is done entirely at your own risk/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Volunteering to pick up litter is done entirely at your own risk/)
+    ).toBeInTheDocument()
   })
 
   it('covers private land and permission', () => {

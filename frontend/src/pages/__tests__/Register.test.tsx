@@ -13,7 +13,7 @@ function renderRegister() {
   return render(
     <MemoryRouter>
       <Register />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 

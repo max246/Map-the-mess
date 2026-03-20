@@ -6,7 +6,7 @@ function renderPrivacyPolicy() {
   return render(
     <MemoryRouter>
       <PrivacyPolicy />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 

@@ -14,7 +14,7 @@ function renderResetPassword(token?: string) {
   return render(
     <MemoryRouter initialEntries={[`/reset-password${searchParams}`]}>
       <ResetPassword />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 

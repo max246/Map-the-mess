@@ -16,7 +16,7 @@ function renderReportLitter() {
   return render(
     <MemoryRouter>
       <ReportLitter />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -29,7 +29,9 @@ describe('ReportLitter', () => {
   it('shows the conditions checkbox', () => {
     renderReportLitter()
     expect(
-      screen.getByText(/I confirm that I am reporting litter suitable for volunteer litter pickers/i),
+      screen.getByText(
+        /I confirm that I am reporting litter suitable for volunteer litter pickers/i
+      )
     ).toBeInTheDocument()
   })
 

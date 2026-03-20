@@ -5,9 +5,27 @@ import UserManagement from '../UserManagement'
 
 /* ── mock data ─────────────────────────────────────────── */
 const USERS = [
-  { id: 1, full_name: 'Alice Admin', email: 'alice@example.com', user_type: 'admin', created_at: '2025-06-01T00:00:00Z' },
-  { id: 2, full_name: 'Bob Volunteer', email: 'bob@example.com', user_type: 'volunteer', created_at: '2025-09-15T00:00:00Z' },
-  { id: 3, full_name: 'Charlie Mod', email: 'charlie@example.com', user_type: 'moderator', created_at: '2026-01-20T00:00:00Z' },
+  {
+    id: 1,
+    full_name: 'Alice Admin',
+    email: 'alice@example.com',
+    user_type: 'admin',
+    created_at: '2025-06-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    full_name: 'Bob Volunteer',
+    email: 'bob@example.com',
+    user_type: 'volunteer',
+    created_at: '2025-09-15T00:00:00Z',
+  },
+  {
+    id: 3,
+    full_name: 'Charlie Mod',
+    email: 'charlie@example.com',
+    user_type: 'moderator',
+    created_at: '2026-01-20T00:00:00Z',
+  },
 ]
 
 /* ── mocks ────────────────────────────────────────────── */
@@ -33,7 +51,7 @@ function renderUserManagement() {
   return render(
     <MemoryRouter>
       <UserManagement />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -144,7 +162,12 @@ describe('UserManagement', () => {
     const firstSelect = screen.getAllByRole('combobox')[0]
     const options = within(firstSelect).getAllByRole('option')
     expect(options).toHaveLength(4)
-    expect(options.map((o) => o.textContent)).toEqual(['Superuser', 'Admin', 'Moderator', 'Volunteer'])
+    expect(options.map((o) => o.textContent)).toEqual([
+      'Superuser',
+      'Admin',
+      'Moderator',
+      'Volunteer',
+    ])
   })
 
   it('calls API when changing role', async () => {
@@ -159,7 +182,9 @@ describe('UserManagement', () => {
     expect(mockPatch).toHaveBeenCalledWith(
       '/api/auth/users/2/type',
       { user_type: 'moderator' },
-      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer test-token' }) }),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      })
     )
   })
 
@@ -194,10 +219,14 @@ describe('UserManagement', () => {
     const deleteButtons = screen.getAllByRole('button', { name: /delete/i })
     await user.click(deleteButtons[1])
 
-    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete user bob@example.com?')
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Are you sure you want to delete user bob@example.com?'
+    )
     expect(mockDeleteApi).toHaveBeenCalledWith(
       '/api/auth/users/2',
-      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer test-token' }) }),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      })
     )
   })
 

@@ -18,7 +18,7 @@ function renderLogin() {
   return render(
     <MemoryRouter>
       <Login />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -102,8 +102,6 @@ describe('Login', () => {
     await user.type(screen.getByPlaceholderText('Enter your password'), 'password123')
     await user.click(screen.getByRole('button', { name: /log in/i }))
 
-    expect(
-      await screen.findByText(/verify your email before logging in/i),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/verify your email before logging in/i)).toBeInTheDocument()
   })
 })

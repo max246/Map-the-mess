@@ -4,9 +4,36 @@ import { MemoryRouter } from 'react-router-dom'
 
 /* ── mock data ─────────────────────────────────────────── */
 const REPORTS = [
-  { id: 1, description: 'Bottles on path', status: 'reported', latitude: 51.5, longitude: -0.1, created_at: '2026-01-01', what3words: 'fill.count.soap', images: [] },
-  { id: 2, description: 'Bags in park', status: 'cleaned', latitude: 52.0, longitude: -1.0, created_at: '2026-01-02', what3words: '', images: [] },
-  { id: 3, description: 'Cans near bus stop', status: 'reported', latitude: 53.0, longitude: -2.0, created_at: '2026-01-03', what3words: '', images: [] },
+  {
+    id: 1,
+    description: 'Bottles on path',
+    status: 'reported',
+    latitude: 51.5,
+    longitude: -0.1,
+    created_at: '2026-01-01',
+    what3words: 'fill.count.soap',
+    images: [],
+  },
+  {
+    id: 2,
+    description: 'Bags in park',
+    status: 'cleaned',
+    latitude: 52.0,
+    longitude: -1.0,
+    created_at: '2026-01-02',
+    what3words: '',
+    images: [],
+  },
+  {
+    id: 3,
+    description: 'Cans near bus stop',
+    status: 'reported',
+    latitude: 53.0,
+    longitude: -2.0,
+    created_at: '2026-01-03',
+    what3words: '',
+    images: [],
+  },
 ]
 
 /* ── mocks ────────────────────────────────────────────── */
@@ -47,14 +74,25 @@ jest.mock('react-leaflet', () => ({
     <div data-testid="map-container">{children}</div>
   ),
   TileLayer: () => <div data-testid="tile-layer" />,
-  Marker: ({ children, eventHandlers, position }: { children: React.ReactNode; eventHandlers?: { click?: () => void }; position: [number, number] }) => (
-    <div data-testid="marker" data-lat={position[0]} data-lng={position[1]} onClick={eventHandlers?.click}>
+  Marker: ({
+    children,
+    eventHandlers,
+    position,
+  }: {
+    children: React.ReactNode
+    eventHandlers?: { click?: () => void }
+    position: [number, number]
+  }) => (
+    <div
+      data-testid="marker"
+      data-lat={position[0]}
+      data-lng={position[1]}
+      onClick={eventHandlers?.click}
+    >
       {children}
     </div>
   ),
-  Popup: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="popup">{children}</div>
-  ),
+  Popup: ({ children }: { children: React.ReactNode }) => <div data-testid="popup">{children}</div>,
   useMap: () => ({
     flyTo: mockFlyTo,
     getZoom: mockGetZoom,
@@ -78,7 +116,7 @@ function renderMapView() {
   return render(
     <MemoryRouter>
       <MapView />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 

@@ -13,7 +13,7 @@ function renderForgotPassword() {
   return render(
     <MemoryRouter>
       <ForgotPassword />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 

@@ -19,7 +19,7 @@ function renderVerifyEmail(token?: string) {
   return render(
     <MemoryRouter initialEntries={[`/verify-email${searchParams}`]}>
       <VerifyEmail />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -72,12 +72,8 @@ describe('VerifyEmail', () => {
     })
     renderVerifyEmail('bad-token')
 
-    expect(
-      await screen.findByText(/enter your email to resend/i),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /resend verification email/i }),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/enter your email to resend/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /resend verification email/i })).toBeInTheDocument()
   })
 
   it('resends verification email', async () => {

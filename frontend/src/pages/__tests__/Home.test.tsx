@@ -22,7 +22,7 @@ function renderHome() {
   return render(
     <MemoryRouter>
       <Home />
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -80,7 +80,12 @@ describe('Home', () => {
 
   it('shows recent reports when data is loaded', async () => {
     mockListReports.mockResolvedValue([
-      { id: 1, description: 'Broken bottles near park', status: 'reported', created_at: '2026-01-01' },
+      {
+        id: 1,
+        description: 'Broken bottles near park',
+        status: 'reported',
+        created_at: '2026-01-01',
+      },
     ])
     mockVolunteerCount.mockResolvedValue({ count: 0 })
     renderHome()
@@ -107,7 +112,13 @@ describe('Home', () => {
 
   it('shows what3words address when available', async () => {
     mockListReports.mockResolvedValue([
-      { id: 1, description: 'Some litter', status: 'reported', created_at: '2026-01-01', what3words: 'filled.count.soap' },
+      {
+        id: 1,
+        description: 'Some litter',
+        status: 'reported',
+        created_at: '2026-01-01',
+        what3words: 'filled.count.soap',
+      },
     ])
     mockVolunteerCount.mockResolvedValue({ count: 0 })
     renderHome()

@@ -11,7 +11,9 @@ describe('Contact', () => {
   })
 
   it('shows the description text', () => {
-    expect(screen.getByText(/have questions, feedback, or want to get involved/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/have questions, feedback, or want to get involved/i)
+    ).toBeInTheDocument()
   })
 
   it('displays the email address', () => {

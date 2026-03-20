@@ -90,7 +90,7 @@ function renderReportDetail(reportId: string = '42') {
       <Routes>
         <Route path="/report/:id" element={<ReportDetail />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -176,7 +176,7 @@ describe('ReportDetail', () => {
     const coordLink = await screen.findByText('51.50735, -0.12776')
     expect(coordLink.closest('a')).toHaveAttribute(
       'href',
-      'https://www.google.com/maps/search/?api=1&query=51.50735,-0.12776',
+      'https://www.google.com/maps/search/?api=1&query=51.50735,-0.12776'
     )
   })
 
@@ -197,10 +197,7 @@ describe('ReportDetail', () => {
   it('displays what3words address with link', async () => {
     renderReportDetail()
     const w3wLink = await screen.findByText('/// filled.count.soap')
-    expect(w3wLink.closest('a')).toHaveAttribute(
-      'href',
-      'https://what3words.com/filled.count.soap',
-    )
+    expect(w3wLink.closest('a')).toHaveAttribute('href', 'https://what3words.com/filled.count.soap')
   })
 
   it('does not show what3words when not provided', async () => {
