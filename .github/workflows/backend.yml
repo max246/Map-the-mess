@@ -3,9 +3,9 @@ name: Backend CI
 on:
   push:
     branches: [main, develop]
-    paths: ['backend/**']
+    paths: ['backend/**', 'db/**']
   pull_request:
-    paths: ['backend/**']
+    paths: ['backend/**', 'db/**']
 
 jobs:
   lint-and-typecheck:
