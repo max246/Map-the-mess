@@ -131,7 +131,9 @@ def alembic_cfg(migration_db):
 # Per-migration assertions
 # ---------------------------------------------------------------------------
 
-MIGRATION_CHECKS: dict[str, callable] = {}
+from typing import Callable
+
+MIGRATION_CHECKS: dict[str, Callable] = {}
 
 
 def _check(revision: str):
@@ -271,7 +273,7 @@ class TestAllMigrationsHaveTests:
     to the registered checks, so we remove the skipif marker.
     """
 
-    pytestmark = []  # override module-level skipif
+    pytestmark: list[pytest.MarkDecorator] = []  # override module-level skipif
 
     def test_no_untested_migrations(self):
         on_disk = _migration_revisions_on_disk()

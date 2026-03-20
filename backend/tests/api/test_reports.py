@@ -23,14 +23,14 @@ def _create_report(db, **overrides) -> Report:
     return report
 
 
-def _dummy_image() -> tuple[str, io.BytesIO, str]:
-    """Return a minimal valid JPEG upload tuple."""
+def _make_image_buf() -> io.BytesIO:
+    """Return a minimal valid JPEG as a BytesIO."""
     from PIL import Image
 
     buf = io.BytesIO()
     Image.new("RGB", (10, 10), "red").save(buf, format="JPEG")
     buf.seek(0)
-    return ("image", ("test.jpg", buf, "image/jpeg"))
+    return buf
 
 
 class TestListReports:
@@ -88,15 +88,10 @@ class TestCreateReport:
         assert res.json()["created_by_user_id"] == volunteer.id
 
     def test_create_with_image(self, client, db):
-        buf = io.BytesIO()
-        from PIL import Image as PILImage
-
-        PILImage.new("RGB", (10, 10), "red").save(buf, format="JPEG")
-        buf.seek(0)
         res = client.post(
             "/api/reports/",
             data={"latitude": UK_LAT, "longitude": UK_LON, "description": "with img"},
-            files={"image": ("test.jpg", buf, "image/jpeg")},
+            files={"image": ("test.jpg", _make_image_buf(), "image/jpeg")},
         )
         assert res.status_code == 201
         assert len(res.json()["images"]) == 1
@@ -201,27 +196,25 @@ class TestAddImage:
         res = client.post(
             f"/api/reports/{report.id}/images",
             data={"image_type": "report"},
-            files=[("file", ("photo.jpg", _dummy_image()[1][1], "image/jpeg"))],
+            files=[("file", ("photo.jpg", _make_image_buf(), "image/jpeg"))],
         )
         assert res.status_code == 201
         assert res.json()["image_type"] == "report"
 
     def test_add_image_to_nonexistent_report(self, client, db):
-        buf = _dummy_image()[1][1]
         res = client.post(
             "/api/reports/9999/images",
             data={"image_type": "report"},
-            files=[("file", ("photo.jpg", buf, "image/jpeg"))],
+            files=[("file", ("photo.jpg", _make_image_buf(), "image/jpeg"))],
         )
         assert res.status_code == 404
 
     def test_add_image_invalid_type(self, client, db):
         report = _create_report(db)
-        buf = _dummy_image()[1][1]
         res = client.post(
             f"/api/reports/{report.id}/images",
             data={"image_type": "invalid"},
-            files=[("file", ("photo.jpg", buf, "image/jpeg"))],
+            files=[("file", ("photo.jpg", _make_image_buf(), "image/jpeg"))],
         )
         assert res.status_code == 400
 
