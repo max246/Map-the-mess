@@ -63,7 +63,7 @@ function App() {
           </div>
           {version && (
             <a
-              href={`https://github.com/max246/Map-the-mess/releases/tag/v${version}`}
+              href={`https://github.com/max246/Map-the-mess/releases/tag/${version}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:underline"
