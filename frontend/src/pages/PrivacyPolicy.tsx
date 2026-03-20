@@ -150,7 +150,7 @@ export default function PrivacyPolicy() {
           </ul>
           <p className="mt-3">
             To exercise any of these rights, please contact us using the details on our{' '}
-            <Link to="/" className="text-brand hover:underline">
+            <Link to="/contact" className="text-brand hover:underline">
               contact page
             </Link>
             . We will respond within 30 days.
