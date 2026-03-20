@@ -7,6 +7,7 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [registered, setRegistered] = useState(false)
@@ -113,9 +114,30 @@ export default function Register() {
           />
         </label>
 
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-brand"
+          />
+          <span className="text-sm text-gray-600">
+            I agree to the{' '}
+            <Link to="/disclaimer" className="text-brand hover:underline font-medium">
+              disclaimer and conditions of use
+            </Link>{' '}
+            and{' '}
+            <Link to="/privacy" className="text-brand hover:underline font-medium">
+              privacy policy
+            </Link>
+            , including that litter collection is done at my own risk and I must obtain landowner
+            permission before entering private land.
+          </span>
+        </label>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !acceptedTerms}
           className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
         >
           {loading ? 'Creating account...' : 'Register'}

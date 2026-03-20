@@ -18,6 +18,7 @@ export default function ReportLitter() {
   const [submittedReportId, setSubmittedReportId] = useState<number | null>(null)
   const [words, setWords] = useState('')
   const [wordsInput, setWordsInput] = useState('')
+  const [acceptedConditions, setAcceptedConditions] = useState(false)
   const [suggestions, setSuggestions] = useState<W3WSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const suggestTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -146,6 +147,7 @@ export default function ReportLitter() {
               setLocation(null)
               setWords('')
               setWordsInput('')
+              setAcceptedConditions(false)
             }}
             className="text-brand underline text-sm"
           >
@@ -303,9 +305,28 @@ export default function ReportLitter() {
           )}
         </div>
 
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={acceptedConditions}
+              onChange={(e) => setAcceptedConditions(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-brand"
+            />
+            <span className="text-sm text-gray-700">
+              I confirm that I am reporting litter suitable for volunteer litter pickers, not
+              fly-tipping or large-scale dumping. I have read and agree to the{' '}
+              <Link to="/disclaimer" className="text-brand hover:underline font-medium">
+                conditions and disclaimer
+              </Link>
+              .
+            </span>
+          </label>
+        </div>
+
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !acceptedConditions}
           className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
         >
           {submitting ? 'Submitting...' : 'Submit Report'}
