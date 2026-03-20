@@ -54,17 +54,23 @@ function App() {
         </main>
         <footer className="text-center text-xs text-gray-400 py-3 flex flex-col items-center gap-1">
           <div className="flex gap-3">
-            <Link to="/disclaimer" className="hover:underline">Disclaimer</Link>
-            <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+            <Link to="/disclaimer" className="hover:underline">
+              Disclaimer
+            </Link>
+            <Link to="/privacy" className="hover:underline">
+              Privacy Policy
+            </Link>
           </div>
-          {version && <a
+          {version && (
+            <a
               href={`https://github.com/max246/Map-the-mess/releases/tag/v${version}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:underline"
-          >
-            v{version}
-          </a>}
+            >
+              v{version}
+            </a>
+          )}
         </footer>
       </div>
     </AuthProvider>

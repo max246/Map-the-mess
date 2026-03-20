@@ -28,18 +28,18 @@ export default function PrivacyPolicy() {
 
           <h3 className="font-semibold text-gray-800 mt-4 mb-2">Location Data</h3>
           <p>
-            When you submit a report, we collect the GPS coordinates of the litter location. This may
-            come from your device's location services or be manually placed on the map. We also store
-            an optional what3words address if you provide one. We do not continuously track your
-            location — it is only captured at the point of report submission.
+            When you submit a report, we collect the GPS coordinates of the litter location. This
+            may come from your device's location services or be manually placed on the map. We also
+            store an optional what3words address if you provide one. We do not continuously track
+            your location — it is only captured at the point of report submission.
           </p>
 
           <h3 className="font-semibold text-gray-800 mt-4 mb-2">Photos</h3>
           <p>
             You may upload photos when submitting a report. Photos can contain embedded metadata
             (EXIF data) such as the device model, date taken, and GPS coordinates. Uploaded photos
-            may also unintentionally capture identifiable individuals, vehicles, or private property.
-            Please be mindful of what is visible in your photos before uploading.
+            may also unintentionally capture identifiable individuals, vehicles, or private
+            property. Please be mindful of what is visible in your photos before uploading.
           </p>
 
           <h3 className="font-semibold text-gray-800 mt-4 mb-2">Technical Data</h3>
@@ -79,9 +79,7 @@ export default function PrivacyPolicy() {
             <li>Any photos you upload</li>
             <li>The what3words address (if provided)</li>
           </ul>
-          <p className="mt-3">
-            Your email address and password are never publicly displayed.
-          </p>
+          <p className="mt-3">Your email address and password are never publicly displayed.</p>
         </section>
 
         <section>
@@ -89,8 +87,8 @@ export default function PrivacyPolicy() {
           <p>We use the following third-party services that may receive some of your data:</p>
           <ul className="list-disc ml-6 mt-2 space-y-1">
             <li>
-              <strong>What3Words</strong> — when you search for or enter a what3words address,
-              your query is sent to the What3Words API. See their{' '}
+              <strong>What3Words</strong> — when you search for or enter a what3words address, your
+              query is sent to the What3Words API. See their{' '}
               <a
                 href="https://what3words.com/privacy"
                 target="_blank"
@@ -102,8 +100,8 @@ export default function PrivacyPolicy() {
               .
             </li>
             <li>
-              <strong>OpenStreetMap</strong> — map tiles are loaded from OpenStreetMap servers, which
-              may log your IP address. See their{' '}
+              <strong>OpenStreetMap</strong> — map tiles are loaded from OpenStreetMap servers,
+              which may log your IP address. See their{' '}
               <a
                 href="https://wiki.osmfoundation.org/wiki/Privacy_Policy"
                 target="_blank"
@@ -133,7 +131,8 @@ export default function PrivacyPolicy() {
             We retain your account data for as long as your account is active. Litter reports
             (including photos, descriptions, and locations) are retained to maintain a historical
             record of community clean-up efforts. If you delete your account, your personal account
-            information will be removed, but submitted reports may be retained in an anonymised form.
+            information will be removed, but submitted reports may be retained in an anonymised
+            form.
           </p>
         </section>
 
@@ -170,8 +169,8 @@ export default function PrivacyPolicy() {
           <h2 className="text-xl font-semibold text-gray-900 mb-3">Children</h2>
           <p>
             This platform is not intended for use by anyone under the age of 16. We do not knowingly
-            collect personal data from children under 16. If you believe a child has provided us with
-            their data, please contact us and we will delete it.
+            collect personal data from children under 16. If you believe a child has provided us
+            with their data, please contact us and we will delete it.
           </p>
         </section>
 
@@ -179,11 +178,11 @@ export default function PrivacyPolicy() {
           <h2 className="text-xl font-semibold text-gray-900 mb-3">Use at Your Own Risk</h2>
           <p>
             This platform is provided on an "as is" and "as available" basis. While we take
-            reasonable steps to keep the platform running and your data secure, we make no warranties
-            or guarantees of any kind, whether express or implied. Your use of Map the Mess,
-            including any actions you take based on information found on the platform, is entirely at
-            your own risk. We accept no liability for any loss, damage, injury, or legal consequence
-            arising from your use of the platform. Please also refer to our{' '}
+            reasonable steps to keep the platform running and your data secure, we make no
+            warranties or guarantees of any kind, whether express or implied. Your use of Map the
+            Mess, including any actions you take based on information found on the platform, is
+            entirely at your own risk. We accept no liability for any loss, damage, injury, or legal
+            consequence arising from your use of the platform. Please also refer to our{' '}
             <Link to="/disclaimer" className="text-brand hover:underline font-medium">
               disclaimer and conditions of use
             </Link>{' '}
