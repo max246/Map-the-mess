@@ -42,9 +42,9 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     environment:
-      VIRTUAL_HOST: mapthemess.uk
+      VIRTUAL_HOST: mapthemess.uk,www.mapthemess.uk
       VIRTUAL_PORT: "80"
-      LETSENCRYPT_HOST: mapthemess.uk
+      LETSENCRYPT_HOST: mapthemess.uk,www.mapthemess.uk
     depends_on:
       - backend
 
