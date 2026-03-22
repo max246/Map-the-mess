@@ -29,6 +29,7 @@ class ReportRead(BaseModel):
     longitude: float
     description: str
     what3words: Optional[str] = None
+    address: Optional[str] = None
     created_by_user_id: Optional[int] = None
     resolved_by_user_id: Optional[int] = None
     resolved_at: Optional[datetime] = None
