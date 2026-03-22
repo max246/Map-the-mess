@@ -12,6 +12,7 @@ const REPORT_WITH_IMAGES = {
   longitude: -0.12776,
   created_at: '2026-01-15T10:30:00Z',
   what3words: 'filled.count.soap',
+  address: '123 Test Street, London',
   resolved_at: null,
   images: [
     { id: 101, image_type: 'report', path: 'images/101.jpg' },
@@ -50,10 +51,6 @@ jest.mock('../../api/client', () => ({
   },
   imageUrl: (img: { path: string }) => `/api/${img.path}`,
   thumbnailUrl: (img: { path: string }) => `/api/${img.path}?thumb`,
-}))
-
-jest.mock('../../api/geocode', () => ({
-  reverseGeocode: jest.fn().mockResolvedValue({ displayName: '123 Test Street, London' }),
 }))
 
 let mockAuth = { token: null as string | null, canManageUsers: false, isLoggedIn: false }
