@@ -31,7 +31,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="h-dvh flex flex-col overflow-hidden">
         <Navbar />
         <main className="flex-1 overflow-auto">
           <Routes>
