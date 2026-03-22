@@ -15,15 +15,25 @@ export default function Contact() {
       </a>
 
       <div className="mt-12 text-gray-500">
-        <p className="mb-2">You can also find us on GitHub:</p>
-        <a
-          href="https://github.com/max246/Map-the-mess"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-brand hover:underline font-medium"
-        >
-          github.com/max246/Map-the-mess
-        </a>
+        <p className="mb-2">You can also find us on:</p>
+        <div className="flex flex-col gap-3 items-center">
+          <a
+            href="https://github.com/max246/Map-the-mess"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand hover:underline font-medium"
+          >
+            github.com/max246/Map-the-mess
+          </a>
+          <a
+            href="https://www.facebook.com/profile.php?id=61577665256083"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand hover:underline font-medium"
+          >
+            Facebook
+          </a>
+        </div>
       </div>
     </div>
   )
