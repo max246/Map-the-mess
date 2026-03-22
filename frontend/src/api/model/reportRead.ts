@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Map the Mess API
  * Backend for the community litter reporting platform
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: dev
  */
 import type { ReportImageRead } from './reportImageRead';
 
@@ -13,6 +13,7 @@ export interface ReportRead {
   longitude: number;
   description: string;
   what3words?: string | null;
+  address?: string | null;
   created_by_user_id?: number | null;
   resolved_by_user_id?: number | null;
   resolved_at?: string | null;

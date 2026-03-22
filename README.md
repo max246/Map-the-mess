@@ -209,6 +209,11 @@ To clean up old images on EC2:
 docker system prune -a -f
 ```
 
+## Connect With Us
+
+- [Facebook](https://www.facebook.com/profile.php?id=61577665256083)
+- [GitHub](https://github.com/max246/Map-the-mess)
+
 ## Contributing
 
 1. Fork the repo

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Popup } from 'react-leaflet'
-import { reverseGeocode } from '../api/geocode'
 import { thumbnailUrl } from '../api/client'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
@@ -35,14 +34,7 @@ interface ReportPopupProps {
 export default function ReportPopup({ report }: ReportPopupProps) {
   const navigate = useNavigate()
   const { isLoggedIn } = useAuth()
-  const [address, setAddress] = useState<{ displayName: string } | null>(null)
   const [isFavourite, setIsFavourite] = useState(false)
-
-  useEffect(() => {
-    reverseGeocode(report.latitude, report.longitude)
-      .then(setAddress)
-      .catch(() => {})
-  }, [report.latitude, report.longitude])
 
   useEffect(() => {
     if (!isLoggedIn) return
@@ -108,10 +100,8 @@ export default function ReportPopup({ report }: ReportPopupProps) {
         </strong>
 
         {/* Address */}
-        {address && (
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#6b7280' }}>
-            {address.displayName}
-          </p>
+        {report.address && (
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#6b7280' }}>{report.address}</p>
         )}
 
         {/* what3words */}

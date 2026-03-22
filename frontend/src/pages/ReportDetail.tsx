@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'r
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import api, { imageUrl, thumbnailUrl } from '../api/client'
-import { reverseGeocode } from '../api/geocode'
 import { useAuth } from '../context/AuthContext'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
@@ -21,7 +20,6 @@ export default function ReportDetail() {
   const navigate = useNavigate()
   const { token, canManageUsers, isLoggedIn } = useAuth()
   const [report, setReport] = useState<ReportRead | null>(null)
-  const [address, setAddress] = useState<{ displayName: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activePhoto, setActivePhoto] = useState(0)
 
@@ -46,9 +44,7 @@ export default function ReportDetail() {
       .get(`/api/reports/${id}`)
       .then((res) => {
         setReport(res.data)
-        return reverseGeocode(res.data.latitude, res.data.longitude)
       })
-      .then(setAddress)
       .catch(() => setError('Report not found'))
   }
 
@@ -238,19 +234,51 @@ export default function ReportDetail() {
         <h1 className="text-2xl font-bold">
           {report.status === 'cleaned' ? '✅' : '🔴'} Report #{report.id}
         </h1>
-        {isLoggedIn && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={toggleFavourite}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
-              isFavourite
-                ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
-                : 'bg-white border-gray-300 text-gray-500 hover:border-yellow-400 hover:text-yellow-600'
-            }`}
+            onClick={() => {
+              const shareUrl = encodeURIComponent(window.location.href)
+              window.open(
+                `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+                '_blank',
+                'noopener,noreferrer,width=600,height=400'
+              )
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition border bg-white border-gray-300 text-gray-500 hover:border-brand hover:text-brand"
           >
-            <span className="text-lg">{isFavourite ? '★' : '☆'}</span>
-            {isFavourite ? 'Starred' : 'Star'}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Share
           </button>
-        )}
+          {isLoggedIn && (
+            <button
+              onClick={toggleFavourite}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+                isFavourite
+                  ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
+                  : 'bg-white border-gray-300 text-gray-500 hover:border-yellow-400 hover:text-yellow-600'
+              }`}
+            >
+              <span className="text-lg">{isFavourite ? '★' : '☆'}</span>
+              {isFavourite ? 'Starred' : 'Star'}
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-gray-400 mb-6">
@@ -418,10 +446,10 @@ export default function ReportDetail() {
             <p>{report.description || 'No description provided'}</p>
           </div>
 
-          {address && (
+          {report.address && (
             <div>
               <span className="text-gray-500">Location</span>
-              <p>{address.displayName}</p>
+              <p>{report.address}</p>
             </div>
           )}
 

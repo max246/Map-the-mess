@@ -12,7 +12,12 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
+import httpx
+import logging
+
 from app.config import SECRET_KEY, IMAGES_DIR
+
+logger = logging.getLogger(__name__)
 from app.database import get_db
 from app.models.report import Report, ReportStatus
 from app.models.report_image import ReportImage, ImageType
@@ -31,6 +36,30 @@ UK_LAT_MIN, UK_LAT_MAX = 49.9, 60.9
 UK_LON_MIN, UK_LON_MAX = -8.2, 1.8
 
 os.makedirs(IMAGES_DIR, exist_ok=True)
+
+
+def _reverse_geocode(lat: float, lon: float) -> str | None:
+    """Best-effort reverse geocode via Nominatim. Returns a display address or None."""
+    try:
+        resp = httpx.get(
+            "https://nominatim.openstreetmap.org/reverse",
+            params={"lat": lat, "lon": lon, "format": "json", "addressdetails": "1"},
+            headers={"User-Agent": "MapTheMess/1.0", "Accept-Language": "en"},
+            timeout=5,
+        )
+        if resp.status_code != 200:
+            return None
+        addr = resp.json().get("address", {})
+        parts = [
+            addr.get("road") or addr.get("pedestrian") or addr.get("footway") or "",
+            addr.get("city") or addr.get("town") or addr.get("village") or addr.get("hamlet") or "",
+            addr.get("postcode") or "",
+        ]
+        display = ", ".join(p for p in parts if p)
+        return display or None
+    except Exception:
+        logger.warning("Reverse geocode failed for %s, %s", lat, lon)
+        return None
 
 
 def _validate_image_type(raw: str) -> ImageType:
@@ -132,11 +161,13 @@ def create_report(
     if not (UK_LAT_MIN <= latitude <= UK_LAT_MAX and UK_LON_MIN <= longitude <= UK_LON_MAX):
         raise HTTPException(status_code=400, detail="Coordinates must be within the UK")
 
+    address = _reverse_geocode(latitude, longitude)
     report = Report(
         latitude=latitude,
         longitude=longitude,
         description=description,
         what3words=what3words,
+        address=address,
     )
     if current_user:
         report.created_by_user_id = current_user.id

@@ -3,7 +3,7 @@
   "info": {
     "title": "Map the Mess API",
     "description": "Backend for the community litter reporting platform",
-    "version": "0.1.0"
+    "version": "dev"
   },
   "paths": {
     "/api/reports/images/{filename}": {
@@ -1123,6 +1123,17 @@
               }
             ],
             "title": "What3Words"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
           },
           "created_by_user_id": {
             "anyOf": [
