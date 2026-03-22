@@ -43,17 +43,51 @@ const FILTERS: { key: Filter; label: string; auth?: boolean }[] = [
 function LocateButton() {
   const map = useMap()
   const [locating, setLocating] = useState(false)
+  const locationLayerRef = useState<L.LayerGroup>(() => L.layerGroup())[0]
+
+  useEffect(() => {
+    locationLayerRef.addTo(map)
+    return () => {
+      locationLayerRef.remove()
+    }
+  }, [map, locationLayerRef])
 
   const handleLocate = () => {
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        map.flyTo([pos.coords.latitude, pos.coords.longitude], 15)
+        const { latitude, longitude, accuracy } = pos.coords
+        locationLayerRef.clearLayers()
+        L.circle([latitude, longitude], {
+          radius: accuracy,
+          color: '#3b82f6',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.15,
+          weight: 1,
+        }).addTo(locationLayerRef)
+        const pulseIcon = L.divIcon({
+          className: '',
+          html: `<div style="position:relative;width:40px;height:40px">
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 6px rgba(59,130,246,0.5);z-index:2"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:rgba(59,130,246,0.4);border-radius:50%;animation:loc-pulse 2s ease-out infinite;z-index:1"></div>
+          </div>`,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+        })
+        L.marker([latitude, longitude], { icon: pulseIcon, interactive: false }).addTo(
+          locationLayerRef
+        )
+        map.flyTo([latitude, longitude], 18, { duration: 0.8 })
         setLocating(false)
       },
       () => {
         alert('Could not get your location. Please allow location access.')
         setLocating(false)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
       }
     )
   }
@@ -119,7 +153,7 @@ export default function MapView() {
   const visibleFilters = FILTERS.filter((f) => !f.auth || isLoggedIn)
 
   return (
-    <div className="h-[calc(100vh-64px)] relative">
+    <div className="h-full relative">
       {/* Filter bar */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex gap-1 bg-white rounded-lg shadow-lg p-1">
         {visibleFilters.map((f) => (

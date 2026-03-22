@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'r
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import api, { imageUrl, thumbnailUrl } from '../api/client'
-import { reverseGeocode } from '../api/geocode'
 import { useAuth } from '../context/AuthContext'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
@@ -21,7 +20,6 @@ export default function ReportDetail() {
   const navigate = useNavigate()
   const { token, canManageUsers, isLoggedIn } = useAuth()
   const [report, setReport] = useState<ReportRead | null>(null)
-  const [address, setAddress] = useState<{ displayName: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activePhoto, setActivePhoto] = useState(0)
 
@@ -46,9 +44,7 @@ export default function ReportDetail() {
       .get(`/api/reports/${id}`)
       .then((res) => {
         setReport(res.data)
-        return reverseGeocode(res.data.latitude, res.data.longitude)
       })
-      .then(setAddress)
       .catch(() => setError('Report not found'))
   }
 
@@ -450,10 +446,10 @@ export default function ReportDetail() {
             <p>{report.description || 'No description provided'}</p>
           </div>
 
-          {address && (
+          {report.address && (
             <div>
               <span className="text-gray-500">Location</span>
-              <p>{address.displayName}</p>
+              <p>{report.address}</p>
             </div>
           )}
 

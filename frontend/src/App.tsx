@@ -31,9 +31,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className="min-h-screen flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
         <Navbar />
-        <main className="flex-1">
+        <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/report" element={<ReportLitter />} />
@@ -52,34 +52,30 @@ function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
           </Routes>
         </main>
-        <footer className="text-center text-xs text-gray-400 py-3 flex flex-col items-center gap-1">
-          <div className="flex gap-3">
-            <Link to="/disclaimer" className="hover:underline">
-              Disclaimer
-            </Link>
-            <Link to="/privacy" className="hover:underline">
-              Privacy Policy
-            </Link>
-          </div>
-          <div className="flex gap-3 mt-1">
-            <a
-              href="https://www.facebook.com/profile.php?id=61577665256083"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-gray-300 transition-colors"
-              aria-label="Facebook"
+        <footer className="text-xs text-gray-400 py-2 px-4 flex items-center justify-center gap-3 flex-wrap">
+          <Link to="/disclaimer" className="hover:underline">
+            Disclaimer
+          </Link>
+          <Link to="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+          <a
+            href="https://www.facebook.com/profile.php?id=61577665256083"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-gray-300 transition-colors"
+            aria-label="Facebook"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="currentColor"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            </a>
-          </div>
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+            </svg>
+          </a>
           {version && (
             <a
               href={`https://github.com/max246/Map-the-mess/releases/tag/${version}`}

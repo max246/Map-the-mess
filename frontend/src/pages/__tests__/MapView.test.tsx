@@ -58,10 +58,6 @@ jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ isLoggedIn: false }),
 }))
 
-jest.mock('../../api/geocode', () => ({
-  reverseGeocode: jest.fn().mockResolvedValue(null),
-}))
-
 jest.mock('../../api/client', () => ({
   __esModule: true,
   default: { get: jest.fn() },
@@ -106,8 +102,18 @@ jest.mock('react-leaflet-cluster', () => ({
   ),
 }))
 
+const mockLayerGroup = {
+  addTo: jest.fn().mockReturnThis(),
+  remove: jest.fn(),
+  clearLayers: jest.fn(),
+}
+
 jest.mock('leaflet', () => ({
   icon: () => ({}),
+  layerGroup: () => mockLayerGroup,
+  circle: () => ({ addTo: jest.fn() }),
+  divIcon: () => ({}),
+  marker: () => ({ addTo: jest.fn() }),
 }))
 
 import MapView from '../MapView'

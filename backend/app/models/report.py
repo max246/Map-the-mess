@@ -21,6 +21,7 @@ class Report(Base):
     longitude = Column(Float, nullable=False)
     description = Column(String, default="")
     what3words = Column(String, nullable=True)
+    address = Column(String, nullable=True)
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     resolved_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     resolved_at = Column(DateTime, nullable=True)

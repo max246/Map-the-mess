@@ -208,6 +208,12 @@ def _check_is_verified(conn):
     assert "is_verified" in _column_names(conn, "users")
 
 
+# 7. e44cc152ac4d — add address to reports
+@_check("e44cc152ac4d")
+def _check_address(conn):
+    assert "address" in _column_names(conn, "reports")
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -219,6 +225,7 @@ MIGRATION_CHAIN = [
     "69e943d78e72",
     "ea2fec8170bc",
     "0445d97d2ec1",
+    "e44cc152ac4d",
 ]
 
 # ---------------------------------------------------------------------------
