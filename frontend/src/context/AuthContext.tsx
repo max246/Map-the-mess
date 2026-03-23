@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react'
 import api from '../api/client'
 
 interface User {
@@ -14,6 +14,8 @@ interface AuthContextType {
   isAdmin: boolean
   isModerator: boolean
   canManageUsers: boolean
+  sessionExpired: boolean
+  dismissSessionExpired: () => void
   login: (email: string, password: string) => Promise<unknown>
   register: (email: string, fullName: string, password: string) => Promise<unknown>
   forgotPassword: (email: string) => Promise<unknown>
@@ -32,16 +34,65 @@ function decodeToken(token: string): User | null {
   }
 }
 
+let refreshPromise: Promise<string | null> | null = null
+
+export async function tryRefreshToken(): Promise<string | null> {
+  // Deduplicate concurrent refresh attempts
+  if (refreshPromise) return refreshPromise
+
+  refreshPromise = (async () => {
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (!refreshToken) return null
+
+    try {
+      const res = await api.post('/api/auth/refresh', { refresh_token: refreshToken }, {
+        _skipAuthRetry: true,
+      } as never)
+      const { access_token, refresh_token: newRefresh } = res.data
+      localStorage.setItem('token', access_token)
+      localStorage.setItem('refresh_token', newRefresh)
+      return access_token
+    } catch {
+      // Refresh failed — tokens are invalid
+      localStorage.removeItem('token')
+      localStorage.removeItem('refresh_token')
+      return null
+    } finally {
+      refreshPromise = null
+    }
+  })()
+
+  return refreshPromise
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
+  const [sessionExpired, setSessionExpired] = useState(false)
 
   const user = useMemo(() => (token ? decodeToken(token) : null), [token])
 
+  // Called by the axios interceptor when refresh succeeds
+  const updateToken = useCallback((newToken: string) => {
+    setToken(newToken)
+  }, [])
+
+  // Called by the axios interceptor when refresh fails
+  const handleSessionExpired = useCallback(() => {
+    setToken(null)
+    setSessionExpired(true)
+  }, [])
+
+  const dismissSessionExpired = useCallback(() => {
+    setSessionExpired(false)
+  }, [])
+
   const login = async (email: string, password: string) => {
     const res = await api.post('/api/auth/login', { email, password })
-    const t = res.data.access_token
-    localStorage.setItem('token', t)
-    setToken(t)
+    const { access_token, refresh_token } = res.data
+    localStorage.setItem('token', access_token)
+    localStorage.setItem('refresh_token', refresh_token)
+    setToken(access_token)
+    setSessionExpired(false)
     return res.data
   }
 
@@ -68,14 +119,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (refreshToken) {
+      api
+        .post('/api/auth/logout', { refresh_token: refreshToken }, {
+          _skipAuthRetry: true,
+        } as never)
+        .catch(() => {})
+    }
     localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
     setToken(null)
+    setSessionExpired(false)
   }
 
   const isLoggedIn = !!token && !!user
   const isAdmin = user?.userType === 'admin' || user?.userType === 'superuser'
   const isModerator = user?.userType === 'moderator'
   const canManageUsers = isAdmin || isModerator
+
+  // Expose updateToken and handleSessionExpired to the interceptor
+  authBridge.updateToken = updateToken
+  authBridge.handleSessionExpired = handleSessionExpired
 
   return (
     <AuthContext.Provider
@@ -86,6 +151,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isModerator,
         canManageUsers,
+        sessionExpired,
+        dismissSessionExpired,
         login,
         register,
         forgotPassword,
@@ -96,6 +163,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
+}
+
+// Bridge to let the axios interceptor communicate with React state
+// without circular imports
+export const authBridge = {
+  updateToken: (_token: string) => {},
+  handleSessionExpired: () => {},
 }
 
 export function useAuth() {

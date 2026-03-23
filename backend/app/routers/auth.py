@@ -1,5 +1,6 @@
 """Auth routes — user registration, login, and role management."""
 
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +13,7 @@ from app.config import SECRET_KEY, FRONTEND_URL
 from app.email import send_email
 from app.database import get_db
 from app.models.user import User, UserType
+from app.models.refresh_token import RefreshToken
 from app.schemas.user import (
     UserCreate,
     UserLogin,
@@ -19,6 +21,7 @@ from app.schemas.user import (
     UserUpdateType,
     ForgotPassword,
     ResetPassword,
+    RefreshRequest,
     Token,
 )
 
@@ -26,6 +29,7 @@ router = APIRouter()
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+REFRESH_TOKEN_EXPIRE_DAYS = 30
 RESET_TOKEN_EXPIRE_MINUTES = 15
 VERIFY_TOKEN_EXPIRE_HOURS = 48
 
@@ -38,6 +42,15 @@ def create_access_token(data: dict) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def _create_refresh_token(user_id: int, db: Session) -> str:
+    """Create an opaque refresh token and store it in the database."""
+    token = secrets.token_urlsafe(64)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    db.add(RefreshToken(token=token, user_id=user_id, expires_at=expires_at))
+    db.commit()
+    return token
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
@@ -182,8 +195,47 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             detail="Email not verified. Please check your inbox.",
         )
 
-    token = create_access_token({"sub": user.email, "type": user.user_type.value})
-    return {"access_token": token}
+    access = create_access_token({"sub": user.email, "type": user.user_type.value})
+    refresh = _create_refresh_token(user.id, db)
+    return {"access_token": access, "refresh_token": refresh}
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Exchange a valid refresh token for a new access token + refresh token (rotation)."""
+    stored = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.token == payload.refresh_token, RefreshToken.revoked.is_(False))
+        .first()
+    )
+    if not stored or stored.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+
+    user = db.query(User).filter(User.id == stored.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    # Revoke the old refresh token (rotation)
+    stored.revoked = True
+
+    access = create_access_token({"sub": user.email, "type": user.user_type.value})
+    new_refresh = _create_refresh_token(user.id, db)
+    return {"access_token": access, "refresh_token": new_refresh}
+
+
+@router.post("/logout", status_code=204)
+def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Revoke a refresh token on logout."""
+    stored = db.query(RefreshToken).filter(RefreshToken.token == payload.refresh_token).first()
+    if stored:
+        stored.revoked = True
+        db.commit()
 
 
 @router.patch("/users/{user_id}/type", response_model=UserRead)
