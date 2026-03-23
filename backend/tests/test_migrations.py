@@ -214,6 +214,14 @@ def _check_address(conn):
     assert "address" in _column_names(conn, "reports")
 
 
+# 8. 3b1048682efd — add refresh tokens table
+@_check("3b1048682efd")
+def _check_refresh_tokens(conn):
+    assert "refresh_tokens" in _table_names(conn)
+    cols = _column_names(conn, "refresh_tokens")
+    assert {"id", "token", "user_id", "expires_at", "revoked", "created_at"} <= cols
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -226,6 +234,7 @@ MIGRATION_CHAIN = [
     "ea2fec8170bc",
     "0445d97d2ec1",
     "e44cc152ac4d",
+    "3b1048682efd",
 ]
 
 # ---------------------------------------------------------------------------

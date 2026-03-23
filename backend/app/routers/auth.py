@@ -196,7 +196,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
         )
 
     access = create_access_token({"sub": user.email, "type": user.user_type.value})
-    refresh = _create_refresh_token(user.id, db)
+    refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
     return {"access_token": access, "refresh_token": refresh}
 
 
@@ -222,10 +222,10 @@ def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
         )
 
     # Revoke the old refresh token (rotation)
-    stored.revoked = True
+    stored.revoked = True  # type: ignore[assignment]
 
     access = create_access_token({"sub": user.email, "type": user.user_type.value})
-    new_refresh = _create_refresh_token(user.id, db)
+    new_refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
     return {"access_token": access, "refresh_token": new_refresh}
 
 
@@ -234,7 +234,7 @@ def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
     """Revoke a refresh token on logout."""
     stored = db.query(RefreshToken).filter(RefreshToken.token == payload.refresh_token).first()
     if stored:
-        stored.revoked = True
+        stored.revoked = True  # type: ignore[assignment]
         db.commit()
 
 
