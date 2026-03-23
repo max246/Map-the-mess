@@ -6,6 +6,7 @@ const publicLinks = [
   { to: '/', label: 'Home' },
   { to: '/map', label: 'Map' },
   { to: '/report', label: 'Report Litter' },
+  { to: '/litter-facts', label: 'Litter Facts' },
   { to: '/contact', label: 'Contact' },
 ]
 
