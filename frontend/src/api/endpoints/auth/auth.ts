@@ -7,6 +7,7 @@
  */
 import type {
   ForgotPassword,
+  RefreshRequest,
   ResetPassword,
   Token,
   UserCreate,
@@ -87,6 +88,34 @@ const loginApiAuthLoginPost = (
       );
     }
   /**
+ * Exchange a valid refresh token for a new access token + refresh token (rotation).
+ * @summary Refresh Token
+ */
+const refreshTokenApiAuthRefreshPost = (
+    refreshRequest: RefreshRequest,
+ ) => {
+      return customInstance<Token>(
+      {url: `/api/auth/refresh`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: refreshRequest
+    },
+      );
+    }
+  /**
+ * Revoke a refresh token on logout.
+ * @summary Logout
+ */
+const logoutApiAuthLogoutPost = (
+    refreshRequest: RefreshRequest,
+ ) => {
+      return customInstance<void>(
+      {url: `/api/auth/logout`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: refreshRequest
+    },
+      );
+    }
+  /**
  * @summary Update User Type
  */
 const updateUserTypeApiAuthUsersUserIdTypePatch = (
@@ -139,12 +168,14 @@ const resetPasswordApiAuthResetPasswordPost = (
     },
       );
     }
-  return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+  return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,refreshTokenApiAuthRefreshPost,logoutApiAuthLogoutPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
 export type ListUsersApiAuthUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listUsersApiAuthUsersGet']>>>
 export type RegisterApiAuthRegisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['registerApiAuthRegisterPost']>>>
 export type VerifyEmailApiAuthVerifyGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['verifyEmailApiAuthVerifyGet']>>>
 export type ResendVerificationApiAuthResendVerificationPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resendVerificationApiAuthResendVerificationPost']>>>
 export type LoginApiAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginApiAuthLoginPost']>>>
+export type RefreshTokenApiAuthRefreshPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['refreshTokenApiAuthRefreshPost']>>>
+export type LogoutApiAuthLogoutPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['logoutApiAuthLogoutPost']>>>
 export type UpdateUserTypeApiAuthUsersUserIdTypePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['updateUserTypeApiAuthUsersUserIdTypePatch']>>>
 export type DeleteUserApiAuthUsersUserIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deleteUserApiAuthUsersUserIdDelete']>>>
 export type ForgotPasswordApiAuthForgotPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['forgotPasswordApiAuthForgotPasswordPost']>>>

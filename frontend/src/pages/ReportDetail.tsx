@@ -30,6 +30,8 @@ export default function ReportDetail() {
   const [resolvePhotos, setResolvePhotos] = useState<File[]>([])
   const [resolvePhotoPreviews, setResolvePhotoPreviews] = useState<string[]>([])
   const [resolving, setResolving] = useState(false)
+  const [resolveProgress, setResolveProgress] = useState(0)
+  const [resolveLabel, setResolveLabel] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [isFavourite, setIsFavourite] = useState(false)
@@ -125,16 +127,28 @@ export default function ReportDetail() {
       return
     }
     setResolving(true)
+    setResolveProgress(0)
+    const totalFiles = resolvePhotos.length
     try {
       // Upload resolve photos
-      for (const file of resolvePhotos) {
+      for (let i = 0; i < resolvePhotos.length; i++) {
+        setResolveLabel(`Uploading photo ${i + 1} of ${totalFiles}...`)
         const formData = new FormData()
-        formData.append('file', file)
+        formData.append('file', resolvePhotos[i])
         formData.append('image_type', 'resolved')
         await api.post(`/api/reports/${id}/images`, formData, {
           headers: { 'Content-Type': 'multipart/form-data', ...authHeaders },
+          timeout: 120000,
+          onUploadProgress: (e) => {
+            const fileProgress = e.total ? e.loaded / e.total : 0
+            const overall = ((i + fileProgress) / totalFiles) * 100
+            setResolveProgress(Math.round(overall))
+          },
         })
       }
+
+      setResolveProgress(100)
+      setResolveLabel('Finalising...')
 
       // Mark as cleaned
       const res = await api.patch(`/api/reports/${id}/clean`, undefined, {
@@ -152,6 +166,8 @@ export default function ReportDetail() {
       alert('Failed to resolve report. Please try again.')
     } finally {
       setResolving(false)
+      setResolveProgress(0)
+      setResolveLabel('')
     }
   }
 
@@ -595,22 +611,36 @@ export default function ReportDetail() {
               )}
 
               {/* Buttons */}
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={resolving}
-                  className="flex-1 bg-brand text-white font-semibold py-2.5 rounded-lg hover:bg-brand-dark transition disabled:opacity-50"
-                >
-                  {resolving ? 'Submitting...' : 'Submit Resolution'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowResolveForm(false)}
-                  className="px-4 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-              </div>
+              {resolving ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between text-sm font-medium text-gray-600">
+                    <span>{resolveLabel}</span>
+                    <span>{resolveProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-brand h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${resolveProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-brand text-white font-semibold py-2.5 rounded-lg hover:bg-brand-dark transition"
+                  >
+                    Submit Resolution
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowResolveForm(false)}
+                    className="px-4 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </form>
           )}
         </div>

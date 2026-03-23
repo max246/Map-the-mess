@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom'
 import LocationPicker from '../components/LocationPicker'
 import { autosuggest } from '../api/w3w'
 import type { W3WSuggestion } from '../api/w3w'
-import { getReports } from '../api/endpoints/reports/reports'
-
-const { createReportApiReportsPost, addImageApiReportsReportIdImagesPost } = getReports()
+import api from '../api/client'
 
 export default function ReportLitter() {
   const [description, setDescription] = useState('')
@@ -15,6 +13,8 @@ export default function ReportLitter() {
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [locating, setLocating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadLabel, setUploadLabel] = useState('')
   const [submittedReportId, setSubmittedReportId] = useState<number | null>(null)
   const [words, setWords] = useState('')
   const [wordsInput, setWordsInput] = useState('')
@@ -84,6 +84,18 @@ export default function ReportLitter() {
     setPhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const uploadFile = (url: string, formData: FormData, fileIndex: number, totalFiles: number) => {
+    return api.post(url, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+      onUploadProgress: (e) => {
+        const fileProgress = e.total ? e.loaded / e.total : 0
+        const overall = ((fileIndex + fileProgress) / totalFiles) * 100
+        setUploadProgress(Math.round(overall))
+      },
+    })
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!location) {
@@ -91,24 +103,35 @@ export default function ReportLitter() {
       return
     }
     setSubmitting(true)
+    setUploadProgress(0)
+
+    const totalFiles = Math.max(photos.length, 1)
+
     try {
       // Create report with first image (if any)
-      const report = await createReportApiReportsPost({
-        latitude: location.lat,
-        longitude: location.lng,
-        description,
-        what3words: words || undefined,
-        image: photos[0] ?? undefined,
-      })
+      setUploadLabel(
+        photos.length > 0 ? `Uploading photo 1 of ${photos.length}...` : 'Creating report...'
+      )
+      const formData = new FormData()
+      formData.append('latitude', location.lat.toString())
+      formData.append('longitude', location.lng.toString())
+      formData.append('description', description)
+      if (words) formData.append('what3words', words)
+      if (photos[0]) formData.append('image', photos[0])
 
-      // Upload remaining images via the add-image endpoint
-      for (const file of photos.slice(1)) {
-        await addImageApiReportsReportIdImagesPost(report.id, {
-          image_type: 'report',
-          file,
-        })
+      const res = await uploadFile('/api/reports/', formData, 0, totalFiles)
+      const report = res.data
+
+      // Upload remaining images
+      for (let i = 1; i < photos.length; i++) {
+        setUploadLabel(`Uploading photo ${i + 1} of ${photos.length}...`)
+        const imgData = new FormData()
+        imgData.append('image_type', 'report')
+        imgData.append('file', photos[i])
+        await uploadFile(`/api/reports/${report.id}/images`, imgData, i, totalFiles)
       }
 
+      setUploadProgress(100)
       setSubmittedReportId(report.id)
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status
@@ -120,6 +143,8 @@ export default function ReportLitter() {
       console.error(err)
     } finally {
       setSubmitting(false)
+      setUploadProgress(0)
+      setUploadLabel('')
     }
   }
 
@@ -324,13 +349,28 @@ export default function ReportLitter() {
           </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting || !acceptedConditions}
-          className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
-        >
-          {submitting ? 'Submitting...' : 'Submit Report'}
-        </button>
+        {submitting ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between text-sm font-medium text-gray-600">
+              <span>{uploadLabel}</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className="bg-brand h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={!acceptedConditions}
+            className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+          >
+            Submit Report
+          </button>
+        )}
       </form>
     </div>
   )

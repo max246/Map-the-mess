@@ -257,6 +257,47 @@ describe('ReportDetail', () => {
     expect(screen.queryByText('Resolve Report')).not.toBeInTheDocument()
   })
 
+  it('shows upload progress bar when resolving with photos', async () => {
+    mockAuth = { token: 'test-token', canManageUsers: false, isLoggedIn: true }
+
+    // Make post stay pending but call onUploadProgress
+    mockPost.mockImplementation((...args: unknown[]) => {
+      const config = args[2] as
+        | { onUploadProgress?: (e: { loaded: number; total: number }) => void }
+        | undefined
+      if (config?.onUploadProgress) {
+        config.onUploadProgress({ loaded: 30, total: 100 })
+      }
+      return new Promise(() => {}) // never resolves
+    })
+
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    // Open resolve form
+    await user.click(await screen.findByRole('button', { name: /mark as resolved/i }))
+
+    // Add a fake photo via the file input — click the upload area to trigger it
+    const file = new File(['photo'], 'proof.jpg', { type: 'image/jpeg' })
+    const fileInputs = document.querySelectorAll('input[type="file"]')
+    // The resolve form's file input is the last one on the page
+    const resolveFileInput = fileInputs[fileInputs.length - 1] as HTMLInputElement
+    await user.upload(resolveFileInput, file)
+
+    // Submit
+    await user.click(screen.getByRole('button', { name: /submit resolution/i }))
+
+    // Progress bar should be visible
+    await waitFor(() => {
+      expect(screen.getByText(/uploading photo 1 of 1/i)).toBeInTheDocument()
+      expect(screen.getByText(/30%/)).toBeInTheDocument()
+    })
+
+    // Submit and cancel buttons should be gone
+    expect(screen.queryByRole('button', { name: /submit resolution/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument()
+  })
+
   /* ── Resolved report ─────────────────────────────── */
 
   it('shows resolved banner for cleaned reports', async () => {

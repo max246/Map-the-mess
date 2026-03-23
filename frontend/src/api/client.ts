@@ -1,4 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios'
+import { tryRefreshToken, authBridge } from '../context/AuthContext'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
@@ -15,11 +16,31 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401 && localStorage.getItem('token')) {
+  async (error) => {
+    const originalRequest = error.config
+
+    // Don't retry refresh/login calls or already-retried requests
+    if (
+      error.response?.status === 401 &&
+      localStorage.getItem('refresh_token') &&
+      !originalRequest._skipAuthRetry &&
+      !originalRequest._retried
+    ) {
+      originalRequest._retried = true
+
+      const newToken = await tryRefreshToken()
+      if (newToken) {
+        authBridge.updateToken(newToken)
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return api(originalRequest)
+      }
+
+      // Refresh failed — clear everything and notify React
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      localStorage.removeItem('refresh_token')
+      authBridge.handleSessionExpired()
     }
+
     return Promise.reject(error)
   }
 )

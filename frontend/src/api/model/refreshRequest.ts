@@ -6,8 +6,6 @@
  * OpenAPI spec version: dev
  */
 
-export interface Token {
-  access_token: string;
+export interface RefreshRequest {
   refresh_token: string;
-  token_type?: string;
 }
