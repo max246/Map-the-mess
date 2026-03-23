@@ -17,6 +17,7 @@ import VerifyEmail from './pages/VerifyEmail'
 import Contact from './pages/Contact'
 import Disclaimer from './pages/Disclaimer'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import LitterFacts from './pages/LitterFacts'
 import api from './api/client'
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/disclaimer" element={<Disclaimer />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/litter-facts" element={<LitterFacts />} />
           </Routes>
         </main>
         <footer className="text-xs text-gray-400 py-2 px-4 flex items-center justify-center gap-3 flex-wrap">
