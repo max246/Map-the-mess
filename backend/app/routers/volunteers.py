@@ -13,6 +13,7 @@ from app.models.report import Report, ReportStatus
 from app.models.user import User, UserType
 from app.routers.auth import get_current_user
 from app.schemas.report import ReportRead
+from app.schemas.user import LeaderboardEntry
 
 router = APIRouter()
 
@@ -24,7 +25,7 @@ def volunteer_count(db: Session = Depends(get_db)):
     return {"count": count}
 
 
-@router.get("/leaderboard")
+@router.get("/leaderboard", response_model=list[LeaderboardEntry])
 def leaderboard(
     months: int = Query(1, ge=1, le=12, description="Number of months to look back"),
     limit: int = Query(15, ge=1, le=50, description="Number of top volunteers to return"),

@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/client'
+import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
+import type { LeaderboardEntry } from '../api/model'
 
-interface LeaderboardEntry {
-  rank: number
-  name: string
-  cleaned_count: number
-}
+const { leaderboardApiVolunteersLeaderboardGet } = getVolunteers()
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -17,9 +14,8 @@ export default function Leaderboard() {
   const linkInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    api
-      .get('/api/volunteers/leaderboard', { params: { months: 1, limit: 15 } })
-      .then((res) => setEntries(res.data))
+    leaderboardApiVolunteersLeaderboardGet({ months: 1, limit: 15 })
+      .then((data) => setEntries(data))
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])

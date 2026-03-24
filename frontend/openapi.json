@@ -875,6 +875,72 @@
         }
       }
     },
+    "/api/volunteers/leaderboard": {
+      "get": {
+        "tags": [
+          "Volunteers"
+        ],
+        "summary": "Leaderboard",
+        "description": "Return the top volunteers ranked by number of reports cleaned within the given period.",
+        "operationId": "leaderboard_api_volunteers_leaderboard_get",
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "description": "Number of months to look back",
+              "default": 1,
+              "title": "Months"
+            },
+            "description": "Number of months to look back"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "Number of top volunteers to return",
+              "default": 15,
+              "title": "Limit"
+            },
+            "description": "Number of top volunteers to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeaderboardEntry"
+                  },
+                  "title": "Response Leaderboard Api Volunteers Leaderboard Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/volunteers/favourites": {
       "get": {
         "tags": [
@@ -1131,6 +1197,29 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LeaderboardEntry": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "cleaned_count": {
+            "type": "integer",
+            "title": "Cleaned Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "name",
+          "cleaned_count"
+        ],
+        "title": "LeaderboardEntry"
       },
       "RefreshRequest": {
         "properties": {

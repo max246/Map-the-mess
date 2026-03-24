@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 const mockListReports = jest.fn()
 const mockVolunteerCount = jest.fn()
+const mockLeaderboard = jest.fn()
 
 jest.mock('../../api/endpoints/reports/reports', () => ({
   getReports: () => ({
@@ -13,13 +14,8 @@ jest.mock('../../api/endpoints/reports/reports', () => ({
 jest.mock('../../api/endpoints/volunteers/volunteers', () => ({
   getVolunteers: () => ({
     volunteerCountApiVolunteersCountGet: (...args: unknown[]) => mockVolunteerCount(...args),
+    leaderboardApiVolunteersLeaderboardGet: (...args: unknown[]) => mockLeaderboard(...args),
   }),
-}))
-
-const mockApiGet = jest.fn()
-jest.mock('../../api/client', () => ({
-  __esModule: true,
-  default: { get: (...args: unknown[]) => mockApiGet(...args) },
 }))
 
 import Home from '../Home'
@@ -37,7 +33,7 @@ describe('Home', () => {
     jest.clearAllMocks()
     mockListReports.mockResolvedValue([])
     mockVolunteerCount.mockResolvedValue({ count: 0 })
-    mockApiGet.mockResolvedValue({ data: [] })
+    mockLeaderboard.mockResolvedValue([])
   })
 
   it('renders the page title', () => {

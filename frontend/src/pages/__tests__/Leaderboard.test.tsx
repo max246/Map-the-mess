@@ -2,10 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 
-const mockApiGet = jest.fn()
-jest.mock('../../api/client', () => ({
-  __esModule: true,
-  default: { get: (...args: unknown[]) => mockApiGet(...args) },
+const mockLeaderboard = jest.fn()
+
+jest.mock('../../api/endpoints/volunteers/volunteers', () => ({
+  getVolunteers: () => ({
+    leaderboardApiVolunteersLeaderboardGet: (...args: unknown[]) => mockLeaderboard(...args),
+  }),
 }))
 
 import Leaderboard from '../Leaderboard'
@@ -39,26 +41,26 @@ describe('Leaderboard', () => {
   })
 
   it('renders the page heading', () => {
-    mockApiGet.mockResolvedValue({ data: [] })
+    mockLeaderboard.mockResolvedValue([])
     renderLeaderboard()
     expect(screen.getByRole('heading', { name: /leaderboard/i })).toBeInTheDocument()
   })
 
   it('shows loading state initially', () => {
-    mockApiGet.mockReturnValue(new Promise(() => {})) // never resolves
+    mockLeaderboard.mockReturnValue(new Promise(() => {})) // never resolves
     renderLeaderboard()
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
   it('shows the current month in the subtitle', () => {
-    mockApiGet.mockResolvedValue({ data: [] })
+    mockLeaderboard.mockResolvedValue([])
     const monthName = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
     renderLeaderboard()
     expect(screen.getByText(new RegExp(monthName))).toBeInTheDocument()
   })
 
   it('shows empty state when no entries', async () => {
-    mockApiGet.mockResolvedValue({ data: [] })
+    mockLeaderboard.mockResolvedValue([])
     renderLeaderboard()
 
     await waitFor(() => {
@@ -68,16 +70,14 @@ describe('Leaderboard', () => {
   })
 
   it('fetches leaderboard with correct params', () => {
-    mockApiGet.mockResolvedValue({ data: [] })
+    mockLeaderboard.mockResolvedValue([])
     renderLeaderboard()
 
-    expect(mockApiGet).toHaveBeenCalledWith('/api/volunteers/leaderboard', {
-      params: { months: 1, limit: 15 },
-    })
+    expect(mockLeaderboard).toHaveBeenCalledWith({ months: 1, limit: 15 })
   })
 
   it('renders volunteer entries in a table', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     await waitFor(() => {
@@ -89,7 +89,7 @@ describe('Leaderboard', () => {
   })
 
   it('shows medal emojis for top 3', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     await waitFor(() => {
@@ -100,7 +100,7 @@ describe('Leaderboard', () => {
   })
 
   it('shows numeric rank for entries beyond top 3', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     await waitFor(() => {
@@ -109,7 +109,7 @@ describe('Leaderboard', () => {
   })
 
   it('displays cleaned counts', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     await waitFor(() => {
@@ -121,7 +121,7 @@ describe('Leaderboard', () => {
   })
 
   it('shows share section when entries exist', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     await waitFor(() => {
@@ -130,7 +130,7 @@ describe('Leaderboard', () => {
   })
 
   it('does not show share section when empty', async () => {
-    mockApiGet.mockResolvedValue({ data: [] })
+    mockLeaderboard.mockResolvedValue([])
     renderLeaderboard()
 
     await waitFor(() => {
@@ -140,7 +140,7 @@ describe('Leaderboard', () => {
   })
 
   it('has a Facebook share link', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     const link = await screen.findByRole('link', { name: /facebook/i })
@@ -149,7 +149,7 @@ describe('Leaderboard', () => {
   })
 
   it('has an X/Twitter share link', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     const link = await screen.findByRole('link', { name: /post/i })
@@ -158,7 +158,7 @@ describe('Leaderboard', () => {
   })
 
   it('has a copy link input with the page URL', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     const input = await screen.findByDisplayValue(window.location.href)
@@ -167,7 +167,7 @@ describe('Leaderboard', () => {
 
   it('shows Copied! after clicking the copy button', async () => {
     const user = userEvent.setup()
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     const button = await screen.findByRole('button', { name: /copy link/i })
@@ -179,7 +179,7 @@ describe('Leaderboard', () => {
   })
 
   it('has a back to home link', () => {
-    mockApiGet.mockResolvedValue({ data: [] })
+    mockLeaderboard.mockResolvedValue([])
     renderLeaderboard()
 
     const link = screen.getByRole('link', { name: /back to home/i })
@@ -187,7 +187,7 @@ describe('Leaderboard', () => {
   })
 
   it('renders table headers', async () => {
-    mockApiGet.mockResolvedValue({ data: MOCK_ENTRIES })
+    mockLeaderboard.mockResolvedValue(MOCK_ENTRIES)
     renderLeaderboard()
 
     await waitFor(() => {

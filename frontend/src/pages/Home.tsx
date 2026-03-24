@@ -2,17 +2,11 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
-import api from '../api/client'
-import type { ReportRead } from '../api/model'
-
-interface LeaderboardEntry {
-  rank: number
-  name: string
-  cleaned_count: number
-}
+import type { ReportRead, LeaderboardEntry } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
-const { volunteerCountApiVolunteersCountGet } = getVolunteers()
+const { volunteerCountApiVolunteersCountGet, leaderboardApiVolunteersLeaderboardGet } =
+  getVolunteers()
 
 const TROPHIES = ['🥇', '🥈', '🥉']
 
@@ -33,9 +27,8 @@ export default function Home() {
       })
       .catch(console.error)
 
-    api
-      .get('/api/volunteers/leaderboard', { params: { months: 3, limit: 3 } })
-      .then((res) => setTopVolunteers(res.data))
+    leaderboardApiVolunteersLeaderboardGet({ months: 3, limit: 3 })
+      .then((data) => setTopVolunteers(data))
       .catch(console.error)
   }, [])
 
