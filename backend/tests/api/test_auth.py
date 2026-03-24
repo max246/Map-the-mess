@@ -266,3 +266,64 @@ class TestResetPassword:
             json={"token": "bad", "new_password": "x"},
         )
         assert res.status_code == 400
+
+
+class TestRefreshToken:
+    def test_refresh_success(self, client, db, volunteer):
+        # Login to get a refresh token
+        login_res = client.post(
+            "/api/auth/login",
+            json={"email": volunteer.email, "password": "testpass123"},
+        )
+        refresh_tok = login_res.json()["refresh_token"]
+
+        res = client.post(
+            "/api/auth/refresh",
+            json={"refresh_token": refresh_tok},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        # New refresh token should differ (rotation)
+        assert data["refresh_token"] != refresh_tok
+
+    def test_refresh_reuse_revoked_token(self, client, db, volunteer):
+        """Using a refresh token twice should fail — it's revoked after first use."""
+        login_res = client.post(
+            "/api/auth/login",
+            json={"email": volunteer.email, "password": "testpass123"},
+        )
+        refresh_tok = login_res.json()["refresh_token"]
+
+        # First use succeeds
+        client.post("/api/auth/refresh", json={"refresh_token": refresh_tok})
+
+        # Second use should fail (revoked)
+        res = client.post("/api/auth/refresh", json={"refresh_token": refresh_tok})
+        assert res.status_code == 401
+
+    def test_refresh_invalid_token(self, client, db):
+        res = client.post(
+            "/api/auth/refresh",
+            json={"refresh_token": "bogus-token"},
+        )
+        assert res.status_code == 401
+
+    def test_refresh_expired_token(self, client, db, volunteer):
+        from datetime import datetime, timedelta, timezone
+        from app.models.refresh_token import RefreshToken
+
+        # Login, then manually expire the token in the DB
+        login_res = client.post(
+            "/api/auth/login",
+            json={"email": volunteer.email, "password": "testpass123"},
+        )
+        refresh_tok = login_res.json()["refresh_token"]
+
+        stored = db.query(RefreshToken).filter(RefreshToken.token == refresh_tok).first()
+        stored.expires_at = datetime(2020, 1, 1)
+        db.commit()
+
+        res = client.post("/api/auth/refresh", json={"refresh_token": refresh_tok})
+        assert res.status_code == 401
