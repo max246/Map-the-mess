@@ -102,6 +102,8 @@ jest.mock('react-leaflet-cluster', () => ({
   ),
 }))
 
+jest.mock('../../components/LocateButton', () => () => <button data-testid="locate-button" />)
+
 const mockLayerGroup = {
   addTo: jest.fn().mockReturnThis(),
   remove: jest.fn(),

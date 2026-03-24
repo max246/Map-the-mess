@@ -81,6 +81,8 @@ jest.mock('react-leaflet', () => ({
   Marker: () => <div data-testid="map-marker" />,
 }))
 
+jest.mock('../../components/LocateButton', () => () => <button data-testid="locate-button" />)
+
 function renderReportDetail(reportId: string = '42') {
   return render(
     <MemoryRouter initialEntries={[`/report/${reportId}`]}>
