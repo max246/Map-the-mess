@@ -16,6 +16,12 @@ jest.mock('../../api/endpoints/volunteers/volunteers', () => ({
   }),
 }))
 
+const mockApiGet = jest.fn()
+jest.mock('../../api/client', () => ({
+  __esModule: true,
+  default: { get: (...args: unknown[]) => mockApiGet(...args) },
+}))
+
 import Home from '../Home'
 
 function renderHome() {
@@ -31,6 +37,7 @@ describe('Home', () => {
     jest.clearAllMocks()
     mockListReports.mockResolvedValue([])
     mockVolunteerCount.mockResolvedValue({ count: 0 })
+    mockApiGet.mockResolvedValue({ data: [] })
   })
 
   it('renders the page title', () => {

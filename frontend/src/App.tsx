@@ -18,6 +18,7 @@ import Contact from './pages/Contact'
 import Disclaimer from './pages/Disclaimer'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import LitterFacts from './pages/LitterFacts'
+import Leaderboard from './pages/Leaderboard'
 import SessionExpiredOverlay from './components/SessionExpiredOverlay'
 import api from './api/client'
 
@@ -54,6 +55,7 @@ function App() {
             <Route path="/disclaimer" element={<Disclaimer />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/litter-facts" element={<LitterFacts />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
           </Routes>
         </main>
         <footer className="text-xs text-gray-400 py-2 px-4 flex items-center justify-center gap-3 flex-wrap">

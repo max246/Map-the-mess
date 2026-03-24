@@ -27,7 +27,7 @@ VERSIONS_DIR = os.path.join(BACKEND_DIR, "alembic", "versions")
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "")
 
-pytestmark = pytest.mark.skipif(
+_skip_no_db = pytest.mark.skipif(
     not TEST_DATABASE_URL,
     reason="TEST_DATABASE_URL not set — skipping migration tests",
 )
@@ -221,6 +221,20 @@ def _check_refresh_tokens(conn):
     cols = _column_names(conn, "refresh_tokens")
     assert {"id", "token", "user_id", "expires_at", "revoked", "created_at"} <= cols
 
+    # Verify indexes
+    indexes = {idx["name"] for idx in inspect(conn).get_indexes("refresh_tokens")}
+    assert "ix_refresh_tokens_id" in indexes
+    assert "ix_refresh_tokens_token" in indexes
+
+    # Verify token index is unique
+    idx_by_name = {idx["name"]: idx for idx in inspect(conn).get_indexes("refresh_tokens")}
+    assert idx_by_name["ix_refresh_tokens_token"]["unique"] is True
+
+    # Verify foreign key to users table
+    fks = inspect(conn).get_foreign_keys("refresh_tokens")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "user_id" in fk_cols
+
 
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
@@ -242,6 +256,7 @@ MIGRATION_CHAIN = [
 # ---------------------------------------------------------------------------
 
 
+@_skip_no_db
 class TestMigrationUpgrades:
     """Step through each migration and verify the schema change."""
 
@@ -256,6 +271,7 @@ class TestMigrationUpgrades:
         MIGRATION_CHECKS[revision](migration_db)
 
 
+@_skip_no_db
 class TestFullDowngrade:
     """Upgrade to head, then downgrade all the way back to base."""
 
@@ -271,6 +287,7 @@ class TestFullDowngrade:
         assert tables == set(), f"Tables left after full downgrade: {tables}"
 
 
+@_skip_no_db
 class TestFullUpgrade:
     """Upgrade from base to head in one shot."""
 
@@ -279,7 +296,7 @@ class TestFullUpgrade:
         assert _current_rev(migration_db) == MIGRATION_CHAIN[-1]
 
         tables = _table_names(migration_db) - {"alembic_version"}
-        assert {"reports", "users", "report_images", "favourites"} <= tables
+        assert {"reports", "users", "report_images", "favourites", "refresh_tokens"} <= tables
 
 
 class TestAllMigrationsHaveTests:
@@ -288,8 +305,6 @@ class TestAllMigrationsHaveTests:
     These tests don't need a database — they just compare files on disk
     to the registered checks, so we remove the skipif marker.
     """
-
-    pytestmark: list[pytest.MarkDecorator] = []  # override module-level skipif
 
     def test_no_untested_migrations(self):
         on_disk = _migration_revisions_on_disk()
