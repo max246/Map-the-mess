@@ -1,7 +1,11 @@
 """Tests for volunteer endpoints (/api/volunteers)."""
 
+from datetime import datetime, timezone
+
 from app.models.favourite import Favourite
 from app.models.report import Report, ReportStatus
+from app.models.user import UserType
+from app.routers.volunteers import _abbreviate_name
 
 from tests.api.conftest import auth_header, _make_user
 
@@ -131,3 +135,59 @@ class TestRemoveFavourite:
         report = _create_report(db)
         res = client.delete(f"/api/volunteers/favourites/{report.id}")
         assert res.status_code == 401
+
+
+class TestAbbreviateName:
+    """Unit tests for the _abbreviate_name helper."""
+
+    def test_first_and_last(self):
+        assert _abbreviate_name("Zoe Brum") == "Zoe B."
+
+    def test_single_name(self):
+        assert _abbreviate_name("Zoe") == "Zoe"
+
+    def test_three_parts(self):
+        assert _abbreviate_name("Mary Jane Watson") == "Mary W."
+
+    def test_empty_string(self):
+        assert _abbreviate_name("") == ""
+
+
+class TestLeaderboard:
+    def test_leaderboard_abbreviates_names(self, client, db):
+        user = _make_user(
+            db,
+            email="lead@example.com",
+            full_name="Zoe Brum",
+            user_type=UserType.volunteer,
+        )
+        report = _create_report(
+            db,
+            status=ReportStatus.cleaned,
+            resolved_by_user_id=user.id,
+            resolved_at=datetime.now(timezone.utc),
+        )
+
+        res = client.get("/api/volunteers/leaderboard")
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 1
+        assert data[0]["name"] == "Zoe B."
+
+    def test_leaderboard_single_name(self, client, db):
+        user = _make_user(
+            db,
+            email="mono@example.com",
+            full_name="Zoe",
+            user_type=UserType.volunteer,
+        )
+        _create_report(
+            db,
+            status=ReportStatus.cleaned,
+            resolved_by_user_id=user.id,
+            resolved_at=datetime.now(timezone.utc),
+        )
+
+        res = client.get("/api/volunteers/leaderboard")
+        data = res.json()
+        assert data[0]["name"] == "Zoe"

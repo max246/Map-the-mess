@@ -18,6 +18,14 @@ from app.schemas.user import LeaderboardEntry
 router = APIRouter()
 
 
+def _abbreviate_name(full_name: str) -> str:
+    """'Zoe Brum' → 'Zoe B.', 'Zoe' → 'Zoe'."""
+    parts = full_name.split()
+    if len(parts) <= 1:
+        return full_name
+    return f"{parts[0]} {parts[-1][0]}."
+
+
 @router.get("/count")
 def volunteer_count(db: Session = Depends(get_db)):
     """Return the total number of registered volunteers."""
@@ -60,7 +68,7 @@ def leaderboard(
     )
 
     return [
-        {"rank": i + 1, "name": row.full_name, "cleaned_count": row.cleaned_count}
+        {"rank": i + 1, "name": _abbreviate_name(row.full_name), "cleaned_count": row.cleaned_count}
         for i, row in enumerate(rows)
     ]
 
