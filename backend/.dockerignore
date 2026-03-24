@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+.env
+.git
+images
+map_the_mess.db
+tests
+utils/dev_seed.py

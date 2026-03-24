@@ -48,3 +48,9 @@ class Token(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    name: str
+    cleaned_count: int

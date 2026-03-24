@@ -2,14 +2,18 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
-import type { ReportRead } from '../api/model'
+import type { ReportRead, LeaderboardEntry } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
-const { volunteerCountApiVolunteersCountGet } = getVolunteers()
+const { volunteerCountApiVolunteersCountGet, leaderboardApiVolunteersLeaderboardGet } =
+  getVolunteers()
+
+const TROPHIES = ['🥇', '🥈', '🥉']
 
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, cleaned: 0, volunteers: 0 })
   const [reports, setReports] = useState<ReportRead[]>([])
+  const [topVolunteers, setTopVolunteers] = useState<LeaderboardEntry[]>([])
 
   useEffect(() => {
     Promise.all([listReportsApiReportsGet(), volunteerCountApiVolunteersCountGet()])
@@ -21,6 +25,10 @@ export default function Home() {
           volunteers: (countData as { count: number })?.count ?? 0,
         })
       })
+      .catch(console.error)
+
+    leaderboardApiVolunteersLeaderboardGet({ months: 3, limit: 3 })
+      .then((data) => setTopVolunteers(data))
       .catch(console.error)
   }, [])
 
@@ -74,6 +82,30 @@ export default function Home() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Top volunteers */}
+      {topVolunteers.length > 0 && (
+        <div className="mt-12 w-full max-w-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Top Volunteers</h2>
+            <Link to="/leaderboard" className="text-sm text-brand hover:underline">
+              Full leaderboard →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {topVolunteers.map((v) => (
+              <div key={v.rank} className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+                <span className="text-3xl">{TROPHIES[v.rank - 1]}</span>
+                <div className="text-left min-w-0">
+                  <p className="font-semibold truncate">{v.name}</p>
+                  <p className="text-sm text-gray-500">{v.cleaned_count} cleaned</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2 text-center">Last 3 months</p>
         </div>
       )}
 

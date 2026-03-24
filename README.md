@@ -128,6 +128,26 @@ Runs on `http://localhost:5173` with Vite hot-reload. The dev server proxies API
 | `npm run format` | Format code with Prettier |
 | `npm run api:generate` | Regenerate typed API client with Orval |
 
+### Dev seed script
+
+A CLI tool for quickly setting up local development data. Run from the `backend/` directory (or inside the backend container):
+
+```bash
+cd backend
+
+python utils/dev_seed.py users          # create 5 random verified volunteers (prints email + password)
+python utils/dev_seed.py wipe-reports   # delete all reports and their images
+python utils/dev_seed.py wipe-users     # delete all users except the superuser
+python utils/dev_seed.py reset          # wipe everything, then seed fresh users
+python utils/dev_seed.py users --count 10   # create a custom number of users
+```
+
+Or via Docker:
+
+```bash
+docker compose exec backend python utils/dev_seed.py reset
+```
+
 ### API client generation
 
 The frontend uses [Orval](https://orval.dev) to generate a typed API client from the backend's OpenAPI schema. After making backend changes, regenerate with:
