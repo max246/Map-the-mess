@@ -6,6 +6,8 @@
  * OpenAPI spec version: dev
  */
 import type {
+  LeaderboardApiVolunteersLeaderboardGetParams,
+  LeaderboardEntry,
   ListFavouritesApiVolunteersFavouritesGetParams,
   ReportRead
 } from '../../model';
@@ -24,6 +26,19 @@ const volunteerCountApiVolunteersCountGet = (
  ) => {
       return customInstance<unknown>(
       {url: `/api/volunteers/count`, method: 'GET'
+    },
+      );
+    }
+  /**
+ * Return the top volunteers ranked by number of reports cleaned within the given period.
+ * @summary Leaderboard
+ */
+const leaderboardApiVolunteersLeaderboardGet = (
+    params?: LeaderboardApiVolunteersLeaderboardGetParams,
+ ) => {
+      return customInstance<LeaderboardEntry[]>(
+      {url: `/api/volunteers/leaderboard`, method: 'GET',
+        params
     },
       );
     }
@@ -64,8 +79,9 @@ const removeFavouriteApiVolunteersFavouritesReportIdDelete = (
     },
       );
     }
-  return {volunteerCountApiVolunteersCountGet,listFavouritesApiVolunteersFavouritesGet,addFavouriteApiVolunteersFavouritesReportIdPost,removeFavouriteApiVolunteersFavouritesReportIdDelete}};
+  return {volunteerCountApiVolunteersCountGet,leaderboardApiVolunteersLeaderboardGet,listFavouritesApiVolunteersFavouritesGet,addFavouriteApiVolunteersFavouritesReportIdPost,removeFavouriteApiVolunteersFavouritesReportIdDelete}};
 export type VolunteerCountApiVolunteersCountGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['volunteerCountApiVolunteersCountGet']>>>
+export type LeaderboardApiVolunteersLeaderboardGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['leaderboardApiVolunteersLeaderboardGet']>>>
 export type ListFavouritesApiVolunteersFavouritesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['listFavouritesApiVolunteersFavouritesGet']>>>
 export type AddFavouriteApiVolunteersFavouritesReportIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['addFavouriteApiVolunteersFavouritesReportIdPost']>>>
 export type RemoveFavouriteApiVolunteersFavouritesReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['removeFavouriteApiVolunteersFavouritesReportIdDelete']>>>

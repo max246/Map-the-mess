@@ -35,6 +35,8 @@ jest.mock('leaflet', () => ({
   Marker: jest.fn(),
 }))
 
+jest.mock('../LocateButton', () => () => <button data-testid="locate-button" />)
+
 describe('LocationPicker', () => {
   const defaultPosition = { lat: 51.5074, lng: -0.1278 }
   let onMove: jest.Mock

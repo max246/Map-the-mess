@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import LocateButton from '../components/LocateButton'
 import api, { imageUrl, thumbnailUrl } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { getReports } from '../api/endpoints/reports/reports'
@@ -681,7 +682,7 @@ export default function ReportDetail() {
       )}
 
       {/* Mini map */}
-      <div className="rounded-lg overflow-hidden shadow h-64">
+      <div className="rounded-lg overflow-hidden shadow h-64 relative">
         <MapContainer
           center={[report.latitude, report.longitude]}
           zoom={16}
@@ -693,6 +694,7 @@ export default function ReportDetail() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <Marker position={[report.latitude, report.longitude]} />
+          <LocateButton />
         </MapContainer>
       </div>
     </div>

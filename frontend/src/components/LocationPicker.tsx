@@ -1,6 +1,7 @@
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import { useRef, useMemo } from 'react'
 import L from 'leaflet'
+import LocateButton from './LocateButton'
 
 interface Position {
   lat: number
@@ -47,13 +48,14 @@ function DraggableMarker({ position, onMove }: LocationPickerProps) {
 
 export default function LocationPicker({ position, onMove }: LocationPickerProps) {
   return (
-    <div className="h-64 rounded-lg overflow-hidden border">
+    <div className="h-64 rounded-lg overflow-hidden border relative">
       <MapContainer center={[position.lat, position.lng]} zoom={16} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <DraggableMarker position={position} onMove={onMove} />
+        <LocateButton onLocate={onMove} showMarker={false} />
       </MapContainer>
     </div>
   )

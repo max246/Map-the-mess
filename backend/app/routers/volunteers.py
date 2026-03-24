@@ -1,15 +1,19 @@
 """Volunteer routes — favourite/star reports for planned cleanups."""
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.database import get_db
 from app.models.favourite import Favourite
 from app.models.report import Report, ReportStatus
-from app.models.user import User
+from app.models.user import User, UserType
 from app.routers.auth import get_current_user
 from app.schemas.report import ReportRead
+from app.schemas.user import LeaderboardEntry
 
 router = APIRouter()
 
@@ -19,6 +23,46 @@ def volunteer_count(db: Session = Depends(get_db)):
     """Return the total number of registered volunteers."""
     count = db.query(User).count()
     return {"count": count}
+
+
+@router.get("/leaderboard", response_model=list[LeaderboardEntry])
+def leaderboard(
+    months: int = Query(1, ge=1, le=12, description="Number of months to look back"),
+    limit: int = Query(15, ge=1, le=50, description="Number of top volunteers to return"),
+    db: Session = Depends(get_db),
+):
+    """Return the top volunteers ranked by number of reports cleaned within the given period."""
+    now = datetime.now(timezone.utc)
+    # Go back to the 1st of the month N months ago
+    month = now.month - months
+    year = now.year
+    while month < 1:
+        month += 12
+        year -= 1
+    since = datetime(year, month, 1, tzinfo=timezone.utc)
+
+    rows = (
+        db.query(
+            User.id,
+            User.full_name,
+            func.count(Report.id).label("cleaned_count"),
+        )
+        .join(Report, Report.resolved_by_user_id == User.id)
+        .filter(
+            Report.status == ReportStatus.cleaned,
+            Report.resolved_at >= since,
+            User.user_type != UserType.superuser,
+        )
+        .group_by(User.id, User.full_name)
+        .order_by(func.count(Report.id).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {"rank": i + 1, "name": row.full_name, "cleaned_count": row.cleaned_count}
+        for i, row in enumerate(rows)
+    ]
 
 
 @router.get("/favourites", response_model=list[ReportRead])
