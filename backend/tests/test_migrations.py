@@ -236,6 +236,86 @@ def _check_refresh_tokens(conn):
     assert "user_id" in fk_cols
 
 
+# 9. 5a2cba4dd38c — add communities, community_posts, community_events, event_reports
+@_check("5a2cba4dd38c")
+def _check_communities(conn):
+    tables = _table_names(conn)
+    assert "communities" in tables
+    assert "community_posts" in tables
+    assert "community_events" in tables
+    assert "event_reports" in tables
+
+    # communities columns
+    comm_cols = _column_names(conn, "communities")
+    assert {
+        "id",
+        "name",
+        "description",
+        "facebook_url",
+        "profile_image",
+        "latitude",
+        "longitude",
+        "radius_km",
+        "owner_id",
+        "status",
+        "created_at",
+    } <= comm_cols
+
+    # community_posts columns
+    post_cols = _column_names(conn, "community_posts")
+    assert {"id", "community_id", "content", "created_at"} <= post_cols
+
+    # community_events columns
+    event_cols = _column_names(conn, "community_events")
+    assert {
+        "id",
+        "community_id",
+        "description",
+        "date",
+        "meeting_latitude",
+        "meeting_longitude",
+        "created_at",
+    } <= event_cols
+
+    # event_reports columns
+    er_cols = _column_names(conn, "event_reports")
+    assert {"event_id", "report_id"} <= er_cols
+
+    # Verify foreign keys on communities
+    fks = inspect(conn).get_foreign_keys("communities")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "owner_id" in fk_cols
+
+    # Verify foreign keys on community_posts
+    post_fks = inspect(conn).get_foreign_keys("community_posts")
+    post_fk_cols = {fk["constrained_columns"][0] for fk in post_fks}
+    assert "community_id" in post_fk_cols
+
+    # Verify foreign keys on community_events
+    event_fks = inspect(conn).get_foreign_keys("community_events")
+    event_fk_cols = {fk["constrained_columns"][0] for fk in event_fks}
+    assert "community_id" in event_fk_cols
+
+    # Verify foreign keys on event_reports
+    er_fks = inspect(conn).get_foreign_keys("event_reports")
+    er_fk_cols = {fk["constrained_columns"][0] for fk in er_fks}
+    assert "event_id" in er_fk_cols
+    assert "report_id" in er_fk_cols
+
+
+# 10. f5aa4f555429 — add community_memberships table
+@_check("f5aa4f555429")
+def _check_community_memberships(conn):
+    assert "community_memberships" in _table_names(conn)
+    cols = _column_names(conn, "community_memberships")
+    assert {"id", "community_id", "user_id", "status", "created_at"} <= cols
+
+    fks = inspect(conn).get_foreign_keys("community_memberships")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "community_id" in fk_cols
+    assert "user_id" in fk_cols
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -249,6 +329,8 @@ MIGRATION_CHAIN = [
     "0445d97d2ec1",
     "e44cc152ac4d",
     "3b1048682efd",
+    "5a2cba4dd38c",
+    "f5aa4f555429",
 ]
 
 # ---------------------------------------------------------------------------
@@ -296,7 +378,18 @@ class TestFullUpgrade:
         assert _current_rev(migration_db) == MIGRATION_CHAIN[-1]
 
         tables = _table_names(migration_db) - {"alembic_version"}
-        assert {"reports", "users", "report_images", "favourites", "refresh_tokens"} <= tables
+        assert {
+            "reports",
+            "users",
+            "report_images",
+            "favourites",
+            "refresh_tokens",
+            "communities",
+            "community_posts",
+            "community_events",
+            "event_reports",
+            "community_memberships",
+        } <= tables
 
 
 class TestAllMigrationsHaveTests:

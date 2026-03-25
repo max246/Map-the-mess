@@ -1087,6 +1087,990 @@
         }
       }
     },
+    "/api/communities/": {
+      "post": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Create Community",
+        "description": "Create a new community. The current user becomes the owner.",
+        "operationId": "create_community_api_communities__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "List Communities",
+        "description": "List communities with optional search and location filters.\n\nVisibility: anon/volunteer see active only. Owner also sees own under_review.\nModerator+ sees all.",
+        "operationId": "list_communities_api_communities__get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search by community name",
+              "title": "Search"
+            },
+            "description": "Search by community name"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Latitude for nearby search",
+              "title": "Lat"
+            },
+            "description": "Latitude for nearby search"
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Longitude for nearby search",
+              "title": "Lng"
+            },
+            "description": "Longitude for nearby search"
+          },
+          {
+            "name": "radius_km",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Radius in km for nearby search",
+              "title": "Radius Km"
+            },
+            "description": "Radius in km for nearby search"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CommunityRead"
+                  },
+                  "title": "Response List Communities Api Communities  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/mine": {
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "My Communities",
+        "description": "Return the current user's owned and joined (approved) communities.",
+        "operationId": "my_communities_api_communities_mine_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyCommunities"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/communities/{community_id}": {
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Get Community",
+        "description": "Get a single community. Posts and events are only visible to members, owner, or moderator+.",
+        "operationId": "get_community_api_communities__community_id__get",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Delete Community",
+        "description": "Delete a community. Admin/superuser only.",
+        "operationId": "delete_community_api_communities__community_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/image": {
+      "put": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Upload Profile Image",
+        "description": "Upload or replace the community profile image. Owner only.",
+        "operationId": "upload_profile_image_api_communities__community_id__image_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_profile_image_api_communities__community_id__image_put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/status": {
+      "patch": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Update Community Status",
+        "description": "Set community status to active or under_review. Moderator+ only.",
+        "operationId": "update_community_status_api_communities__community_id__status_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/posts": {
+      "post": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Create Post",
+        "description": "Create a post on a community page. Owner only.",
+        "operationId": "create_post_api_communities__community_id__posts_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/posts/{post_id}": {
+      "patch": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Update Post",
+        "description": "Edit a post. Owner only.",
+        "operationId": "update_post_api_communities__community_id__posts__post_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "post_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Post Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Delete Post",
+        "description": "Delete a post. Owner or moderator+ only.",
+        "operationId": "delete_post_api_communities__community_id__posts__post_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "post_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Post Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/events": {
+      "post": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Create Event",
+        "description": "Create a cleanup event. Owner only.",
+        "operationId": "create_event_api_communities__community_id__events_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/events/{event_id}": {
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Get Event",
+        "description": "Get a single event. Follows community visibility rules.",
+        "operationId": "get_event_api_communities__community_id__events__event_id__get",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Update Event",
+        "description": "Edit an event. Owner only. All fields optional for partial update.",
+        "operationId": "update_event_api_communities__community_id__events__event_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Delete Event",
+        "description": "Delete an event. Owner or moderator+ only.",
+        "operationId": "delete_event_api_communities__community_id__events__event_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/join": {
+      "post": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Join Community",
+        "description": "Request to join a community. Status starts as pending until owner approves.",
+        "operationId": "join_community_api_communities__community_id__join_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/memberships": {
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "List Memberships",
+        "description": "List memberships. Owner sees all (pending/approved/rejected). Others see only approved.",
+        "operationId": "list_memberships_api_communities__community_id__memberships_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MembershipRead"
+                  },
+                  "title": "Response List Memberships Api Communities  Community Id  Memberships Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/memberships/{membership_id}": {
+      "patch": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Update Membership",
+        "description": "Approve or reject a membership request. Owner only.",
+        "operationId": "update_membership_api_communities__community_id__memberships__membership_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "membership_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Membership Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipAction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/leave": {
+      "delete": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Leave Community",
+        "description": "Leave a community. Owner cannot leave \u2014 they must delete the community.",
+        "operationId": "leave_community_api_communities__community_id__leave_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -1171,6 +2155,400 @@
         ],
         "title": "Body_create_report_api_reports__post"
       },
+      "Body_upload_profile_image_api_communities__community_id__image_put": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_profile_image_api_communities__community_id__image_put"
+      },
+      "CommunityCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "radius_km": {
+            "type": "number",
+            "title": "Radius Km"
+          },
+          "facebook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facebook Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "latitude",
+          "longitude",
+          "radius_km"
+        ],
+        "title": "CommunityCreate"
+      },
+      "CommunityDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "facebook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facebook Url"
+          },
+          "profile_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "radius_km": {
+            "type": "number",
+            "title": "Radius Km"
+          },
+          "owner_id": {
+            "type": "integer",
+            "title": "Owner Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "posts": {
+            "items": {
+              "$ref": "#/components/schemas/PostRead"
+            },
+            "type": "array",
+            "title": "Posts",
+            "default": []
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventRead"
+            },
+            "type": "array",
+            "title": "Events",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "latitude",
+          "longitude",
+          "radius_km",
+          "owner_id",
+          "status",
+          "created_at"
+        ],
+        "title": "CommunityDetail"
+      },
+      "CommunityRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "facebook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Facebook Url"
+          },
+          "profile_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "radius_km": {
+            "type": "number",
+            "title": "Radius Km"
+          },
+          "owner_id": {
+            "type": "integer",
+            "title": "Owner Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "latitude",
+          "longitude",
+          "radius_km",
+          "owner_id",
+          "status",
+          "created_at"
+        ],
+        "title": "CommunityRead"
+      },
+      "CommunityStatusUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "CommunityStatusUpdate"
+      },
+      "EventCreate": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "meeting_latitude": {
+            "type": "number",
+            "title": "Meeting Latitude"
+          },
+          "meeting_longitude": {
+            "type": "number",
+            "title": "Meeting Longitude"
+          },
+          "report_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Report Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "description",
+          "date",
+          "meeting_latitude",
+          "meeting_longitude"
+        ],
+        "title": "EventCreate"
+      },
+      "EventRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "community_id": {
+            "type": "integer",
+            "title": "Community Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "meeting_latitude": {
+            "type": "number",
+            "title": "Meeting Latitude"
+          },
+          "meeting_longitude": {
+            "type": "number",
+            "title": "Meeting Longitude"
+          },
+          "report_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Report Ids",
+            "default": []
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "community_id",
+          "description",
+          "date",
+          "meeting_latitude",
+          "meeting_longitude",
+          "created_at"
+        ],
+        "title": "EventRead"
+      },
+      "EventUpdate": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "meeting_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Latitude"
+          },
+          "meeting_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meeting Longitude"
+          },
+          "report_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Ids"
+          }
+        },
+        "type": "object",
+        "title": "EventUpdate"
+      },
       "ForgotPassword": {
         "properties": {
           "email": {
@@ -1220,6 +2598,131 @@
           "cleaned_count"
         ],
         "title": "LeaderboardEntry"
+      },
+      "MembershipAction": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "MembershipAction",
+        "description": "Body for approve/reject."
+      },
+      "MembershipRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "community_id": {
+            "type": "integer",
+            "title": "Community Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "community_id",
+          "user_id",
+          "status",
+          "created_at"
+        ],
+        "title": "MembershipRead"
+      },
+      "MyCommunities": {
+        "properties": {
+          "owned": {
+            "items": {
+              "$ref": "#/components/schemas/CommunityRead"
+            },
+            "type": "array",
+            "title": "Owned",
+            "default": []
+          },
+          "joined": {
+            "items": {
+              "$ref": "#/components/schemas/CommunityRead"
+            },
+            "type": "array",
+            "title": "Joined",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "MyCommunities"
+      },
+      "PostCreate": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "PostCreate"
+      },
+      "PostRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "community_id": {
+            "type": "integer",
+            "title": "Community Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "community_id",
+          "content",
+          "created_at"
+        ],
+        "title": "PostRead"
+      },
+      "PostUpdate": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "PostUpdate"
       },
       "RefreshRequest": {
         "properties": {

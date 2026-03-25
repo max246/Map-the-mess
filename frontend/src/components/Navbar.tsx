@@ -7,6 +7,7 @@ const publicLinks = [
   { to: '/map', label: 'Map' },
   { to: '/report', label: 'Report Litter' },
   { to: '/leaderboard', label: 'Leaderboard' },
+  { to: '/communities', label: 'Communities' },
   { to: '/litter-facts', label: 'Litter Facts' },
   { to: '/contact', label: 'Contact' },
 ]

@@ -9,6 +9,10 @@ from app.config import DATABASE_URL
 from app.database import Base
 from app.models import Report, ReportImage, User  # noqa: F401 — ensure models are registered
 from app.models.favourite import Favourite  # noqa: F401
+from app.models.community import Community  # noqa: F401
+from app.models.community_post import CommunityPost  # noqa: F401
+from app.models.community_event import CommunityEvent, event_reports  # noqa: F401
+from app.models.community_membership import CommunityMembership  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
