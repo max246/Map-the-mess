@@ -11,3 +11,4 @@ venv/
 images/
 *.pem
 proxy-conf/htpasswd.*
+.idea/
