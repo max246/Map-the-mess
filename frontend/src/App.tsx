@@ -19,6 +19,14 @@ import Disclaimer from './pages/Disclaimer'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import LitterFacts from './pages/LitterFacts'
 import Leaderboard from './pages/Leaderboard'
+import CommunitySearch from './pages/CommunitySearch'
+import CreateCommunity from './pages/CreateCommunity'
+import CommunityDetail from './pages/CommunityDetail'
+import CreateEvent from './pages/CreateEvent'
+import EditEvent from './pages/EditEvent'
+import AdminCommunities from './pages/AdminCommunities'
+import EventDetail from './pages/EventDetail'
+import PostDetail from './pages/PostDetail'
 import SessionExpiredOverlay from './components/SessionExpiredOverlay'
 import api from './api/client'
 
@@ -51,11 +59,19 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/communities" element={<AdminCommunities />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/disclaimer" element={<Disclaimer />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/litter-facts" element={<LitterFacts />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/communities" element={<CommunitySearch />} />
+            <Route path="/communities/new" element={<CreateCommunity />} />
+            <Route path="/communities/:id" element={<CommunityDetail />} />
+            <Route path="/communities/:id/events/new" element={<CreateEvent />} />
+            <Route path="/communities/:id/posts/:postId" element={<PostDetail />} />
+            <Route path="/communities/:id/events/:eventId" element={<EventDetail />} />
+            <Route path="/communities/:id/events/:eventId/edit" element={<EditEvent />} />
           </Routes>
         </main>
         <footer className="text-xs text-gray-400 py-2 px-4 flex items-center justify-center gap-3 flex-wrap">

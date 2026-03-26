@@ -53,6 +53,9 @@ export const imageUrl = (img: { url: string }) => `${API_BASE_URL}/api/reports/i
 export const thumbnailUrl = (img: { thumbnail_url?: string | null; url: string }) =>
   `${API_BASE_URL}/api/reports/images/${img.thumbnail_url || img.url}`
 
+export const communityImageUrl = (filename: string) =>
+  `${API_BASE_URL}/api/reports/images/${filename}`
+
 export const customInstance = <T>(config: AxiosRequestConfig): Promise<T> => {
   return api(config).then((response) => response.data)
 }

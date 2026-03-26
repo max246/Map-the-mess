@@ -195,7 +195,9 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             detail="Email not verified. Please check your inbox.",
         )
 
-    access = create_access_token({"sub": user.email, "type": user.user_type.value})
+    access = create_access_token(
+        {"sub": user.email, "type": user.user_type.value, "user_id": user.id}
+    )
     refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
     return {"access_token": access, "refresh_token": refresh}
 
@@ -224,7 +226,9 @@ def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
     # Revoke the old refresh token (rotation)
     stored.revoked = True  # type: ignore[assignment]
 
-    access = create_access_token({"sub": user.email, "type": user.user_type.value})
+    access = create_access_token(
+        {"sub": user.email, "type": user.user_type.value, "user_id": user.id}
+    )
     new_refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
     return {"access_token": access, "refresh_token": new_refresh}
 
