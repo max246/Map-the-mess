@@ -26,7 +26,7 @@ class CommunityMembership(Base):
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    status = Column(Enum(MembershipStatus), default=MembershipStatus.pending, nullable=False)
+    status: Column[MembershipStatus] = Column(Enum(MembershipStatus), default=MembershipStatus.pending, nullable=False)  # type: ignore[assignment]
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

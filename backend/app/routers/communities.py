@@ -138,14 +138,14 @@ def _save_profile_image(file: UploadFile) -> str:
 def _event_to_read(event: CommunityEvent) -> EventRead:
     """Convert a CommunityEvent ORM object to an EventRead schema."""
     return EventRead(
-        id=event.id,
-        community_id=event.community_id,
-        description=event.description,
-        date=event.date,
-        meeting_latitude=event.meeting_latitude,
-        meeting_longitude=event.meeting_longitude,
+        id=event.id,  # type: ignore[arg-type]
+        community_id=event.community_id,  # type: ignore[arg-type]
+        description=event.description,  # type: ignore[arg-type]
+        date=event.date,  # type: ignore[arg-type]
+        meeting_latitude=event.meeting_latitude,  # type: ignore[arg-type]
+        meeting_longitude=event.meeting_longitude,  # type: ignore[arg-type]
         report_ids=[r.id for r in event.reports],
-        created_at=event.created_at,
+        created_at=event.created_at,  # type: ignore[arg-type]
     )
 
 
@@ -155,21 +155,17 @@ def _community_to_detail(community: Community, show_content: bool = True) -> Com
     If show_content is False, posts and events are hidden (empty lists).
     """
     return CommunityDetail(
-        id=community.id,
-        name=community.name,
-        description=community.description,
-        facebook_url=community.facebook_url,
-        profile_image=community.profile_image,
-        latitude=community.latitude,
-        longitude=community.longitude,
-        radius_km=community.radius_km,
-        owner_id=community.owner_id,
-        status=(
-            community.status.value
-            if isinstance(community.status, CommunityStatus)
-            else community.status
-        ),
-        created_at=community.created_at,
+        id=community.id,  # type: ignore[arg-type]
+        name=community.name,  # type: ignore[arg-type]
+        description=community.description,  # type: ignore[arg-type]
+        facebook_url=community.facebook_url,  # type: ignore[arg-type]
+        profile_image=community.profile_image,  # type: ignore[arg-type]
+        latitude=community.latitude,  # type: ignore[arg-type]
+        longitude=community.longitude,  # type: ignore[arg-type]
+        radius_km=community.radius_km,  # type: ignore[arg-type]
+        owner_id=community.owner_id,  # type: ignore[arg-type]
+        status=community.status.value if isinstance(community.status, CommunityStatus) else community.status,  # type: ignore[arg-type]
+        created_at=community.created_at,  # type: ignore[arg-type]
         posts=[PostRead.model_validate(p) for p in community.posts] if show_content else [],
         events=[_event_to_read(e) for e in community.events] if show_content else [],
     )
@@ -307,7 +303,7 @@ def my_communities(
         rejected=[
             RejectedCommunity(
                 community=CommunityRead.model_validate(c),
-                rejected_at=rejected_map[c.id].updated_at or rejected_map[c.id].created_at,
+                rejected_at=rejected_map[c.id].updated_at or rejected_map[c.id].created_at,  # type: ignore[arg-type]
             )
             for c in rejected_communities
         ],
@@ -371,7 +367,7 @@ def upload_profile_image(
         if os.path.isfile(old_path):
             os.remove(old_path)
 
-    community.profile_image = _save_profile_image(file)
+    community.profile_image = _save_profile_image(file)  # type: ignore[assignment]
     db.commit()
     db.refresh(community)
     return community
@@ -400,7 +396,7 @@ def update_community_status(
             detail=f"Invalid status. Must be one of: {', '.join(s.value for s in CommunityStatus)}",
         )
 
-    community.status = new_status
+    community.status = new_status  # type: ignore[assignment]
     db.commit()
     db.refresh(community)
     return community
@@ -449,7 +445,7 @@ def update_post(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    post.content = payload.content
+    post.content = payload.content  # type: ignore[assignment]
     db.commit()
     db.refresh(post)
     return post
@@ -492,7 +488,7 @@ def _attach_reports(event: CommunityEvent, report_ids: list[int], db: Session) -
     reports = db.query(Report).filter(Report.id.in_(report_ids)).all() if report_ids else []
     if len(reports) != len(report_ids):
         found = {r.id for r in reports}
-        missing = set(report_ids) - found
+        missing = set(report_ids) - found  # type: ignore[operator]
         raise HTTPException(status_code=404, detail=f"Reports not found: {missing}")
     event.reports = reports
 
@@ -567,13 +563,13 @@ def update_event(
         raise HTTPException(status_code=404, detail="Event not found")
 
     if payload.description is not None:
-        event.description = payload.description
+        event.description = payload.description  # type: ignore[assignment]
     if payload.date is not None:
-        event.date = payload.date
+        event.date = payload.date  # type: ignore[assignment]
     if payload.meeting_latitude is not None:
-        event.meeting_latitude = payload.meeting_latitude
+        event.meeting_latitude = payload.meeting_latitude  # type: ignore[assignment]
     if payload.meeting_longitude is not None:
-        event.meeting_longitude = payload.meeting_longitude
+        event.meeting_longitude = payload.meeting_longitude  # type: ignore[assignment]
     if payload.report_ids is not None:
         _attach_reports(event, payload.report_ids, db)
 
@@ -646,9 +642,9 @@ def join_community(
                         detail="You can request to join again after 24 hours",
                     )
             # Cooldown passed — reset to pending
-            existing.status = MembershipStatus.pending
-            existing.created_at = datetime.now(timezone.utc)
-            existing.updated_at = datetime.now(timezone.utc)
+            existing.status = MembershipStatus.pending  # type: ignore[assignment]
+            existing.created_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+            existing.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
             db.commit()
             db.refresh(existing)
             return existing
@@ -696,13 +692,13 @@ def list_memberships(
 
     return [
         MembershipRead(
-            id=m.id,
-            community_id=m.community_id,
-            user_id=m.user_id,
-            user_name=users.get(m.user_id, ""),
-            status=m.status.value if hasattr(m.status, "value") else m.status,
-            created_at=m.created_at,
-            updated_at=m.updated_at,
+            id=m.id,  # type: ignore[arg-type]
+            community_id=m.community_id,  # type: ignore[arg-type]
+            user_id=m.user_id,  # type: ignore[arg-type]
+            user_name=users.get(m.user_id, ""),  # type: ignore[arg-type]
+            status=m.status.value if hasattr(m.status, "value") else m.status,  # type: ignore[arg-type]
+            created_at=m.created_at,  # type: ignore[arg-type]
+            updated_at=m.updated_at,  # type: ignore[arg-type]
         )
         for m in memberships
     ]
@@ -742,8 +738,8 @@ def update_membership(
             detail=f"Invalid status. Must be one of: {', '.join(s.value for s in MembershipStatus)}",
         )
 
-    membership.status = new_status
-    membership.updated_at = datetime.now(timezone.utc)
+    membership.status = new_status  # type: ignore[assignment]
+    membership.updated_at = datetime.now(timezone.utc)  # type: ignore[assignment]
     db.commit()
     db.refresh(membership)
     return membership

@@ -28,7 +28,7 @@ class Community(Base):
     owner_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    status = Column(Enum(CommunityStatus), default=CommunityStatus.active, nullable=False)
+    status: Column[CommunityStatus] = Column(Enum(CommunityStatus), default=CommunityStatus.active, nullable=False)  # type: ignore[assignment]
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", backref="owned_communities", lazy="joined")
