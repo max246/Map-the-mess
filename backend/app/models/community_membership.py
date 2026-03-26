@@ -28,6 +28,7 @@ class CommunityMembership(Base):
     )
     status = Column(Enum(MembershipStatus), default=MembershipStatus.pending, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     community = relationship("Community", backref="memberships", lazy="joined")
     user = relationship("User", backref="community_memberships", lazy="joined")

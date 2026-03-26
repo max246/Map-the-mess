@@ -236,14 +236,15 @@ def _check_refresh_tokens(conn):
     assert "user_id" in fk_cols
 
 
-# 9. 5a2cba4dd38c — add communities, community_posts, community_events, event_reports
-@_check("5a2cba4dd38c")
+# 9. 3a9e288db961 — add communities feature (all tables in one migration)
+@_check("3a9e288db961")
 def _check_communities(conn):
     tables = _table_names(conn)
     assert "communities" in tables
     assert "community_posts" in tables
     assert "community_events" in tables
     assert "event_reports" in tables
+    assert "community_memberships" in tables
 
     # communities columns
     comm_cols = _column_names(conn, "communities")
@@ -281,6 +282,10 @@ def _check_communities(conn):
     er_cols = _column_names(conn, "event_reports")
     assert {"event_id", "report_id"} <= er_cols
 
+    # community_memberships columns
+    mem_cols = _column_names(conn, "community_memberships")
+    assert {"id", "community_id", "user_id", "status", "created_at", "updated_at"} <= mem_cols
+
     # Verify foreign keys on communities
     fks = inspect(conn).get_foreign_keys("communities")
     fk_cols = {fk["constrained_columns"][0] for fk in fks}
@@ -302,18 +307,11 @@ def _check_communities(conn):
     assert "event_id" in er_fk_cols
     assert "report_id" in er_fk_cols
 
-
-# 10. f5aa4f555429 — add community_memberships table
-@_check("f5aa4f555429")
-def _check_community_memberships(conn):
-    assert "community_memberships" in _table_names(conn)
-    cols = _column_names(conn, "community_memberships")
-    assert {"id", "community_id", "user_id", "status", "created_at"} <= cols
-
-    fks = inspect(conn).get_foreign_keys("community_memberships")
-    fk_cols = {fk["constrained_columns"][0] for fk in fks}
-    assert "community_id" in fk_cols
-    assert "user_id" in fk_cols
+    # Verify foreign keys on community_memberships
+    mem_fks = inspect(conn).get_foreign_keys("community_memberships")
+    mem_fk_cols = {fk["constrained_columns"][0] for fk in mem_fks}
+    assert "community_id" in mem_fk_cols
+    assert "user_id" in mem_fk_cols
 
 
 # ---------------------------------------------------------------------------
@@ -329,8 +327,7 @@ MIGRATION_CHAIN = [
     "0445d97d2ec1",
     "e44cc152ac4d",
     "3b1048682efd",
-    "5a2cba4dd38c",
-    "f5aa4f555429",
+    "3a9e288db961",
 ]
 
 # ---------------------------------------------------------------------------

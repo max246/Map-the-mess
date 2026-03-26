@@ -6,11 +6,8 @@
  * OpenAPI spec version: dev
  */
 import type { CommunityRead } from './communityRead';
-import type { RejectedCommunity } from './rejectedCommunity';
 
-export interface MyCommunities {
-  owned?: CommunityRead[];
-  joined?: CommunityRead[];
-  pending?: CommunityRead[];
-  rejected?: RejectedCommunity[];
+export interface RejectedCommunity {
+  community: CommunityRead;
+  rejected_at?: string | null;
 }

@@ -5,6 +5,7 @@ import type { CommunityRead } from '../api/model'
 interface CommunityCardProps {
   community: CommunityRead
   badge?: 'owned' | 'joined' | 'pending'
+  pendingRequests?: number
 }
 
 const BADGE_STYLES = {
@@ -19,7 +20,7 @@ const BADGE_LABELS = {
   pending: 'Pending',
 } as const
 
-export default function CommunityCard({ community, badge }: CommunityCardProps) {
+export default function CommunityCard({ community, badge, pendingRequests }: CommunityCardProps) {
   return (
     <Link
       to={`/communities/${community.id}`}
@@ -56,7 +57,14 @@ export default function CommunityCard({ community, badge }: CommunityCardProps) 
           {community.description && (
             <p className="text-sm text-gray-500 line-clamp-2">{community.description}</p>
           )}
-          <p className="text-xs text-gray-400 mt-1">{community.radius_km} km radius</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-xs text-gray-400">{community.radius_km} km radius</p>
+            {pendingRequests != null && pendingRequests > 0 && (
+              <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-medium">
+                {pendingRequests} pending {pendingRequests === 1 ? 'request' : 'requests'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>

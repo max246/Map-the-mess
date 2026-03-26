@@ -22,6 +22,7 @@ const {
   leaveCommunityApiCommunitiesCommunityIdLeaveDelete,
   listMembershipsApiCommunitiesCommunityIdMembershipsGet,
   updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,
+  myCommunitiesApiCommunitiesMineGet,
 } = getCommunities()
 
 export default function CommunityDetail() {
@@ -52,29 +53,78 @@ export default function CommunityDetail() {
       .finally(() => setLoading(false))
   }, [communityId])
 
-  // Fetch memberships
-  useEffect(() => {
+  // Fetch memberships + own status
+  const fetchMemberships = () => {
     if (!isLoggedIn) return
-    listMembershipsApiCommunitiesCommunityIdMembershipsGet(communityId)
-      .then((mems) => {
-        setMemberships(mems)
-        if (user) {
-          setMyMembership(mems.find((m) => m.user_id === user.id) || null)
-        }
-      })
-      .catch(() => {})
-  }, [communityId, isLoggedIn, user])
-
-  const refresh = () => {
-    getCommunityApiCommunitiesCommunityIdGet(communityId).then(setCommunity).catch(console.error)
-    if (isLoggedIn) {
+    // Only owner/admin can list memberships
+    if (isOwner || isAdmin) {
       listMembershipsApiCommunitiesCommunityIdMembershipsGet(communityId)
         .then((mems) => {
           setMemberships(mems)
-          if (user) setMyMembership(mems.find((m) => m.user_id === user.id) || null)
+          if (user) {
+            const mine = mems.find((m) => m.user_id === user.id)
+            if (mine) setMyMembership(mine)
+          }
         })
         .catch(() => {})
     }
+    // Also check /mine to get the user's own pending/joined status
+    // (since non-owners can't see pending memberships in the list)
+    myCommunitiesApiCommunitiesMineGet()
+      .then((data) => {
+        const joinedIds = new Set((data.joined || []).map((c) => c.id))
+        const pendingIds = new Set((data.pending || []).map((c) => c.id))
+        const rejectedEntry = (data.rejected || []).find((r) => r.community.id === communityId)
+        if (joinedIds.has(communityId)) {
+          setMyMembership(
+            (prev) =>
+              prev || {
+                id: 0,
+                community_id: communityId,
+                user_id: user?.id || 0,
+                user_name: '',
+                status: 'approved',
+                created_at: '',
+              }
+          )
+        } else if (pendingIds.has(communityId)) {
+          setMyMembership(
+            (prev) =>
+              prev || {
+                id: 0,
+                community_id: communityId,
+                user_id: user?.id || 0,
+                user_name: '',
+                status: 'pending',
+                created_at: '',
+              }
+          )
+        } else if (rejectedEntry) {
+          setMyMembership(
+            (prev) =>
+              prev || {
+                id: 0,
+                community_id: communityId,
+                user_id: user?.id || 0,
+                user_name: '',
+                status: 'rejected',
+                created_at: '',
+                updated_at: rejectedEntry.rejected_at || '',
+              }
+          )
+        }
+      })
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchMemberships()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityId, isLoggedIn, user, community?.owner_id])
+
+  const refresh = () => {
+    getCommunityApiCommunitiesCommunityIdGet(communityId).then(setCommunity).catch(console.error)
+    fetchMemberships()
   }
 
   // --- Image upload ---
@@ -148,6 +198,7 @@ export default function CommunityDetail() {
     return <div className="text-center text-gray-500 py-16">{error || 'Not found'}</div>
 
   const isUnderReview = community.status === 'under_review'
+  const pendingCount = memberships.filter((m) => m.status === 'pending').length
   const posts = [...(community.posts || [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
@@ -160,6 +211,27 @@ export default function CommunityDetail() {
       <Link to="/communities" className="text-sm text-brand underline mb-4 inline-block">
         ← Back to communities
       </Link>
+
+      {/* Pending approval banner (owner only) */}
+      {isOwner && pendingCount > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+          <span className="text-red-500 text-lg">!</span>
+          <p className="text-red-700 text-sm">
+            <span className="font-medium">{pendingCount}</span> membership{' '}
+            {pendingCount === 1 ? 'request' : 'requests'} pending approval.{' '}
+            <a
+              href="#members"
+              className="underline"
+              onClick={(e) => {
+                e.preventDefault()
+                document.getElementById('pending-requests')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            >
+              Review now
+            </a>
+          </p>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-start gap-4 mb-6">
@@ -228,10 +300,13 @@ export default function CommunityDetail() {
               onClick={async () => {
                 setJoining(true)
                 try {
-                  await joinCommunityApiCommunitiesCommunityIdJoinPost(communityId)
-                  refresh()
-                } catch {
-                  alert('Failed to join community')
+                  const membership =
+                    await joinCommunityApiCommunitiesCommunityIdJoinPost(communityId)
+                  setMyMembership(membership)
+                } catch (err: unknown) {
+                  const detail = (err as { response?: { data?: { detail?: string } } })?.response
+                    ?.data?.detail
+                  alert(detail || 'Failed to join community')
                 }
                 setJoining(false)
               }}
@@ -261,19 +336,54 @@ export default function CommunityDetail() {
               Leave Community
             </button>
           ) : myMembership.status === 'rejected' ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-700 border border-red-200">
-              Request declined
-            </span>
+            (() => {
+              const rejectedAt = myMembership.updated_at
+                ? new Date(myMembership.updated_at)
+                : myMembership.created_at
+                  ? new Date(myMembership.created_at)
+                  : new Date() // fallback: assume just rejected
+              const cooldownEnd = new Date(rejectedAt.getTime() + 24 * 60 * 60 * 1000)
+              const canReapply = new Date() >= cooldownEnd
+              return canReapply ? (
+                <button
+                  onClick={async () => {
+                    setJoining(true)
+                    try {
+                      const membership =
+                        await joinCommunityApiCommunitiesCommunityIdJoinPost(communityId)
+                      setMyMembership(membership)
+                    } catch (err: unknown) {
+                      const detail = (err as { response?: { data?: { detail?: string } } })
+                        ?.response?.data?.detail
+                      alert(detail || 'Failed to request to join')
+                    }
+                    setJoining(false)
+                  }}
+                  disabled={joining}
+                  className="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {joining ? 'Requesting...' : 'Request to Join Again'}
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+                  Request declined — you can reapply{' '}
+                  {cooldownEnd.toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              )
+            })()
           ) : null}
         </div>
       )}
 
       {/* Membership management (owner only) */}
-      {isOwner && memberships.filter((m) => m.status === 'pending').length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <h2 className="font-semibold mb-3">
-            Pending Requests ({memberships.filter((m) => m.status === 'pending').length})
-          </h2>
+      {isOwner && pendingCount > 0 && (
+        <div id="pending-requests" className="bg-white rounded-lg shadow p-4 mb-6">
+          <h2 className="font-semibold mb-3">Pending Requests ({pendingCount})</h2>
           <div className="divide-y divide-gray-100">
             {memberships
               .filter((m) => m.status === 'pending')

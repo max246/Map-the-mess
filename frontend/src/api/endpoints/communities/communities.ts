@@ -185,7 +185,7 @@ const createEventApiCommunitiesCommunityIdEventsPost = (
       );
     }
   /**
- * Get a single event. Follows community visibility rules.
+ * Get a single event. Only members, owner, or moderator+ can view.
  * @summary Get Event
  */
 const getEventApiCommunitiesCommunityIdEventsEventIdGet = (
@@ -239,7 +239,7 @@ const joinCommunityApiCommunitiesCommunityIdJoinPost = (
       );
     }
   /**
- * List memberships. Owner sees all (pending/approved/rejected). Others see only approved.
+ * List memberships. Only the community owner, admin, or superuser can access.
  * @summary List Memberships
  */
 const listMembershipsApiCommunitiesCommunityIdMembershipsGet = (

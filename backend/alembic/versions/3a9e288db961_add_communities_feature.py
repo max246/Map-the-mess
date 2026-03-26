@@ -1,8 +1,8 @@
-"""add communities community_posts community_events and event_reports tables
+"""add communities feature
 
-Revision ID: 5a2cba4dd38c
+Revision ID: 3a9e288db961
 Revises: 3b1048682efd
-Create Date: 2026-03-25 21:03:15.961685
+Create Date: 2026-03-26 21:44:55.907252
 
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision: str = "5a2cba4dd38c"
+revision: str = "3a9e288db961"
 down_revision: Union[str, None] = "3b1048682efd"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -58,6 +58,35 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_community_events_id"), "community_events", ["id"], unique=False)
     op.create_table(
+        "community_memberships",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("community_id", sa.Integer(), nullable=False),
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum("pending", "approved", "rejected", name="membershipstatus"),
+            nullable=False,
+        ),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["community_id"], ["communities.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("community_id", "user_id", name="uq_community_user"),
+    )
+    op.create_index(
+        op.f("ix_community_memberships_community_id"),
+        "community_memberships",
+        ["community_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_community_memberships_id"), "community_memberships", ["id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_community_memberships_user_id"), "community_memberships", ["user_id"], unique=False
+    )
+    op.create_table(
         "community_posts",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("community_id", sa.Integer(), nullable=False),
@@ -87,6 +116,10 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_community_posts_id"), table_name="community_posts")
     op.drop_index(op.f("ix_community_posts_community_id"), table_name="community_posts")
     op.drop_table("community_posts")
+    op.drop_index(op.f("ix_community_memberships_user_id"), table_name="community_memberships")
+    op.drop_index(op.f("ix_community_memberships_id"), table_name="community_memberships")
+    op.drop_index(op.f("ix_community_memberships_community_id"), table_name="community_memberships")
+    op.drop_table("community_memberships")
     op.drop_index(op.f("ix_community_events_id"), table_name="community_events")
     op.drop_index(op.f("ix_community_events_community_id"), table_name="community_events")
     op.drop_table("community_events")

@@ -80,12 +80,20 @@ export default function Admin() {
           </p>
         </div>
         {canManageUsers && (
-          <Link
-            to="/admin/users"
-            className="bg-brand hover:bg-brand-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition"
-          >
-            Manage Users
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              to="/admin/users"
+              className="bg-brand hover:bg-brand-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            >
+              Manage Users
+            </Link>
+            <Link
+              to="/admin/communities"
+              className="bg-brand hover:bg-brand-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            >
+              Manage Communities
+            </Link>
+          </div>
         )}
       </div>
 

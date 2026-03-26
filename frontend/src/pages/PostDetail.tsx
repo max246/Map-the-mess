@@ -33,6 +33,11 @@ export default function PostDetail() {
 
   const isOwner = !!(user && community && user.id === community.owner_id)
 
+  // Reset editing state when postId changes (e.g. after creating a new post)
+  useEffect(() => {
+    setEditing(isNew || searchParams.get('edit') === 'true')
+  }, [postId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     getCommunityApiCommunitiesCommunityIdGet(communityId)
       .then((c) => {
@@ -74,7 +79,8 @@ export default function PostDetail() {
         const created = await createPostApiCommunitiesCommunityIdPostsPost(communityId, {
           content: editContent,
         })
-        navigate(`/communities/${communityId}/posts/${created.id}`, { replace: true })
+        setEditing(false)
+        navigate(`/communities/${communityId}/posts/${created.id}`)
       } else {
         const updated = await updatePostApiCommunitiesCommunityIdPostsPostIdPatch(
           communityId,

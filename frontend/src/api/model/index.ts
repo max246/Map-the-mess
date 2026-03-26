@@ -30,6 +30,7 @@ export * from './postCreate';
 export * from './postRead';
 export * from './postUpdate';
 export * from './refreshRequest';
+export * from './rejectedCommunity';
 export * from './reportImageRead';
 export * from './reportRead';
 export * from './resetPassword';

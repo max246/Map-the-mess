@@ -24,6 +24,7 @@ import CreateCommunity from './pages/CreateCommunity'
 import CommunityDetail from './pages/CommunityDetail'
 import CreateEvent from './pages/CreateEvent'
 import EditEvent from './pages/EditEvent'
+import AdminCommunities from './pages/AdminCommunities'
 import EventDetail from './pages/EventDetail'
 import PostDetail from './pages/PostDetail'
 import SessionExpiredOverlay from './components/SessionExpiredOverlay'
@@ -58,6 +59,7 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/communities" element={<AdminCommunities />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/disclaimer" element={<Disclaimer />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />

@@ -396,6 +396,72 @@ class TestEvents:
         )
         assert res.status_code == 403
 
+    def test_non_member_cannot_view_event(self, client, db, volunteer):
+        outsider = _make_user(db, email="event_outsider@example.com")
+        c = _create_community(db, volunteer)
+        create_res = client.post(
+            f"/api/communities/{c.id}/events",
+            json={
+                "description": "Private event",
+                "date": "2026-04-01T10:00:00",
+                "meeting_latitude": UK_LAT,
+                "meeting_longitude": UK_LON,
+            },
+            headers=auth_header(volunteer),
+        )
+        event_id = create_res.json()["id"]
+
+        res = client.get(
+            f"/api/communities/{c.id}/events/{event_id}",
+            headers=auth_header(outsider),
+        )
+        assert res.status_code == 403
+
+    def test_approved_member_can_view_event(self, client, db, volunteer):
+        member = _make_user(db, email="event_member@example.com")
+        c = _create_community(db, volunteer)
+        db.add(
+            CommunityMembership(
+                community_id=c.id, user_id=member.id, status=MembershipStatus.approved
+            )
+        )
+        db.commit()
+
+        create_res = client.post(
+            f"/api/communities/{c.id}/events",
+            json={
+                "description": "Member event",
+                "date": "2026-04-01T10:00:00",
+                "meeting_latitude": UK_LAT,
+                "meeting_longitude": UK_LON,
+            },
+            headers=auth_header(volunteer),
+        )
+        event_id = create_res.json()["id"]
+
+        res = client.get(
+            f"/api/communities/{c.id}/events/{event_id}",
+            headers=auth_header(member),
+        )
+        assert res.status_code == 200
+
+    def test_anon_cannot_view_event(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        create_res = client.post(
+            f"/api/communities/{c.id}/events",
+            json={
+                "description": "Anon test",
+                "date": "2026-04-01T10:00:00",
+                "meeting_latitude": UK_LAT,
+                "meeting_longitude": UK_LON,
+            },
+            headers=auth_header(volunteer),
+        )
+        event_id = create_res.json()["id"]
+
+        res = client.get(f"/api/communities/{c.id}/events/{event_id}")
+        assert res.status_code == 403
+
     def test_owner_deletes_event(self, client, db, volunteer):
         c = _create_community(db, volunteer)
         create_res = client.post(
@@ -561,33 +627,33 @@ class TestListMemberships:
         assert len(res.json()) == 1
         assert res.json()[0]["status"] == "pending"
 
-    def test_non_owner_sees_only_approved(self, client, db, volunteer):
-        joiner = _make_user(db, email="approved_user@example.com")
-        pending = _make_user(db, email="pending_user2@example.com")
+    def test_regular_user_cannot_list_memberships(self, client, db, volunteer):
+        other = _make_user(db, email="regular_user@example.com")
         c = _create_community(db, volunteer)
 
-        # Add approved member
-        db.add(
-            CommunityMembership(
-                community_id=c.id, user_id=joiner.id, status=MembershipStatus.approved
-            )
+        res = client.get(
+            f"/api/communities/{c.id}/memberships",
+            headers=auth_header(other),
         )
-        # Add pending member
+        assert res.status_code == 403
+
+    def test_admin_can_list_memberships(self, client, db, volunteer, admin):
+        c = _create_community(db, volunteer)
         db.add(
             CommunityMembership(
-                community_id=c.id, user_id=pending.id, status=MembershipStatus.pending
+                community_id=c.id,
+                user_id=_make_user(db, email="member_x@example.com").id,
+                status=MembershipStatus.approved,
             )
         )
         db.commit()
 
         res = client.get(
             f"/api/communities/{c.id}/memberships",
-            headers=auth_header(joiner),
+            headers=auth_header(admin),
         )
         assert res.status_code == 200
-        statuses = [m["status"] for m in res.json()]
-        assert "approved" in statuses
-        assert "pending" not in statuses
+        assert len(res.json()) == 1
 
 
 # ---------------------------------------------------------------------------

@@ -15,7 +15,27 @@ import string
 import sys
 
 # Ensure the backend package is importable
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+BACKEND_DIR = os.path.join(os.path.dirname(__file__), "..")
+sys.path.insert(0, BACKEND_DIR)
+
+# Load .env from project root and build DATABASE_URL for local access
+PROJECT_ROOT = os.path.join(BACKEND_DIR, "..")
+_env_path = os.path.join(PROJECT_ROOT, ".env")
+if os.path.isfile(_env_path):
+    with open(_env_path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
+
+# Build DATABASE_URL from .env vars if not already set (localhost:5433 for Docker-exposed Postgres)
+if not os.environ.get("DATABASE_URL"):
+    pg_user = os.environ.get("POSTGRES_USER", "")
+    pg_pass = os.environ.get("POSTGRES_PASSWORD", "")
+    pg_db = os.environ.get("POSTGRES_DB", "")
+    if pg_user and pg_pass and pg_db:
+        os.environ["DATABASE_URL"] = f"postgresql://{pg_user}:{pg_pass}@localhost:5433/{pg_db}"
 
 from passlib.context import CryptContext
 
@@ -53,6 +73,7 @@ def seed_users(db, count: int = 5) -> None:
         if existing:
             existing.hashed_password = pwd_context.hash(password)
             existing.is_verified = True
+            db.commit()
             print(f"{email:<35} {password:<15} {first} {last}  (updated)")
         else:
             db.add(
@@ -115,6 +136,10 @@ def main() -> None:
         help="Number of users to create (default: 5)",
     )
     args = parser.parse_args()
+
+    from app.config import DATABASE_URL
+
+    print(f"Using database: {DATABASE_URL}\n")
 
     db = SessionLocal()
     try:

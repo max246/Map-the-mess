@@ -1704,7 +1704,7 @@
           "Communities"
         ],
         "summary": "Get Event",
-        "description": "Get a single event. Follows community visibility rules.",
+        "description": "Get a single event. Only members, owner, or moderator+ can view.",
         "operationId": "get_event_api_communities__community_id__events__event_id__get",
         "parameters": [
           {
@@ -1917,7 +1917,7 @@
           "Communities"
         ],
         "summary": "List Memberships",
-        "description": "List memberships. Owner sees all (pending/approved/rejected). Others see only approved.",
+        "description": "List memberships. Only the community owner, admin, or superuser can access.",
         "operationId": "list_memberships_api_communities__community_id__memberships_get",
         "security": [
           {
@@ -2640,6 +2640,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -2676,6 +2688,14 @@
             },
             "type": "array",
             "title": "Pending",
+            "default": []
+          },
+          "rejected": {
+            "items": {
+              "$ref": "#/components/schemas/RejectedCommunity"
+            },
+            "type": "array",
+            "title": "Rejected",
             "default": []
           }
         },
@@ -2749,6 +2769,30 @@
           "refresh_token"
         ],
         "title": "RefreshRequest"
+      },
+      "RejectedCommunity": {
+        "properties": {
+          "community": {
+            "$ref": "#/components/schemas/CommunityRead"
+          },
+          "rejected_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejected At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "community"
+        ],
+        "title": "RejectedCommunity"
       },
       "ReportImageRead": {
         "properties": {

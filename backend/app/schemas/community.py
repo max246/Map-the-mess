@@ -117,6 +117,7 @@ class MembershipRead(BaseModel):
     user_name: str = ""
     status: str
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -132,7 +133,13 @@ class MembershipAction(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class RejectedCommunity(BaseModel):
+    community: CommunityRead
+    rejected_at: Optional[datetime] = None
+
+
 class MyCommunities(BaseModel):
     owned: list[CommunityRead] = []
     joined: list[CommunityRead] = []
     pending: list[CommunityRead] = []
+    rejected: list[RejectedCommunity] = []

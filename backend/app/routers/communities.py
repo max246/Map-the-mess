@@ -2,6 +2,7 @@
 
 import os
 import uuid
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
@@ -34,6 +35,7 @@ from app.schemas.community import (
     MembershipAction,
     MembershipRead,
     MyCommunities,
+    RejectedCommunity,
     PostCreate,
     PostRead,
     PostUpdate,
@@ -101,6 +103,14 @@ def _is_member_or_owner(community: Community, user: User | None, db: Session) ->
         .first()
     )
     return membership is not None
+
+
+def _require_content_access(community: Community, user: User | None, db: Session) -> None:
+    """Raise 403 if the user is not an approved member, owner, or moderator+."""
+    if _is_moderator_or_above(user):
+        return
+    if not _is_member_or_owner(community, user, db):
+        raise HTTPException(status_code=403, detail="You must be a member to view this content")
 
 
 def _save_profile_image(file: UploadFile) -> str:
@@ -274,10 +284,33 @@ def my_communities(
         .all()
     )
 
+    rejected_memberships = (
+        db.query(CommunityMembership)
+        .filter(
+            CommunityMembership.user_id == current_user.id,
+            CommunityMembership.status == MembershipStatus.rejected,
+        )
+        .all()
+    )
+    rejected_community_ids = [m.community_id for m in rejected_memberships]
+    rejected_communities = (
+        db.query(Community).filter(Community.id.in_(rejected_community_ids)).all()
+        if rejected_community_ids
+        else []
+    )
+    rejected_map = {m.community_id: m for m in rejected_memberships}
+
     return MyCommunities(
         owned=[CommunityRead.model_validate(c) for c in owned],
         joined=[CommunityRead.model_validate(c) for c in joined_communities],
         pending=[CommunityRead.model_validate(c) for c in pending_communities],
+        rejected=[
+            RejectedCommunity(
+                community=CommunityRead.model_validate(c),
+                rejected_at=rejected_map[c.id].updated_at or rejected_map[c.id].created_at,
+            )
+            for c in rejected_communities
+        ],
     )
 
 
@@ -498,14 +531,9 @@ def get_event(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
 ):
-    """Get a single event. Follows community visibility rules."""
+    """Get a single event. Only members, owner, or moderator+ can view."""
     community = _get_community_or_404(community_id, db)
-
-    # Visibility check
-    if community.status != CommunityStatus.active:
-        if not _is_moderator_or_above(current_user):
-            if not current_user or community.owner_id != current_user.id:
-                raise HTTPException(status_code=404, detail="Community not found")
+    _require_content_access(community, current_user, db)
 
     event = (
         db.query(CommunityEvent)
@@ -607,6 +635,23 @@ def join_community(
         .first()
     )
     if existing:
+        if existing.status == MembershipStatus.rejected:
+            # Allow re-joining after 24h cooldown
+            rejected_at = existing.updated_at or existing.created_at
+            if rejected_at:
+                cooldown = rejected_at.replace(tzinfo=timezone.utc) + timedelta(hours=24)
+                if datetime.now(timezone.utc) < cooldown:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="You can request to join again after 24 hours",
+                    )
+            # Cooldown passed — reset to pending
+            existing.status = MembershipStatus.pending
+            existing.created_at = datetime.now(timezone.utc)
+            existing.updated_at = datetime.now(timezone.utc)
+            db.commit()
+            db.refresh(existing)
+            return existing
         raise HTTPException(
             status_code=409, detail="You have already requested to join this community"
         )
@@ -627,13 +672,17 @@ def list_memberships(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List memberships. Owner sees all (pending/approved/rejected). Others see only approved."""
+    """List memberships. Only the community owner, admin, or superuser can access."""
     community = _get_community_or_404(community_id, db)
 
-    q = db.query(CommunityMembership).filter(CommunityMembership.community_id == community.id)
+    is_owner = community.owner_id == current_user.id
+    is_admin = current_user.user_type in (UserType.superuser, UserType.admin)
+    if not is_owner and not is_admin:
+        raise HTTPException(
+            status_code=403, detail="Only the community owner or an admin can view memberships"
+        )
 
-    if community.owner_id != current_user.id and not _is_moderator_or_above(current_user):
-        q = q.filter(CommunityMembership.status == MembershipStatus.approved)
+    q = db.query(CommunityMembership).filter(CommunityMembership.community_id == community.id)
 
     memberships = q.order_by(CommunityMembership.created_at.desc()).all()
 
@@ -653,6 +702,7 @@ def list_memberships(
             user_name=users.get(m.user_id, ""),
             status=m.status.value if hasattr(m.status, "value") else m.status,
             created_at=m.created_at,
+            updated_at=m.updated_at,
         )
         for m in memberships
     ]
@@ -693,6 +743,7 @@ def update_membership(
         )
 
     membership.status = new_status
+    membership.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(membership)
     return membership
