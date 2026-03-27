@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useMemo, useCallback, type ReactNo
 import api from '../api/client'
 
 interface User {
+  id: number
   email: string
   userType: string
   exp: number
@@ -28,7 +29,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 function decodeToken(token: string): User | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
-    return { email: payload.sub, userType: payload.type, exp: payload.exp }
+    return { id: payload.user_id, email: payload.sub, userType: payload.type, exp: payload.exp }
   } catch {
     return null
   }
