@@ -1,17 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import { getAuth } from '../api/endpoints/auth/auth'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
 import type { ReportRead } from '../api/model'
 
+const {
+  getProfileApiAuthMeGet,
+  updateProfileApiAuthMePatch,
+  uploadAvatarApiAuthMeAvatarPut,
+  changePasswordApiAuthMePasswordPatch,
+} = getAuth()
 const { listReportsApiReportsGet } = getReports()
 const {
   listFavouritesApiVolunteersFavouritesGet,
   addFavouriteApiVolunteersFavouritesReportIdPost,
   removeFavouriteApiVolunteersFavouritesReportIdDelete,
 } = getVolunteers()
+
+const WOMBLE_AVATARS = [
+  '/avatars/womble1.png',
+  '/avatars/womble2.png',
+  '/avatars/womble3.png',
+  '/avatars/womble4.png',
+]
 
 type Tab = 'favourites' | 'unresolved' | 'resolved'
 
@@ -76,6 +90,294 @@ function ReportCard({
       >
         {isFavourite ? '★' : '☆'}
       </button>
+    </div>
+  )
+}
+
+/** Resolve an avatar_url to a displayable src.
+ *  - Womble paths like "/avatars/womble1.png" are served by the frontend.
+ *  - Custom uploaded filenames like "avatar_abc123.jpg" are served by the backend images endpoint.
+ */
+function avatarSrc(avatarUrl: string | null | undefined): string {
+  if (!avatarUrl) return WOMBLE_AVATARS[0]
+  if (avatarUrl.startsWith('/avatars/')) return avatarUrl
+  // Custom upload — served from backend images
+  return `/api/reports/images/${avatarUrl}`
+}
+
+function ProfileSection() {
+  const { user } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [avatar, setAvatar] = useState(WOMBLE_AVATARS[0])
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+
+  // Edit name
+  const [editingName, setEditingName] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [nameLoading, setNameLoading] = useState(false)
+  const [nameMsg, setNameMsg] = useState('')
+
+  // Change password
+  const [editingPassword, setEditingPassword] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwMsg, setPwMsg] = useState('')
+
+  // Load profile from backend
+  useEffect(() => {
+    getProfileApiAuthMeGet()
+      .then((profile) => {
+        setFullName(profile.full_name || '')
+        setAvatar(avatarSrc(profile.avatar_url))
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleAvatarSelect = async (src: string) => {
+    // Womble avatar — store the path in DB via PATCH /me
+    setAvatar(src)
+    setShowAvatarPicker(false)
+    try {
+      await updateProfileApiAuthMePatch({ avatar_url: src })
+    } catch {
+      // silently fail — avatar is already set visually
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setShowAvatarPicker(false)
+    try {
+      const result = await uploadAvatarApiAuthMeAvatarPut({ file })
+      setAvatar(avatarSrc(result.avatar_url))
+    } catch {
+      alert('Failed to upload avatar.')
+    }
+  }
+
+  const handleSaveName = async () => {
+    setNameMsg('')
+    setNameLoading(true)
+    try {
+      await updateProfileApiAuthMePatch({ full_name: fullName.trim() })
+      setNameMsg('Name updated!')
+      setEditingName(false)
+    } catch {
+      setNameMsg('Failed to update name. Please try again later.')
+    }
+    setNameLoading(false)
+  }
+
+  const handleChangePassword = async () => {
+    setPwMsg('')
+    if (newPassword.length < 6) {
+      setPwMsg('Password must be at least 6 characters.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPwMsg('Passwords do not match.')
+      return
+    }
+    setPwLoading(true)
+    try {
+      await changePasswordApiAuthMePasswordPatch({
+        current_password: currentPassword,
+        new_password: newPassword,
+      })
+      setPwMsg('Password changed!')
+      setEditingPassword(false)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch {
+      setPwMsg('Failed to change password. Please try again later.')
+    }
+    setPwLoading(false)
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="flex items-start gap-6">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          <div className="relative group">
+            <img
+              src={avatar}
+              alt="Avatar"
+              className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+            />
+            <button
+              onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+              className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-medium"
+            >
+              Change
+            </button>
+          </div>
+
+          {showAvatarPicker && (
+            <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-56">
+              <p className="text-xs font-medium text-gray-500 mb-2">Pick an avatar</p>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {WOMBLE_AVATARS.map((src) => (
+                  <button
+                    key={src}
+                    onClick={() => handleAvatarSelect(src)}
+                    className={`rounded-full overflow-hidden border-2 transition ${
+                      avatar === src ? 'border-brand' : 'border-transparent hover:border-gray-300'
+                    }`}
+                  >
+                    <img src={src} alt="" className="w-10 h-10 object-cover" />
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full text-xs text-brand hover:underline text-center"
+              >
+                Upload custom picture
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-gray-500">{user?.email}</p>
+
+          {/* Name */}
+          <div className="mt-2">
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm flex-1"
+                  placeholder="Your full name"
+                />
+                <button
+                  onClick={handleSaveName}
+                  disabled={nameLoading || !fullName.trim()}
+                  className="px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {nameLoading ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingName(false)
+                    setNameMsg('')
+                  }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <p className="text-lg font-semibold">{fullName || 'No name set'}</p>
+                <button
+                  onClick={() => setEditingName(true)}
+                  className="text-xs text-brand hover:underline"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+            {nameMsg && (
+              <p
+                className={`text-xs mt-1 ${nameMsg.includes('Failed') ? 'text-red-500' : 'text-green-600'}`}
+              >
+                {nameMsg}
+              </p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div className="mt-3">
+            {editingPassword ? (
+              <div className="space-y-2 max-w-sm">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="Current password"
+                />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="New password (min 6 characters)"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                  placeholder="Confirm new password"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={pwLoading || !currentPassword || !newPassword || !confirmPassword}
+                    className="px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                  >
+                    {pwLoading ? 'Changing...' : 'Change Password'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingPassword(false)
+                      setPwMsg('')
+                      setCurrentPassword('')
+                      setNewPassword('')
+                      setConfirmPassword('')
+                    }}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingPassword(true)}
+                className="text-xs text-brand hover:underline"
+              >
+                Change password
+              </button>
+            )}
+            {pwMsg && (
+              <p
+                className={`text-xs mt-1 ${pwMsg.includes('Failed') || pwMsg.includes('must') || pwMsg.includes('match') ? 'text-red-500' : 'text-green-600'}`}
+              >
+                {pwMsg}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Badges - Coming Soon */}
+      <div className="mt-6 pt-5 border-t border-gray-100">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Badges</h3>
+        <div className="bg-gray-50 rounded-lg p-4 text-center">
+          <p className="text-gray-400 text-sm">
+            Badges are coming soon! Complete cleanups and participate in events to earn them.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -173,10 +475,10 @@ export default function VolunteerDashboard() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-1">Volunteer Dashboard</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Welcome back, <span className="font-medium text-gray-700">{user?.email}</span>
-      </p>
+      <h1 className="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
+
+      {/* Profile Section */}
+      <ProfileSection />
 
       {/* Tabs */}
       <div className="flex border-b mb-6">

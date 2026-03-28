@@ -22,9 +22,20 @@ class UserRead(BaseModel):
     full_name: str
     is_verified: bool
     user_type: str
+    avatar_url: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ProfileUpdate(BaseModel):
+    full_name: str | None = None
+    avatar_url: str | None = None
+
+
+class ChangePassword(BaseModel):
+    current_password: str
+    new_password: str
 
 
 class UserUpdateType(BaseModel):
