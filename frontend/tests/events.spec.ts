@@ -152,11 +152,11 @@ async function mockApi(page: Page) {
 }
 
 async function loginAsOwner(page: Page) {
-  await page.goto('/login')
-  await page.getByPlaceholder('Enter your email').fill('owner@example.com')
-  await page.getByPlaceholder('Enter your password').fill('password123')
-  await page.getByRole('button', { name: /log in/i }).click()
-  await page.waitForURL('**/admin')
+  // Set token directly in localStorage to avoid login page race conditions
+  await page.goto('/')
+  await page.evaluate((token) => {
+    localStorage.setItem('token', token)
+  }, OWNER_TOKEN)
 }
 
 test.beforeEach(async ({ page }) => {
