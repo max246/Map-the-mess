@@ -7,6 +7,7 @@ import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
 import LocateButton from '../components/LocateButton'
+import MarkdownRenderer from '../components/MarkdownRenderer'
 import type { EventRead, ReportRead } from '../api/model'
 
 const {
@@ -121,7 +122,7 @@ export default function EventDetail() {
 
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Event</h1>
+          <h1 className="text-2xl font-bold">{event.title}</h1>
           {isPast && (
             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Past</span>
           )}
@@ -145,7 +146,11 @@ export default function EventDetail() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-5 mb-6">
-        <p className="text-lg font-medium mb-2">{event.description}</p>
+        {event.description && (
+          <div className="mb-4">
+            <MarkdownRenderer content={event.description} />
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div>
             <span className="text-gray-500">Date</span>

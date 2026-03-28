@@ -2396,8 +2396,19 @@
       },
       "EventCreate": {
         "properties": {
-          "description": {
+          "title": {
             "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           },
           "date": {
@@ -2424,7 +2435,7 @@
         },
         "type": "object",
         "required": [
-          "description",
+          "title",
           "date",
           "meeting_latitude",
           "meeting_longitude"
@@ -2441,8 +2452,19 @@
             "type": "integer",
             "title": "Community Id"
           },
-          "description": {
+          "title": {
             "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           },
           "date": {
@@ -2476,7 +2498,7 @@
         "required": [
           "id",
           "community_id",
-          "description",
+          "title",
           "date",
           "meeting_latitude",
           "meeting_longitude",
@@ -2486,6 +2508,17 @@
       },
       "EventUpdate": {
         "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
           "description": {
             "anyOf": [
               {

@@ -10,7 +10,8 @@ sys.path.insert(0, str(backend_dir))
 
 from main import app
 
-output = backend_dir / "openapi.json"
+frontend_dir = backend_dir.parent / "frontend"
+output = frontend_dir / "openapi.json"
 with open(output, "w") as f:
     json.dump(app.openapi(), f, indent=2)
 

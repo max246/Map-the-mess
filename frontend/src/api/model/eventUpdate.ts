@@ -7,6 +7,7 @@
  */
 
 export interface EventUpdate {
+  title?: string | null;
   description?: string | null;
   date?: string | null;
   meeting_latitude?: number | null;
