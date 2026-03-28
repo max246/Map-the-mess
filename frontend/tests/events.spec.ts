@@ -152,9 +152,8 @@ async function mockApi(page: Page) {
 }
 
 async function loginAsOwner(page: Page) {
-  // Set token directly in localStorage to avoid login page race conditions
-  await page.goto('/')
-  await page.evaluate((token) => {
+  // Set token in localStorage BEFORE React mounts, so AuthContext picks it up
+  await page.addInitScript((token) => {
     localStorage.setItem('token', token)
   }, OWNER_TOKEN)
 }
