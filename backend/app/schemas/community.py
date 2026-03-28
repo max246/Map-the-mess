@@ -67,7 +67,8 @@ class PostRead(BaseModel):
 
 
 class EventCreate(BaseModel):
-    description: str
+    title: str
+    description: Optional[str] = None
     date: datetime
     meeting_latitude: float
     meeting_longitude: float
@@ -75,6 +76,7 @@ class EventCreate(BaseModel):
 
 
 class EventUpdate(BaseModel):
+    title: Optional[str] = None
     description: Optional[str] = None
     date: Optional[datetime] = None
     meeting_latitude: Optional[float] = None
@@ -85,7 +87,8 @@ class EventUpdate(BaseModel):
 class EventRead(BaseModel):
     id: int
     community_id: int
-    description: str
+    title: str
+    description: Optional[str] = None
     date: datetime
     meeting_latitude: float
     meeting_longitude: float

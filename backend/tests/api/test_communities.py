@@ -302,7 +302,7 @@ class TestEvents:
         res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Saturday cleanup",
+                "title": "Saturday cleanup",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
@@ -312,7 +312,7 @@ class TestEvents:
         )
         assert res.status_code == 201
         data = res.json()
-        assert data["description"] == "Saturday cleanup"
+        assert data["title"] == "Saturday cleanup"
         assert data["report_ids"] == [report.id]
         assert data["meeting_latitude"] == UK_LAT
 
@@ -323,7 +323,7 @@ class TestEvents:
         res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Big cleanup",
+                "title": "Big cleanup",
                 "date": "2026-04-05T09:00:00",
                 "meeting_latitude": 51.6,
                 "meeting_longitude": -0.2,
@@ -341,7 +341,7 @@ class TestEvents:
         create_res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Original",
+                "title": "Original",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
@@ -352,11 +352,11 @@ class TestEvents:
 
         res = client.patch(
             f"/api/communities/{c.id}/events/{event_id}",
-            json={"description": "Updated", "meeting_latitude": 52.0},
+            json={"title": "Updated", "meeting_latitude": 52.0},
             headers=auth_header(volunteer),
         )
         assert res.status_code == 200
-        assert res.json()["description"] == "Updated"
+        assert res.json()["title"] == "Updated"
         assert res.json()["meeting_latitude"] == 52.0
 
     def test_non_owner_cannot_create_event(self, client, db, volunteer):
@@ -365,7 +365,7 @@ class TestEvents:
         res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Intruder event",
+                "title": "Intruder event",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
@@ -380,7 +380,7 @@ class TestEvents:
         create_res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Owned event",
+                "title": "Owned event",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
@@ -391,7 +391,7 @@ class TestEvents:
 
         res = client.patch(
             f"/api/communities/{c.id}/events/{event_id}",
-            json={"description": "Hacked"},
+            json={"title": "Hacked"},
             headers=auth_header(other),
         )
         assert res.status_code == 403
@@ -402,7 +402,7 @@ class TestEvents:
         create_res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Private event",
+                "title": "Private event",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
@@ -430,7 +430,7 @@ class TestEvents:
         create_res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Member event",
+                "title": "Member event",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
@@ -450,7 +450,7 @@ class TestEvents:
         create_res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Anon test",
+                "title": "Anon test",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
@@ -467,7 +467,7 @@ class TestEvents:
         create_res = client.post(
             f"/api/communities/{c.id}/events",
             json={
-                "description": "Doomed event",
+                "title": "Doomed event",
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
