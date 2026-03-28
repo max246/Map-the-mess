@@ -38,14 +38,14 @@ const EVENT = {
 }
 
 async function mockApi(page: Page) {
-  // Use a single route handler for all community API calls to avoid
-  // route-ordering issues where broader patterns intercept narrower ones.
-  await page.route('**/api/communities/**', async (route: Route) => {
-    const url = route.request().url()
+  // Single handler for ALL API calls to avoid Playwright route-ordering issues
+  await page.route(/\/api\//, async (route: Route) => {
+    const url = new URL(route.request().url())
+    const path = url.pathname
     const method = route.request().method()
 
-    // Single event: /api/communities/1/events/5
-    if (/\/communities\/\d+\/events\/\d+$/.test(url)) {
+    // Single event: /api/communities/:id/events/:eventId
+    if (/^\/api\/communities\/\d+\/events\/\d+$/.test(path)) {
       if (method === 'GET') {
         return route.fulfill({
           status: 200,
@@ -66,8 +66,8 @@ async function mockApi(page: Page) {
       }
     }
 
-    // Events collection: /api/communities/1/events
-    if (/\/communities\/\d+\/events$/.test(url)) {
+    // Events collection: /api/communities/:id/events
+    if (/^\/api\/communities\/\d+\/events$/.test(path)) {
       if (method === 'POST') {
         const body = route.request().postDataJSON()
         return route.fulfill({
@@ -84,7 +84,7 @@ async function mockApi(page: Page) {
     }
 
     // Members
-    if (/\/members/.test(url)) {
+    if (/^\/api\/communities\/\d+\/members/.test(path)) {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -93,7 +93,7 @@ async function mockApi(page: Page) {
     }
 
     // Posts
-    if (/\/posts/.test(url)) {
+    if (/^\/api\/communities\/\d+\/posts/.test(path)) {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -101,8 +101,8 @@ async function mockApi(page: Page) {
       })
     }
 
-    // Single community: /api/communities/1
-    if (/\/communities\/\d+$/.test(url) && method === 'GET') {
+    // Single community: /api/communities/:id
+    if (/^\/api\/communities\/\d+$/.test(path) && method === 'GET') {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -110,47 +110,61 @@ async function mockApi(page: Page) {
       })
     }
 
-    // Fallback
-    await route.continue()
-  })
-
-  // Communities list: /api/communities/
-  await page.route('**/api/communities/', async (route: Route) => {
-    if (route.request().method() === 'GET') {
-      await route.fulfill({
+    // Communities list: /api/communities/
+    if (/^\/api\/communities\/?$/.test(path) && method === 'GET') {
+      return route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([COMMUNITY]),
       })
-    } else {
-      await route.continue()
     }
+
+    // Reports
+    if (/^\/api\/reports/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+    }
+
+    // Auth login
+    if (/^\/api\/auth\/login/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ access_token: OWNER_TOKEN }),
+      })
+    }
+
+    // Auth catch-all
+    if (/^\/api\/auth\//.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'ok' }),
+      })
+    }
+
+    // Volunteers
+    if (/^\/api\/volunteers/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+    }
+
+    // Fallback - let unknown API calls through
+    await route.continue()
   })
 
-  // Reports
-  await page.route('**/api/reports**', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([]),
-    })
-  })
-
-  // Backend version
+  // Backend version (not under /api/)
   await page.route('**/backend/', async (route: Route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ version: '1.0.0' }),
-    })
-  })
-
-  // Auth login
-  await page.route('**/api/auth/login', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ access_token: OWNER_TOKEN }),
     })
   })
 }
@@ -221,8 +235,10 @@ test.describe('Edit Event page', () => {
     await loginAsOwner(page)
     await page.goto('/communities/1/events/5/edit')
 
-    const titleInput = page.locator('input[type="text"]').first()
-    await titleInput.waitFor()
+    // Wait for data to load (heading only shows after loading finishes)
+    await expect(page.getByRole('heading', { name: /edit event/i })).toBeVisible()
+
+    const titleInput = page.getByPlaceholder('Event title')
     await titleInput.clear()
     await titleInput.fill('Updated Cleanup')
 
