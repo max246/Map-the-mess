@@ -24,7 +24,8 @@ class CommunityEvent(Base):
     community_id = Column(
         Integer, ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    description = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
     date = Column(DateTime, nullable=False)
     meeting_latitude = Column(Float, nullable=False)
     meeting_longitude = Column(Float, nullable=False)

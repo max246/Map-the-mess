@@ -599,7 +599,10 @@ function EventCard({
     <div className={`bg-white rounded-lg shadow p-4 ${isPast ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <Link to={`/communities/${communityId}/events/${event.id}`} className="flex-1 min-w-0">
-          <p className="font-medium hover:text-brand transition">{event.description}</p>
+          <p className="font-medium hover:text-brand transition">{event.title}</p>
+          {event.description && (
+            <p className="text-sm text-gray-500 mt-0.5 truncate">{event.description}</p>
+          )}
           <p className="text-sm text-gray-500 mt-1">
             {date.toLocaleDateString('en-GB', {
               weekday: 'short',

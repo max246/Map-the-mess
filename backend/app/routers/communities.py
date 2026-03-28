@@ -140,6 +140,7 @@ def _event_to_read(event: CommunityEvent) -> EventRead:
     return EventRead(
         id=event.id,  # type: ignore[arg-type]
         community_id=event.community_id,  # type: ignore[arg-type]
+        title=event.title,  # type: ignore[arg-type]
         description=event.description,  # type: ignore[arg-type]
         date=event.date,  # type: ignore[arg-type]
         meeting_latitude=event.meeting_latitude,  # type: ignore[arg-type]
@@ -506,6 +507,7 @@ def create_event(
 
     event = CommunityEvent(
         community_id=community.id,
+        title=payload.title,
         description=payload.description,
         date=payload.date,
         meeting_latitude=payload.meeting_latitude,
@@ -562,6 +564,8 @@ def update_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
+    if payload.title is not None:
+        event.title = payload.title  # type: ignore[assignment]
     if payload.description is not None:
         event.description = payload.description  # type: ignore[assignment]
     if payload.date is not None:

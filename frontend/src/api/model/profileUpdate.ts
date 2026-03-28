@@ -6,12 +6,7 @@
  * OpenAPI spec version: dev
  */
 
-export interface UserRead {
-  id: number;
-  email: string;
-  full_name: string;
-  is_verified: boolean;
-  user_type: string;
+export interface ProfileUpdate {
+  full_name?: string | null;
   avatar_url?: string | null;
-  created_at: string;
 }

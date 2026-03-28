@@ -9,7 +9,8 @@
 export interface EventRead {
   id: number;
   community_id: number;
-  description: string;
+  title: string;
+  description?: string | null;
   date: string;
   meeting_latitude: number;
   meeting_longitude: number;

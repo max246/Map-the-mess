@@ -314,6 +314,20 @@ def _check_communities(conn):
     assert "user_id" in mem_fk_cols
 
 
+# 10. 190fb0515524 — rename event description to title and add description field
+@_check("190fb0515524")
+def _check_event_title_and_description(conn):
+    event_cols = _column_names(conn, "community_events")
+    assert "title" in event_cols
+    assert "description" in event_cols
+
+
+# 11. a1b2c3d4e5f6 — add avatar_url to users
+@_check("a1b2c3d4e5f6")
+def _check_avatar_url(conn):
+    assert "avatar_url" in _column_names(conn, "users")
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -328,6 +342,8 @@ MIGRATION_CHAIN = [
     "e44cc152ac4d",
     "3b1048682efd",
     "3a9e288db961",
+    "190fb0515524",
+    "a1b2c3d4e5f6",
 ]
 
 # ---------------------------------------------------------------------------

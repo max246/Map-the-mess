@@ -1,6 +1,9 @@
 """Tests for auth endpoints (/api/auth)."""
 
+from io import BytesIO
 from unittest.mock import patch
+
+from PIL import Image as PILImage
 
 from app.models.user import User, UserType
 from app.routers.auth import pwd_context
@@ -326,4 +329,129 @@ class TestRefreshToken:
         db.commit()
 
         res = client.post("/api/auth/refresh", json={"refresh_token": refresh_tok})
+        assert res.status_code == 401
+
+
+class TestGetProfile:
+    def test_get_own_profile(self, client, db, volunteer):
+        res = client.get("/api/auth/me", headers=auth_header(volunteer))
+        assert res.status_code == 200
+        data = res.json()
+        assert data["email"] == volunteer.email
+        assert data["full_name"] == "Test User"
+        assert data["avatar_url"] is None
+
+    def test_unauthenticated(self, client, db):
+        res = client.get("/api/auth/me")
+        assert res.status_code == 401
+
+
+class TestUpdateProfile:
+    def test_update_name(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me",
+            json={"full_name": "New Name"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["full_name"] == "New Name"
+        db.refresh(volunteer)
+        assert volunteer.full_name == "New Name"
+
+    def test_update_avatar_url(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me",
+            json={"avatar_url": "/avatars/womble2.png"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["avatar_url"] == "/avatars/womble2.png"
+
+    def test_update_both(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me",
+            json={"full_name": "Updated", "avatar_url": "/avatars/womble3.png"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["full_name"] == "Updated"
+        assert res.json()["avatar_url"] == "/avatars/womble3.png"
+
+    def test_unauthenticated(self, client, db):
+        res = client.patch("/api/auth/me", json={"full_name": "Hacker"})
+        assert res.status_code == 401
+
+
+class TestUploadAvatar:
+    def _make_image(self) -> BytesIO:
+        buf = BytesIO()
+        PILImage.new("RGB", (600, 600), color="blue").save(buf, format="JPEG")
+        buf.seek(0)
+        return buf
+
+    def test_upload_success(self, client, db, volunteer, tmp_path, monkeypatch):
+        monkeypatch.setattr("app.routers.auth.IMAGES_DIR", str(tmp_path))
+        buf = self._make_image()
+        res = client.put(
+            "/api/auth/me/avatar",
+            files={"file": ("avatar.jpg", buf, "image/jpeg")},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["avatar_url"].startswith("avatar_")
+        assert res.json()["avatar_url"].endswith(".jpg")
+
+    def test_upload_invalid_type(self, client, db, volunteer):
+        buf = BytesIO(b"not an image")
+        res = client.put(
+            "/api/auth/me/avatar",
+            files={"file": ("avatar.gif", buf, "image/gif")},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 400
+        assert "not allowed" in res.json()["detail"]
+
+    def test_unauthenticated(self, client, db):
+        buf = BytesIO(b"data")
+        res = client.put(
+            "/api/auth/me/avatar",
+            files={"file": ("avatar.jpg", buf, "image/jpeg")},
+        )
+        assert res.status_code == 401
+
+
+class TestChangePassword:
+    def test_change_success(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me/password",
+            json={"current_password": "testpass123", "new_password": "newpass456"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        db.refresh(volunteer)
+        assert pwd_context.verify("newpass456", volunteer.hashed_password)
+
+    def test_wrong_current_password(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me/password",
+            json={"current_password": "wrong", "new_password": "newpass456"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 400
+        assert "incorrect" in res.json()["detail"]
+
+    def test_too_short_new_password(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me/password",
+            json={"current_password": "testpass123", "new_password": "12345"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 400
+        assert "6 characters" in res.json()["detail"]
+
+    def test_unauthenticated(self, client, db):
+        res = client.patch(
+            "/api/auth/me/password",
+            json={"current_password": "x", "new_password": "y"},
+        )
         assert res.status_code == 401

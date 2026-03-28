@@ -24,4 +24,5 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
     user_type: Column[UserType] = Column(Enum(UserType), default=UserType.volunteer, nullable=False)
+    avatar_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
