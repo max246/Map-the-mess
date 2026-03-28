@@ -1,20 +1,26 @@
 """Auth routes — user registration, login, and role management."""
 
+import os
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from PIL import Image
 from sqlalchemy.orm import Session
 
-from app.config import SECRET_KEY, FRONTEND_URL
+from app.config import IMAGES_DIR, SECRET_KEY, FRONTEND_URL
 from app.email import send_email
 from app.database import get_db
 from app.models.user import User, UserType
 from app.models.refresh_token import RefreshToken
 from app.schemas.user import (
+    ChangePassword,
+    ProfileUpdate,
     UserCreate,
     UserLogin,
     UserRead,
@@ -29,6 +35,8 @@ router = APIRouter()
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+AVATAR_MAX_SIZE = (300, 300)
+AVATAR_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 REFRESH_TOKEN_EXPIRE_DAYS = 30
 RESET_TOKEN_EXPIRE_MINUTES = 15
 VERIFY_TOKEN_EXPIRE_HOURS = 48
@@ -71,6 +79,81 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise credentials_exception
     return user
+
+
+@router.get("/me", response_model=UserRead)
+def get_profile(current_user: User = Depends(get_current_user)):
+    """Return the current user's profile."""
+    return current_user
+
+
+@router.patch("/me", response_model=UserRead)
+def update_profile(
+    payload: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update the current user's profile (name, avatar_url)."""
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name  # type: ignore[assignment]
+    if payload.avatar_url is not None:
+        current_user.avatar_url = payload.avatar_url  # type: ignore[assignment]
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.put("/me/avatar", response_model=UserRead)
+def upload_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a custom avatar image. Resized to 300x300 max."""
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in AVATAR_ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type not allowed. Must be one of: {', '.join(AVATAR_ALLOWED_EXTENSIONS)}",
+        )
+    try:
+        img = Image.open(BytesIO(file.file.read()))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Unable to read image file")
+
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+
+    img.thumbnail(AVATAR_MAX_SIZE, Image.Resampling.LANCZOS)
+    filename = f"avatar_{uuid.uuid4().hex}.jpg"
+    img.save(os.path.join(IMAGES_DIR, filename), format="JPEG", quality=85, optimize=True)
+
+    # Remove old custom avatar file if it exists
+    if current_user.avatar_url and str(current_user.avatar_url).startswith("avatar_"):
+        old_path = os.path.join(IMAGES_DIR, str(current_user.avatar_url))
+        if os.path.isfile(old_path):
+            os.remove(old_path)
+
+    current_user.avatar_url = filename  # type: ignore[assignment]
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.patch("/me/password")
+def change_password(
+    payload: ChangePassword,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Change the current user's password. Requires current password."""
+    if not pwd_context.verify(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    current_user.hashed_password = pwd_context.hash(payload.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}
 
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:

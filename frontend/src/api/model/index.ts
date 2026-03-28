@@ -8,7 +8,9 @@
 
 export * from './bodyAddImageApiReportsReportIdImagesPost';
 export * from './bodyCreateReportApiReportsPost';
+export * from './bodyUploadAvatarApiAuthMeAvatarPut';
 export * from './bodyUploadProfileImageApiCommunitiesCommunityIdImagePut';
+export * from './changePassword';
 export * from './communityCreate';
 export * from './communityDetail';
 export * from './communityRead';
@@ -29,6 +31,7 @@ export * from './myCommunities';
 export * from './postCreate';
 export * from './postRead';
 export * from './postUpdate';
+export * from './profileUpdate';
 export * from './refreshRequest';
 export * from './rejectedCommunity';
 export * from './reportImageRead';

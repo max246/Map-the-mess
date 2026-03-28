@@ -322,6 +322,12 @@ def _check_event_title_and_description(conn):
     assert "description" in event_cols
 
 
+# 11. a1b2c3d4e5f6 — add avatar_url to users
+@_check("a1b2c3d4e5f6")
+def _check_avatar_url(conn):
+    assert "avatar_url" in _column_names(conn, "users")
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -337,6 +343,7 @@ MIGRATION_CHAIN = [
     "3b1048682efd",
     "3a9e288db961",
     "190fb0515524",
+    "a1b2c3d4e5f6",
 ]
 
 # ---------------------------------------------------------------------------

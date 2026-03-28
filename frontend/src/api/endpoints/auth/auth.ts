@@ -6,7 +6,10 @@
  * OpenAPI spec version: dev
  */
 import type {
+  BodyUploadAvatarApiAuthMeAvatarPut,
+  ChangePassword,
   ForgotPassword,
+  ProfileUpdate,
   RefreshRequest,
   ResetPassword,
   Token,
@@ -23,6 +26,61 @@ import { customInstance } from '../../client';
 
   export const getAuth = () => {
 /**
+ * Return the current user's profile.
+ * @summary Get Profile
+ */
+const getProfileApiAuthMeGet = (
+    
+ ) => {
+      return customInstance<UserRead>(
+      {url: `/api/auth/me`, method: 'GET'
+    },
+      );
+    }
+  /**
+ * Update the current user's profile (name, avatar_url).
+ * @summary Update Profile
+ */
+const updateProfileApiAuthMePatch = (
+    profileUpdate: ProfileUpdate,
+ ) => {
+      return customInstance<UserRead>(
+      {url: `/api/auth/me`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: profileUpdate
+    },
+      );
+    }
+  /**
+ * Upload a custom avatar image. Resized to 300x300 max.
+ * @summary Upload Avatar
+ */
+const uploadAvatarApiAuthMeAvatarPut = (
+    bodyUploadAvatarApiAuthMeAvatarPut: BodyUploadAvatarApiAuthMeAvatarPut,
+ ) => {const formData = new FormData();
+formData.append(`file`, bodyUploadAvatarApiAuthMeAvatarPut.file);
+
+      return customInstance<UserRead>(
+      {url: `/api/auth/me/avatar`, method: 'PUT',
+       data: formData
+    },
+      );
+    }
+  /**
+ * Change the current user's password. Requires current password.
+ * @summary Change Password
+ */
+const changePasswordApiAuthMePasswordPatch = (
+    changePassword: ChangePassword,
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/auth/me/password`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: changePassword
+    },
+      );
+    }
+  /**
  * List all users. Requires admin access.
  * @summary List Users
  */
@@ -168,7 +226,11 @@ const resetPasswordApiAuthResetPasswordPost = (
     },
       );
     }
-  return {listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,refreshTokenApiAuthRefreshPost,logoutApiAuthLogoutPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+  return {getProfileApiAuthMeGet,updateProfileApiAuthMePatch,uploadAvatarApiAuthMeAvatarPut,changePasswordApiAuthMePasswordPatch,listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,refreshTokenApiAuthRefreshPost,logoutApiAuthLogoutPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+export type GetProfileApiAuthMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getProfileApiAuthMeGet']>>>
+export type UpdateProfileApiAuthMePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['updateProfileApiAuthMePatch']>>>
+export type UploadAvatarApiAuthMeAvatarPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['uploadAvatarApiAuthMeAvatarPut']>>>
+export type ChangePasswordApiAuthMePasswordPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['changePasswordApiAuthMePasswordPatch']>>>
 export type ListUsersApiAuthUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listUsersApiAuthUsersGet']>>>
 export type RegisterApiAuthRegisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['registerApiAuthRegisterPost']>>>
 export type VerifyEmailApiAuthVerifyGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['verifyEmailApiAuthVerifyGet']>>>
