@@ -38,7 +38,83 @@ const EVENT = {
 }
 
 async function mockApi(page: Page) {
-  // Communities list
+  // Use a single route handler for all community API calls to avoid
+  // route-ordering issues where broader patterns intercept narrower ones.
+  await page.route('**/api/communities/**', async (route: Route) => {
+    const url = route.request().url()
+    const method = route.request().method()
+
+    // Single event: /api/communities/1/events/5
+    if (/\/communities\/\d+\/events\/\d+$/.test(url)) {
+      if (method === 'GET') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(EVENT),
+        })
+      }
+      if (method === 'PATCH') {
+        const body = route.request().postDataJSON()
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...EVENT, ...body }),
+        })
+      }
+      if (method === 'DELETE') {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+      }
+    }
+
+    // Events collection: /api/communities/1/events
+    if (/\/communities\/\d+\/events$/.test(url)) {
+      if (method === 'POST') {
+        const body = route.request().postDataJSON()
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...EVENT, ...body, id: 10 }),
+        })
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([EVENT]),
+      })
+    }
+
+    // Members
+    if (/\/members/.test(url)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+    }
+
+    // Posts
+    if (/\/posts/.test(url)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+    }
+
+    // Single community: /api/communities/1
+    if (/\/communities\/\d+$/.test(url) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(COMMUNITY),
+      })
+    }
+
+    // Fallback
+    await route.continue()
+  })
+
+  // Communities list: /api/communities/
   await page.route('**/api/communities/', async (route: Route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
@@ -46,61 +122,6 @@ async function mockApi(page: Page) {
         contentType: 'application/json',
         body: JSON.stringify([COMMUNITY]),
       })
-    } else {
-      await route.continue()
-    }
-  })
-
-  // Single community
-  await page.route('**/api/communities/1', async (route: Route) => {
-    if (route.request().method() === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(COMMUNITY),
-      })
-    } else {
-      await route.continue()
-    }
-  })
-
-  // Events list / create
-  await page.route('**/api/communities/1/events', async (route: Route) => {
-    if (route.request().method() === 'POST') {
-      const body = route.request().postDataJSON()
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...EVENT, ...body, id: 10 }),
-      })
-    } else if (route.request().method() === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([EVENT]),
-      })
-    } else {
-      await route.continue()
-    }
-  })
-
-  // Single event
-  await page.route('**/api/communities/1/events/5', async (route: Route) => {
-    if (route.request().method() === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EVENT),
-      })
-    } else if (route.request().method() === 'PATCH') {
-      const body = route.request().postDataJSON()
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...EVENT, ...body }),
-      })
-    } else if (route.request().method() === 'DELETE') {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     } else {
       await route.continue()
     }
@@ -124,29 +145,12 @@ async function mockApi(page: Page) {
     })
   })
 
-  // Auth login (needed for setting up logged-in state)
+  // Auth login
   await page.route('**/api/auth/login', async (route: Route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ access_token: OWNER_TOKEN }),
-    })
-  })
-
-  // Catch-all for other community-related API calls
-  await page.route('**/api/communities/1/members**', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([]),
-    })
-  })
-
-  await page.route('**/api/communities/1/posts**', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify([]),
     })
   })
 }
