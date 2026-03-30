@@ -13,6 +13,7 @@ from app.models.report import Report, ReportStatus
 from app.models.user import User, UserType
 from app.routers.auth import get_current_user
 from app.schemas.report import ReportRead
+from app.badges import evaluate_badges
 from app.schemas.user import LeaderboardEntry, PublicProfile
 
 router = APIRouter()
@@ -87,7 +88,7 @@ def public_profile(user_id: int, db: Session = Depends(get_db)):
     return {
         "name": _abbreviate_name(str(user.full_name)),
         "avatar_url": user.avatar_url,
-        "badges": [],
+        "badges": evaluate_badges(db, user),
         "member_since": user.created_at,
     }
 

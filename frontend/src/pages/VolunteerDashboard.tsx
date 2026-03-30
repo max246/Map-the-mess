@@ -6,7 +6,7 @@ import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
-import type { ReportRead } from '../api/model'
+import type { ReportRead, BadgeRead } from '../api/model'
 
 const {
   getProfileApiAuthMeGet,
@@ -19,6 +19,7 @@ const {
   listFavouritesApiVolunteersFavouritesGet,
   addFavouriteApiVolunteersFavouritesReportIdPost,
   removeFavouriteApiVolunteersFavouritesReportIdDelete,
+  publicProfileApiVolunteersUserIdProfileGet,
 } = getVolunteers()
 
 const WOMBLE_AVATARS = [
@@ -119,6 +120,9 @@ function ProfileSection() {
   const [nameLoading, setNameLoading] = useState(false)
   const [nameMsg, setNameMsg] = useState('')
 
+  // Badges
+  const [badges, setBadges] = useState<BadgeRead[]>([])
+
   // Change password
   const [editingPassword, setEditingPassword] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -133,6 +137,10 @@ function ProfileSection() {
       .then((profile) => {
         setFullName(profile.full_name || '')
         setAvatar(avatarSrc(profile.avatar_url))
+        // Fetch badges via public profile
+        publicProfileApiVolunteersUserIdProfileGet(profile.id)
+          .then((pub) => setBadges(pub.badges || []))
+          .catch(() => {})
       })
       .catch(() => {})
   }, [])
@@ -370,14 +378,28 @@ function ProfileSection() {
         </div>
       </div>
 
-      {/* Badges - Coming Soon */}
+      {/* Badges */}
       <div className="mt-6 pt-5 border-t border-gray-100">
         <h3 className="text-sm font-semibold text-gray-700 mb-2">Badges</h3>
-        <div className="bg-gray-50 rounded-lg p-4 text-center">
-          <p className="text-gray-400 text-sm">
-            Badges are coming soon! Complete cleanups and participate in events to earn them.
-          </p>
-        </div>
+        {badges.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {badges.map((badge) => (
+              <div key={badge.id} className="flex flex-col items-center gap-1.5">
+                <img
+                  src={`/badges/thumbs/${badge.id}.jpg`}
+                  alt={badge.name}
+                  title={badge.description}
+                  className="w-[150px] h-[150px] object-contain"
+                />
+                <span className="text-sm text-gray-600 text-center leading-tight font-medium">
+                  {badge.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No badges yet — keep volunteering!</p>
+        )}
       </div>
     </div>
   )

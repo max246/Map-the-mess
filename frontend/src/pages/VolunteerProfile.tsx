@@ -42,7 +42,7 @@ export default function VolunteerProfile() {
   })
 
   return (
-    <div className="max-w-md mx-auto px-4 py-8">
+    <div className="max-w-2xl mx-auto px-4 py-8">
       <PageMeta
         title={profile.name}
         description={`${profile.name} — volunteer on Map the Mess since ${memberSince}.`}
@@ -72,14 +72,19 @@ export default function VolunteerProfile() {
             Badges
           </h2>
           {profile.badges && profile.badges.length > 0 ? (
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
               {profile.badges.map((badge) => (
-                <span
-                  key={badge}
-                  className="bg-brand bg-opacity-10 text-brand text-sm font-medium px-3 py-1 rounded-full"
-                >
-                  {badge}
-                </span>
+                <div key={badge.id} className="flex flex-col items-center gap-1.5">
+                  <img
+                    src={`/badges/thumbs/${badge.id}.jpg`}
+                    alt={badge.name}
+                    title={badge.description}
+                    className="w-[150px] h-[150px] object-contain"
+                  />
+                  <span className="text-sm text-gray-600 text-center leading-tight font-medium">
+                    {badge.name}
+                  </span>
+                </div>
               ))}
             </div>
           ) : (

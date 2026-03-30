@@ -2297,6 +2297,29 @@
   },
   "components": {
     "schemas": {
+      "BadgeRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "title": "BadgeRead"
+      },
       "Body_add_image_api_reports__report_id__images_post": {
         "properties": {
           "image_type": {
@@ -3081,7 +3104,7 @@
           },
           "badges": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/BadgeRead"
             },
             "type": "array",
             "title": "Badges",
