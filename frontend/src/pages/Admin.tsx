@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import api from '../api/client'
 import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
@@ -59,6 +60,10 @@ export default function Admin() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      <PageMeta
+        title="Admin Dashboard"
+        description="Manage reports and view platform statistics."
+      />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>

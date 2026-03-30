@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 
 export default function PrivacyPolicy() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <PageMeta
+        title="Privacy Policy"
+        description="How Map the Mess collects, uses, and protects your personal data."
+      />
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
       <p className="text-sm text-gray-400 mb-8">Last updated: 20 March 2026</p>
 

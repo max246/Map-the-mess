@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getAuth } from '../api/endpoints/auth/auth'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
@@ -475,6 +476,10 @@ export default function VolunteerDashboard() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <PageMeta
+        title="Volunteer Dashboard"
+        description="Manage your volunteer profile, view your reports, and track your litter-picking progress."
+      />
       <h1 className="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
 
       {/* Profile Section */}

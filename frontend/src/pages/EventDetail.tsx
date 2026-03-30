@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import PageMeta from '../components/PageMeta'
 import { getCommunities } from '../api/endpoints/communities/communities'
 import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
@@ -113,6 +114,7 @@ export default function EventDetail() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <PageMeta title="Event" description="View cleanup event details, location, and attendees." />
       <Link
         to={`/communities/${communityId}`}
         className="text-sm text-brand underline mb-4 inline-block"

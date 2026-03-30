@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
@@ -33,6 +34,10 @@ export default function Login() {
 
   return (
     <div className="max-w-sm mx-auto px-4 py-16">
+      <PageMeta
+        title="Log In"
+        description="Log in to your Map the Mess account to report litter and join cleanup efforts."
+      />
       <h1 className="text-2xl font-bold mb-6 text-center">Log in</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

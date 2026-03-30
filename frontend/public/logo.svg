@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <circle cx="60" cy="60" r="56" fill="#22c55e"/>
+  <g transform="translate(24, 20)" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Folded map -->
+    <polygon points="4,8 24,2 48,8 72,2 72,68 48,74 24,68 4,74" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="3.5"/>
+    <line x1="24" y1="2" x2="24" y2="68"/>
+    <line x1="48" y1="8" x2="48" y2="74"/>
+    <!-- Map pin -->
+    <circle cx="38" cy="30" r="7" fill="#ef4444" stroke="#fff" stroke-width="2.5"/>
+    <circle cx="38" cy="30" r="2.5" fill="#fff" stroke="none"/>
+    <path d="M38 37 L38 46" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>

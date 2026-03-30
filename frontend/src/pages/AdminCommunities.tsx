@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getCommunities } from '../api/endpoints/communities/communities'
 import { useAuth } from '../context/AuthContext'
 import { communityImageUrl } from '../api/client'
@@ -78,6 +79,7 @@ export default function AdminCommunities() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      <PageMeta title="Manage Communities" description="Review and manage community groups." />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Manage Communities</h1>

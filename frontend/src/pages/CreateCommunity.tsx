@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getCommunities } from '../api/endpoints/communities/communities'
 import { useAuth } from '../context/AuthContext'
 import RadiusLocationPicker from '../components/RadiusLocationPicker'
@@ -78,6 +79,10 @@ export default function CreateCommunity() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
+      <PageMeta
+        title="Create Community"
+        description="Start a new litter-picking community in your area."
+      />
       <Link to="/communities" className="text-sm text-brand underline mb-4 inline-block">
         ← Back to communities
       </Link>
