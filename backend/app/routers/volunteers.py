@@ -13,7 +13,8 @@ from app.models.report import Report, ReportStatus
 from app.models.user import User, UserType
 from app.routers.auth import get_current_user
 from app.schemas.report import ReportRead
-from app.schemas.user import LeaderboardEntry
+from app.badges import evaluate_badges
+from app.schemas.user import LeaderboardEntry, PublicProfile
 
 router = APIRouter()
 
@@ -68,9 +69,28 @@ def leaderboard(
     )
 
     return [
-        {"rank": i + 1, "name": _abbreviate_name(row.full_name), "cleaned_count": row.cleaned_count}
+        {
+            "user_id": row.id,
+            "rank": i + 1,
+            "name": _abbreviate_name(row.full_name),
+            "cleaned_count": row.cleaned_count,
+        }
         for i, row in enumerate(rows)
     ]
+
+
+@router.get("/{user_id}/profile", response_model=PublicProfile)
+def public_profile(user_id: int, db: Session = Depends(get_db)):
+    """Return a volunteer's public profile."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or user.user_type == UserType.superuser:
+        raise HTTPException(status_code=404, detail="Volunteer not found")
+    return {
+        "name": _abbreviate_name(str(user.full_name)),
+        "avatar_url": user.avatar_url,
+        "badges": evaluate_badges(db, user),
+        "member_since": user.created_at,
+    }
 
 
 @router.get("/favourites", response_model=list[ReportRead])

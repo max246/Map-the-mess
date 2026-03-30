@@ -62,6 +62,20 @@ class RefreshRequest(BaseModel):
 
 
 class LeaderboardEntry(BaseModel):
+    user_id: int
     rank: int
     name: str
     cleaned_count: int
+
+
+class BadgeRead(BaseModel):
+    id: str
+    name: str
+    description: str
+
+
+class PublicProfile(BaseModel):
+    name: str
+    avatar_url: str | None = None
+    badges: list[BadgeRead] = []
+    member_since: datetime

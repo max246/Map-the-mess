@@ -6,6 +6,7 @@
  * OpenAPI spec version: dev
  */
 
+export * from './badgeRead';
 export * from './bodyAddImageApiReportsReportIdImagesPost';
 export * from './bodyCreateReportApiReportsPost';
 export * from './bodyUploadAvatarApiAuthMeAvatarPut';
@@ -32,6 +33,7 @@ export * from './postCreate';
 export * from './postRead';
 export * from './postUpdate';
 export * from './profileUpdate';
+export * from './publicProfile';
 export * from './refreshRequest';
 export * from './rejectedCommunity';
 export * from './reportImageRead';

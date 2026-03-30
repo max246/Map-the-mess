@@ -5,10 +5,11 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: dev
  */
+import type { BadgeRead } from './badgeRead';
 
-export interface LeaderboardEntry {
-  user_id: number;
-  rank: number;
+export interface PublicProfile {
   name: string;
-  cleaned_count: number;
+  avatar_url?: string | null;
+  badges?: BadgeRead[];
+  member_since: string;
 }

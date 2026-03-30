@@ -82,7 +82,14 @@ export default function Leaderboard() {
                       <span className="text-gray-400">{entry.rank}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium">{entry.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      to={`/volunteers/${entry.user_id}`}
+                      className="text-brand hover:underline"
+                    >
+                      {entry.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <span className="bg-brand bg-opacity-10 text-brand font-semibold px-2 py-0.5 rounded text-sm">
                       {entry.cleaned_count}
