@@ -442,10 +442,10 @@ describe('VolunteerDashboard', () => {
     expect(mockUpdateProfile).toHaveBeenCalledWith({ avatar_url: '/avatars/womble2.png' })
   })
 
-  it('shows badges coming soon section', async () => {
+  it('shows badges section with empty state', async () => {
     renderDashboard()
     expect(await screen.findByText('Badges')).toBeInTheDocument()
-    expect(screen.getByText(/coming soon/i)).toBeInTheDocument()
+    expect(screen.getByText(/no badges yet/i)).toBeInTheDocument()
   })
 
   /* ── Empty states ────────────────────────────────── */
