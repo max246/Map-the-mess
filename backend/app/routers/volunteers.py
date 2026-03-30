@@ -68,7 +68,12 @@ def leaderboard(
     )
 
     return [
-        {"user_id": row.id, "rank": i + 1, "name": _abbreviate_name(row.full_name), "cleaned_count": row.cleaned_count}
+        {
+            "user_id": row.id,
+            "rank": i + 1,
+            "name": _abbreviate_name(row.full_name),
+            "cleaned_count": row.cleaned_count,
+        }
         for i, row in enumerate(rows)
     ]
 
