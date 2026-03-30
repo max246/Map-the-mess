@@ -68,8 +68,14 @@ class LeaderboardEntry(BaseModel):
     cleaned_count: int
 
 
+class BadgeRead(BaseModel):
+    id: str
+    name: str
+    description: str
+
+
 class PublicProfile(BaseModel):
     name: str
     avatar_url: str | None = None
-    badges: list[str] = []
+    badges: list[BadgeRead] = []
     member_since: datetime

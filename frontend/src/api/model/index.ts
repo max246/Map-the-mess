@@ -6,6 +6,7 @@
  * OpenAPI spec version: dev
  */
 
+export * from './badgeRead';
 export * from './bodyAddImageApiReportsReportIdImagesPost';
 export * from './bodyCreateReportApiReportsPost';
 export * from './bodyUploadAvatarApiAuthMeAvatarPut';
