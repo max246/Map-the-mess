@@ -101,13 +101,17 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {topVolunteers.map((v) => (
-              <div key={v.rank} className="bg-white rounded-lg shadow p-4 flex items-center gap-3">
+              <Link
+                key={v.rank}
+                to={`/volunteers/${v.user_id}`}
+                className="bg-white rounded-lg shadow p-4 flex items-center gap-3 hover:shadow-md transition"
+              >
                 <span className="text-3xl">{TROPHIES[v.rank - 1]}</span>
                 <div className="text-left min-w-0">
-                  <p className="font-semibold truncate">{v.name}</p>
+                  <p className="font-semibold truncate text-brand">{v.name}</p>
                   <p className="text-sm text-gray-500">{v.cleaned_count} cleaned</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-2 text-center">Last 3 months</p>

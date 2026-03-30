@@ -1105,6 +1105,49 @@
         }
       }
     },
+    "/api/volunteers/{user_id}/profile": {
+      "get": {
+        "tags": [
+          "Volunteers"
+        ],
+        "summary": "Public Profile",
+        "description": "Return a volunteer's public profile.",
+        "operationId": "public_profile_api_volunteers__user_id__profile_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProfile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/volunteers/favourites": {
       "get": {
         "tags": [
@@ -2807,6 +2850,10 @@
       },
       "LeaderboardEntry": {
         "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
           "rank": {
             "type": "integer",
             "title": "Rank"
@@ -2822,6 +2869,7 @@
         },
         "type": "object",
         "required": [
+          "user_id",
           "rank",
           "name",
           "cleaned_count"
@@ -3013,6 +3061,44 @@
         },
         "type": "object",
         "title": "ProfileUpdate"
+      },
+      "PublicProfile": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "badges": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Badges",
+            "default": []
+          },
+          "member_since": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Member Since"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "member_since"
+        ],
+        "title": "PublicProfile"
       },
       "RefreshRequest": {
         "properties": {
