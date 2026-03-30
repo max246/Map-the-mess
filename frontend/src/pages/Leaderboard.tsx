@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { LeaderboardEntry } from '../api/model'
 
@@ -35,6 +36,10 @@ export default function Leaderboard() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+      <PageMeta
+        title="Leaderboard"
+        description="See the top volunteers ranked by reports cleaned this month."
+      />
       <Link to="/" className="text-sm text-brand underline mb-4 inline-block">
         ← Back to home
       </Link>

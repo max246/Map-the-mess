@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead, LeaderboardEntry } from '../api/model'
@@ -34,6 +35,10 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 py-16 md:py-24">
+      <PageMeta
+        title="Home"
+        description="Spot litter, report it, and volunteers will clean it up. Together we're making Britain's streets cleaner, one pin at a time."
+      />
       <h1 className="text-4xl md:text-6xl font-bold mb-4">🗺️ Map the Mess</h1>
       <p className="text-lg md:text-xl text-gray-600 max-w-xl mb-8">
         Spot litter? Report it. Volunteers will find it on the map and clean it up. Together we're

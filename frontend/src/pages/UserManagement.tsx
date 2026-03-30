@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import type { UserRead } from '../api/model'
@@ -59,6 +60,7 @@ export default function UserManagement() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <PageMeta title="User Management" description="Manage user accounts and roles." />
       <h1 className="text-2xl font-bold mb-6">User Management</h1>
 
       {error && (

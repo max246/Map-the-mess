@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { useAuth } from '../context/AuthContext'
 
 export default function Register() {
@@ -57,6 +58,10 @@ export default function Register() {
 
   return (
     <div className="max-w-sm mx-auto px-4 py-16">
+      <PageMeta
+        title="Register"
+        description="Create a Map the Mess account to start reporting litter and volunteering for cleanups."
+      />
       <h1 className="text-2xl font-bold mb-6 text-center">Create an account</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

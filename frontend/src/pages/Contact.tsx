@@ -1,6 +1,12 @@
+import PageMeta from '../components/PageMeta'
+
 export default function Contact() {
   return (
     <div className="flex flex-col items-center justify-center text-center px-4 py-16 md:py-24">
+      <PageMeta
+        title="Contact Us"
+        description="Have questions, feedback, or want to get involved? Get in touch with the Map the Mess team."
+      />
       <h1 className="text-4xl md:text-5xl font-bold mb-4">Contact Us</h1>
       <p className="text-lg text-gray-600 max-w-xl mb-8">
         Have questions, feedback, or want to get involved? Send us an email and we'll get back to

@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 
 export default function Disclaimer() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <PageMeta
+        title="Disclaimer"
+        description="Disclaimer and conditions of use for Map the Mess."
+      />
       <h1 className="text-3xl font-bold mb-8">Disclaimer & Conditions of Use</h1>
 
       <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 mb-8">

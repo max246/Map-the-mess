@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getCommunities } from '../api/endpoints/communities/communities'
 import { useAuth } from '../context/AuthContext'
 import CommunityCard from '../components/CommunityCard'
@@ -124,6 +125,10 @@ export default function CommunitySearch() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+      <PageMeta
+        title="Communities"
+        description="Find and join local litter-picking communities near you."
+      />
       {/* Pending requests banner */}
       {totalPending > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-2">

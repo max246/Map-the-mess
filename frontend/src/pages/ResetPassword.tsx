@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { useAuth } from '../context/AuthContext'
 
 export default function ResetPassword() {
@@ -56,6 +57,10 @@ export default function ResetPassword() {
 
   return (
     <div className="max-w-sm mx-auto px-4 py-16">
+      <PageMeta
+        title="Reset Password"
+        description="Set a new password for your Map the Mess account."
+      />
       <h1 className="text-2xl font-bold mb-6 text-center">Reset password</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

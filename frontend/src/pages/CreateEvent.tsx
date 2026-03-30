@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getCommunities } from '../api/endpoints/communities/communities'
 import { getReports } from '../api/endpoints/reports/reports'
 import { useAuth } from '../context/AuthContext'
@@ -104,6 +105,7 @@ export default function CreateEvent() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
+      <PageMeta title="New Event" description="Create a new cleanup event for your community." />
       <Link
         to={`/communities/${communityId}`}
         className="text-sm text-brand underline mb-4 inline-block"

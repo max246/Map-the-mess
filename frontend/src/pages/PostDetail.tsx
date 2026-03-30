@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getCommunities } from '../api/endpoints/communities/communities'
 import { useAuth } from '../context/AuthContext'
 import MarkdownRenderer from '../components/MarkdownRenderer'
@@ -113,6 +114,7 @@ export default function PostDetail() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <PageMeta title="Post" description="View and discuss community posts." />
       <Link
         to={`/communities/${communityId}`}
         className="text-sm text-brand underline mb-4 inline-block"

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { useAuth } from '../context/AuthContext'
 
 export default function ForgotPassword() {
@@ -41,6 +42,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="max-w-sm mx-auto px-4 py-16">
+      <PageMeta title="Forgot Password" description="Reset your Map the Mess account password." />
       <h1 className="text-2xl font-bold mb-2 text-center">Forgot password</h1>
       <p className="text-sm text-gray-500 text-center mb-6">
         Enter your email and we'll send you a link to reset your password.

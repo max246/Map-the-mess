@@ -1,5 +1,6 @@
 import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import LocationPicker from '../components/LocationPicker'
 import { autosuggest } from '../api/w3w'
 import type { W3WSuggestion } from '../api/w3w'
@@ -185,6 +186,10 @@ export default function ReportLitter() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
+      <PageMeta
+        title="Report Litter"
+        description="Spotted litter? Report it with a photo and location so volunteers can find and clean it up."
+      />
       <h1 className="text-2xl font-bold mb-6">📸 Report Litter</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
