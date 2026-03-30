@@ -85,7 +85,7 @@ def public_profile(user_id: int, db: Session = Depends(get_db)):
     if not user or user.user_type == UserType.superuser:
         raise HTTPException(status_code=404, detail="Volunteer not found")
     return {
-        "name": _abbreviate_name(user.full_name),
+        "name": _abbreviate_name(str(user.full_name)),
         "avatar_url": user.avatar_url,
         "badges": [],
         "member_since": user.created_at,
