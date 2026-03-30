@@ -2,6 +2,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import { useState, useEffect } from 'react'
+import PageMeta from '../components/PageMeta'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
@@ -91,6 +92,10 @@ export default function MapView() {
 
   return (
     <div className="h-full relative">
+      <PageMeta
+        title="Litter Map"
+        description="View reported litter on an interactive map of Britain. Find nearby reports and help clean up your area."
+      />
       {/* Filter bar */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex gap-1 bg-white rounded-lg shadow-lg p-1">
         {visibleFilters.map((f) => (

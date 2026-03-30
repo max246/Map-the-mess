@@ -1,3 +1,5 @@
+import PageMeta from '../components/PageMeta'
+
 const ITEMS = [
   {
     name: 'Cigarette Butt',
@@ -89,6 +91,10 @@ function severityColor(label: string): string {
 export default function LitterFacts() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
+      <PageMeta
+        title="Litter Facts"
+        description="How long does litter last? Learn about decomposition times and the environmental impact of common litter items."
+      />
       <div className="text-center mb-8 md:mb-12">
         <h1 className="text-3xl md:text-4xl font-bold mb-3">How Long Does Litter Last?</h1>
         <p className="text-gray-500 max-w-2xl mx-auto">

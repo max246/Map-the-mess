@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import { getCommunities } from '../api/endpoints/communities/communities'
 import { useAuth } from '../context/AuthContext'
 import { communityImageUrl } from '../api/client'
@@ -208,6 +209,7 @@ export default function CommunityDetail() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <PageMeta title="Community" description="View community details, events, and members." />
       <Link to="/communities" className="text-sm text-brand underline mb-4 inline-block">
         ← Back to communities
       </Link>

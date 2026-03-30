@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import PageMeta from '../components/PageMeta'
 import LocateButton from '../components/LocateButton'
 import api, { imageUrl, thumbnailUrl } from '../api/client'
 import { useAuth } from '../context/AuthContext'
@@ -243,6 +244,10 @@ export default function ReportDetail() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+      <PageMeta
+        title={`Report #${id}`}
+        description="View litter report details, location, and photos. Help resolve reports in your area."
+      />
       <Link to="/map" className="text-sm text-brand underline mb-4 inline-block">
         ← Back to map
       </Link>

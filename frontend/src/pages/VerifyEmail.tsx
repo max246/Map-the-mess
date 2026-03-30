@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import PageMeta from '../components/PageMeta'
 import api from '../api/client'
 
 export default function VerifyEmail() {
@@ -75,6 +76,10 @@ export default function VerifyEmail() {
 
   return (
     <div className="max-w-sm mx-auto px-4 py-16 text-center">
+      <PageMeta
+        title="Verify Email"
+        description="Verify your email address to activate your Map the Mess account."
+      />
       <div className="text-5xl mb-4">❌</div>
       <h1 className="text-2xl font-bold mb-3">Verification failed</h1>
       <p className="text-gray-600 mb-6">{message}</p>
