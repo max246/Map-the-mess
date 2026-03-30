@@ -9,6 +9,7 @@ import type {
   LeaderboardApiVolunteersLeaderboardGetParams,
   LeaderboardEntry,
   ListFavouritesApiVolunteersFavouritesGetParams,
+  PublicProfile,
   ReportRead
 } from '../../model';
 
@@ -39,6 +40,18 @@ const leaderboardApiVolunteersLeaderboardGet = (
       return customInstance<LeaderboardEntry[]>(
       {url: `/api/volunteers/leaderboard`, method: 'GET',
         params
+    },
+      );
+    }
+  /**
+ * Return a volunteer's public profile.
+ * @summary Public Profile
+ */
+const publicProfileApiVolunteersUserIdProfileGet = (
+    userId: number,
+ ) => {
+      return customInstance<PublicProfile>(
+      {url: `/api/volunteers/${userId}/profile`, method: 'GET'
     },
       );
     }
@@ -79,9 +92,10 @@ const removeFavouriteApiVolunteersFavouritesReportIdDelete = (
     },
       );
     }
-  return {volunteerCountApiVolunteersCountGet,leaderboardApiVolunteersLeaderboardGet,listFavouritesApiVolunteersFavouritesGet,addFavouriteApiVolunteersFavouritesReportIdPost,removeFavouriteApiVolunteersFavouritesReportIdDelete}};
+  return {volunteerCountApiVolunteersCountGet,leaderboardApiVolunteersLeaderboardGet,publicProfileApiVolunteersUserIdProfileGet,listFavouritesApiVolunteersFavouritesGet,addFavouriteApiVolunteersFavouritesReportIdPost,removeFavouriteApiVolunteersFavouritesReportIdDelete}};
 export type VolunteerCountApiVolunteersCountGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['volunteerCountApiVolunteersCountGet']>>>
 export type LeaderboardApiVolunteersLeaderboardGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['leaderboardApiVolunteersLeaderboardGet']>>>
+export type PublicProfileApiVolunteersUserIdProfileGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['publicProfileApiVolunteersUserIdProfileGet']>>>
 export type ListFavouritesApiVolunteersFavouritesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['listFavouritesApiVolunteersFavouritesGet']>>>
 export type AddFavouriteApiVolunteersFavouritesReportIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['addFavouriteApiVolunteersFavouritesReportIdPost']>>>
 export type RemoveFavouriteApiVolunteersFavouritesReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getVolunteers>['removeFavouriteApiVolunteersFavouritesReportIdDelete']>>>

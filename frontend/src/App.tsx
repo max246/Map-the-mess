@@ -29,6 +29,7 @@ import AdminCommunities from './pages/AdminCommunities'
 import EventDetail from './pages/EventDetail'
 import PostDetail from './pages/PostDetail'
 import Tools from './pages/Tools'
+import VolunteerProfile from './pages/VolunteerProfile'
 import SessionExpiredOverlay from './components/SessionExpiredOverlay'
 import api from './api/client'
 
@@ -69,6 +70,7 @@ function App() {
               <Route path="/litter-facts" element={<LitterFacts />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/tools" element={<Tools />} />
+              <Route path="/volunteers/:id" element={<VolunteerProfile />} />
               <Route path="/communities" element={<CommunitySearch />} />
               <Route path="/communities/new" element={<CreateCommunity />} />
               <Route path="/communities/:id" element={<CommunityDetail />} />

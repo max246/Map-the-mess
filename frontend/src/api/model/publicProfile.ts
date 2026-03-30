@@ -6,9 +6,9 @@
  * OpenAPI spec version: dev
  */
 
-export interface LeaderboardEntry {
-  user_id: number;
-  rank: number;
+export interface PublicProfile {
   name: string;
-  cleaned_count: number;
+  avatar_url?: string | null;
+  badges?: string[];
+  member_since: string;
 }
