@@ -62,7 +62,11 @@ const EXISTING_EVENT = {
 
 function renderEditEvent() {
   return render(
-    <MemoryRouter initialEntries={['/communities/00000000-0000-0000-0000-000000000001/events/00000000-0000-0000-0000-000000000005/edit']}>
+    <MemoryRouter
+      initialEntries={[
+        '/communities/00000000-0000-0000-0000-000000000001/events/00000000-0000-0000-0000-000000000005/edit',
+      ]}
+    >
       <Routes>
         <Route path="/communities/:id/events/:eventId/edit" element={<EditEvent />} />
       </Routes>
@@ -74,7 +78,13 @@ describe('EditEvent', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockListCommunities.mockResolvedValue([
-      { id: '00000000-0000-0000-0000-000000000001', name: 'Test Community', latitude: 53.5, longitude: -1.5, radius_km: 10 },
+      {
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'Test Community',
+        latitude: 53.5,
+        longitude: -1.5,
+        radius_km: 10,
+      },
     ])
     mockListReports.mockResolvedValue([])
     mockGetEvent.mockResolvedValue(EXISTING_EVENT)
