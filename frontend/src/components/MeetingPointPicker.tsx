@@ -13,7 +13,7 @@ interface MeetingPointPickerProps {
   meetingPoint: Position
   onMeetingPointChange: (pos: Position) => void
   reports: ReportRead[]
-  selectedReportIds: Set<number>
+  selectedReportIds: Set<string>
 }
 
 function createPinIcon(color: string) {

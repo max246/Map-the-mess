@@ -8,14 +8,14 @@
 import type { ReportImageRead } from './reportImageRead';
 
 export interface ReportRead {
-  id: number;
+  id: string;
   latitude: number;
   longitude: number;
   description: string;
   what3words?: string | null;
   address?: string | null;
-  created_by_user_id?: number | null;
-  resolved_by_user_id?: number | null;
+  created_by_user_id?: string | null;
+  resolved_by_user_id?: string | null;
   resolved_at?: string | null;
   status: string;
   created_at: string;

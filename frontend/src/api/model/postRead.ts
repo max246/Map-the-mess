@@ -7,8 +7,8 @@
  */
 
 export interface PostRead {
-  id: number;
-  community_id: number;
+  id: string;
+  community_id: string;
   content: string;
   created_at: string;
 }

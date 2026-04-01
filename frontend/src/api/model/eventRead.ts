@@ -7,13 +7,13 @@
  */
 
 export interface EventRead {
-  id: number;
-  community_id: number;
+  id: string;
+  community_id: string;
   title: string;
   description?: string | null;
   date: string;
   meeting_latitude: number;
   meeting_longitude: number;
-  report_ids?: number[];
+  report_ids?: string[];
   created_at: string;
 }

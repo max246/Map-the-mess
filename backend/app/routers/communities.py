@@ -1,7 +1,7 @@
 """Community routes — create, moderate, post updates, and plan events."""
 
 import os
-import uuid
+import uuid as uuid_mod
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
@@ -75,7 +75,7 @@ def _is_moderator_or_above(user: User | None) -> bool:
     return user.user_type in (UserType.superuser, UserType.admin, UserType.moderator)
 
 
-def _get_community_or_404(community_id: int, db: Session) -> Community:
+def _get_community_or_404(community_id: uuid_mod.UUID, db: Session) -> Community:
     community = db.query(Community).filter(Community.id == community_id).first()
     if not community:
         raise HTTPException(status_code=404, detail="Community not found")
@@ -130,7 +130,7 @@ def _save_profile_image(file: UploadFile) -> str:
         img = img.convert("RGB")
 
     img.thumbnail(PROFILE_IMAGE_SIZE, Image.Resampling.LANCZOS)
-    filename = f"community_{uuid.uuid4().hex}.jpg"
+    filename = f"community_{uuid_mod.uuid4().hex}.jpg"
     img.save(os.path.join(IMAGES_DIR, filename), format="JPEG", quality=85, optimize=True)
     return filename
 
@@ -313,7 +313,7 @@ def my_communities(
 
 @router.get("/{community_id}", response_model=CommunityDetail)
 def get_community(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
 ):
@@ -336,7 +336,7 @@ def get_community(
 
 @router.delete("/{community_id}", status_code=204)
 def delete_community(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
@@ -353,7 +353,7 @@ def delete_community(
 
 @router.put("/{community_id}/image", response_model=CommunityRead)
 def upload_profile_image(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -381,7 +381,7 @@ def upload_profile_image(
 
 @router.patch("/{community_id}/status", response_model=CommunityRead)
 def update_community_status(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     payload: CommunityStatusUpdate,
     db: Session = Depends(get_db),
     _mod: User = Depends(require_moderator_or_admin),
@@ -410,7 +410,7 @@ def update_community_status(
 
 @router.post("/{community_id}/posts", response_model=PostRead, status_code=201)
 def create_post(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     payload: PostCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -428,8 +428,8 @@ def create_post(
 
 @router.patch("/{community_id}/posts/{post_id}", response_model=PostRead)
 def update_post(
-    community_id: int,
-    post_id: int,
+    community_id: uuid_mod.UUID,
+    post_id: uuid_mod.UUID,
     payload: PostUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -454,8 +454,8 @@ def update_post(
 
 @router.delete("/{community_id}/posts/{post_id}", status_code=204)
 def delete_post(
-    community_id: int,
-    post_id: int,
+    community_id: uuid_mod.UUID,
+    post_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -484,7 +484,7 @@ def delete_post(
 # ---------------------------------------------------------------------------
 
 
-def _attach_reports(event: CommunityEvent, report_ids: list[int], db: Session) -> None:
+def _attach_reports(event: CommunityEvent, report_ids: list[uuid_mod.UUID], db: Session) -> None:
     """Replace the event's linked reports with the given IDs."""
     reports = db.query(Report).filter(Report.id.in_(report_ids)).all() if report_ids else []
     if len(reports) != len(report_ids):
@@ -496,7 +496,7 @@ def _attach_reports(event: CommunityEvent, report_ids: list[int], db: Session) -
 
 @router.post("/{community_id}/events", response_model=EventRead, status_code=201)
 def create_event(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     payload: EventCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -524,8 +524,8 @@ def create_event(
 
 @router.get("/{community_id}/events/{event_id}", response_model=EventRead)
 def get_event(
-    community_id: int,
-    event_id: int,
+    community_id: uuid_mod.UUID,
+    event_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
 ):
@@ -546,8 +546,8 @@ def get_event(
 
 @router.patch("/{community_id}/events/{event_id}", response_model=EventRead)
 def update_event(
-    community_id: int,
-    event_id: int,
+    community_id: uuid_mod.UUID,
+    event_id: uuid_mod.UUID,
     payload: EventUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -584,8 +584,8 @@ def update_event(
 
 @router.delete("/{community_id}/events/{event_id}", status_code=204)
 def delete_event(
-    community_id: int,
-    event_id: int,
+    community_id: uuid_mod.UUID,
+    event_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -616,7 +616,7 @@ def delete_event(
 
 @router.post("/{community_id}/join", response_model=MembershipRead, status_code=201)
 def join_community(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -668,7 +668,7 @@ def join_community(
 
 @router.get("/{community_id}/memberships", response_model=list[MembershipRead])
 def list_memberships(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -713,8 +713,8 @@ def list_memberships(
     response_model=MembershipRead,
 )
 def update_membership(
-    community_id: int,
-    membership_id: int,
+    community_id: uuid_mod.UUID,
+    membership_id: uuid_mod.UUID,
     payload: MembershipAction,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -751,7 +751,7 @@ def update_membership(
 
 @router.delete("/{community_id}/leave", status_code=204)
 def leave_community(
-    community_id: int,
+    community_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

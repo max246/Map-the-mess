@@ -182,7 +182,7 @@ class TestUpdateUserType:
 
     def test_change_nonexistent_user(self, client, db, admin):
         res = client.patch(
-            "/api/auth/users/9999/type",
+            "/api/auth/users/00000000-0000-0000-0000-000000009999/type",
             json={"user_type": "moderator"},
             headers=auth_header(admin),
         )
@@ -221,7 +221,7 @@ class TestDeleteUser:
 
     def test_delete_nonexistent_user(self, client, db, admin):
         res = client.delete(
-            "/api/auth/users/9999",
+            "/api/auth/users/00000000-0000-0000-0000-000000009999",
             headers=auth_header(admin),
         )
         assert res.status_code == 404

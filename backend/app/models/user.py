@@ -1,9 +1,10 @@
 """User model — authenticated users with role-based access."""
 
 import enum
+import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, Enum
+from sqlalchemy import Boolean, Column, String, DateTime, Enum, Uuid
 
 from app.database import Base
 
@@ -18,7 +19,7 @@ class UserType(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
     full_name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)

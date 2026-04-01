@@ -140,7 +140,7 @@ def list_reports(status: str | None = None, db: Session = Depends(get_db)):
 
 
 @router.get("/{report_id}", response_model=ReportRead)
-def get_report(report_id: int, db: Session = Depends(get_db)):
+def get_report(report_id: uuid.UUID, db: Session = Depends(get_db)):
     report = db.query(Report).get(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
@@ -192,7 +192,7 @@ def create_report(
 
 @router.post("/{report_id}/images", response_model=ReportImageRead, status_code=201)
 def add_image(
-    report_id: int,
+    report_id: uuid.UUID,
     image_type: str = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -215,7 +215,7 @@ def add_image(
 
 @router.patch("/{report_id}/clean", response_model=ReportRead)
 def mark_cleaned(
-    report_id: int,
+    report_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
 ):
@@ -234,7 +234,7 @@ def mark_cleaned(
 
 @router.patch("/{report_id}/unresolve", response_model=ReportRead)
 def mark_unresolved(
-    report_id: int,
+    report_id: uuid.UUID,
     db: Session = Depends(get_db),
     _user: User = Depends(require_moderator_or_admin),
 ):
@@ -252,7 +252,7 @@ def mark_unresolved(
 
 @router.delete("/images/{image_id}", status_code=204)
 def delete_image(
-    image_id: int,
+    image_id: uuid.UUID,
     db: Session = Depends(get_db),
     _user: User = Depends(require_moderator_or_admin),
 ):
@@ -294,7 +294,7 @@ def delete_image(
 
 @router.delete("/{report_id}", status_code=204)
 def delete_report(
-    report_id: int,
+    report_id: uuid.UUID,
     db: Session = Depends(get_db),
     _user: User = Depends(require_moderator_or_admin),
 ):

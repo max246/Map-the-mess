@@ -52,7 +52,7 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def _create_refresh_token(user_id: int, db: Session) -> str:
+def _create_refresh_token(user_id: uuid.UUID, db: Session) -> str:
     """Create an opaque refresh token and store it in the database."""
     token = secrets.token_urlsafe(64)
     expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
@@ -279,7 +279,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
         )
 
     access = create_access_token(
-        {"sub": user.email, "type": user.user_type.value, "user_id": user.id}
+        {"sub": user.email, "type": user.user_type.value, "user_id": str(user.id)}
     )
     refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
     return {"access_token": access, "refresh_token": refresh}
@@ -310,7 +310,7 @@ def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
     stored.revoked = True  # type: ignore[assignment]
 
     access = create_access_token(
-        {"sub": user.email, "type": user.user_type.value, "user_id": user.id}
+        {"sub": user.email, "type": user.user_type.value, "user_id": str(user.id)}
     )
     new_refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
     return {"access_token": access, "refresh_token": new_refresh}
@@ -327,7 +327,7 @@ def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
 
 @router.patch("/users/{user_id}/type", response_model=UserRead)
 def update_user_type(
-    user_id: int,
+    user_id: uuid.UUID,
     payload: UserUpdateType,
     db: Session = Depends(get_db),
     _admin: User = Depends(require_admin),
@@ -361,7 +361,7 @@ def update_user_type(
 
 @router.delete("/users/{user_id}", status_code=204)
 def delete_user(
-    user_id: int,
+    user_id: uuid.UUID,
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
