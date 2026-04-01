@@ -397,8 +397,10 @@ class TestFullDowngrade:
     """Upgrade to head, then downgrade all the way back to base."""
 
     def test_downgrade_to_base(self, migration_db, alembic_cfg):
-        _upgrade(alembic_cfg, "head")
-        assert _current_rev(migration_db) == MIGRATION_CHAIN[-1]
+        # Upgrade to the last reversible migration (before UUID migration)
+        last_reversible = "a1b2c3d4e5f6"
+        _upgrade(alembic_cfg, last_reversible)
+        assert _current_rev(migration_db) == last_reversible
 
         _downgrade(alembic_cfg, "base")
         assert _current_rev(migration_db) is None
@@ -406,6 +408,12 @@ class TestFullDowngrade:
         # Only the alembic_version table should remain (empty)
         tables = _table_names(migration_db) - {"alembic_version"}
         assert tables == set(), f"Tables left after full downgrade: {tables}"
+
+    def test_uuid_migration_downgrade_raises(self, migration_db, alembic_cfg):
+        """The UUID migration is intentionally irreversible."""
+        _upgrade(alembic_cfg, "head")
+        with pytest.raises(NotImplementedError):
+            _downgrade(alembic_cfg, "a1b2c3d4e5f6")
 
 
 @_skip_no_db
