@@ -30,6 +30,7 @@ import EventDetail from './pages/EventDetail'
 import PostDetail from './pages/PostDetail'
 import Tools from './pages/Tools'
 import VolunteerProfile from './pages/VolunteerProfile'
+import NotFound from './pages/NotFound'
 import SessionExpiredOverlay from './components/SessionExpiredOverlay'
 import api from './api/client'
 
@@ -78,6 +79,7 @@ function App() {
               <Route path="/communities/:id/posts/:postId" element={<PostDetail />} />
               <Route path="/communities/:id/events/:eventId" element={<EventDetail />} />
               <Route path="/communities/:id/events/:eventId/edit" element={<EditEvent />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <footer className="text-xs text-gray-400 py-2 px-4 flex items-center justify-center gap-3 flex-wrap">
