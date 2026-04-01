@@ -27,7 +27,10 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 export default function EditEvent() {
-  const { id: communityId, eventId } = useParams<{ id: string; eventId: string }>() as { id: string; eventId: string }
+  const { id: communityId, eventId } = useParams<{ id: string; eventId: string }>() as {
+    id: string
+    eventId: string
+  }
   const { isLoggedIn } = useAuth()
   const navigate = useNavigate()
 

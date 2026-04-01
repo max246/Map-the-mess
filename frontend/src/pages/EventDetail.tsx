@@ -61,7 +61,10 @@ function FitAllMarkers({
 }
 
 export default function EventDetail() {
-  const { id: communityId, eventId } = useParams<{ id: string; eventId: string }>() as { id: string; eventId: string }
+  const { id: communityId, eventId } = useParams<{ id: string; eventId: string }>() as {
+    id: string
+    eventId: string
+  }
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -304,7 +307,9 @@ export default function EventDetail() {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm">🔴</span>
-                  <span className="text-sm font-medium">{r.description || `Report #${r.id.slice(-6)}`}</span>
+                  <span className="text-sm font-medium">
+                    {r.description || `Report #${r.id.slice(-6)}`}
+                  </span>
                   {r.what3words && <span className="text-xs text-brand">/// {r.what3words}</span>}
                 </div>
               </Link>

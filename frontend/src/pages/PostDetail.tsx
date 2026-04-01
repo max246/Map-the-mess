@@ -14,7 +14,10 @@ const {
 } = getCommunities()
 
 export default function PostDetail() {
-  const { id: communityId, postId } = useParams<{ id: string; postId: string }>() as { id: string; postId: string }
+  const { id: communityId, postId } = useParams<{ id: string; postId: string }>() as {
+    id: string
+    postId: string
+  }
   const isNew = postId === 'new'
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, canManageUsers } = useAuth()
