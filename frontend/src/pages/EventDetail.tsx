@@ -61,9 +61,10 @@ function FitAllMarkers({
 }
 
 export default function EventDetail() {
-  const { id, eventId } = useParams<{ id: string; eventId: string }>()
-  const communityId = Number(id)
-  const numericEventId = Number(eventId)
+  const { id: communityId, eventId } = useParams<{ id: string; eventId: string }>() as {
+    id: string
+    eventId: string
+  }
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -77,7 +78,7 @@ export default function EventDetail() {
     const fetchData = async () => {
       try {
         const [e, community] = await Promise.all([
-          getEventApiCommunitiesCommunityIdEventsEventIdGet(communityId, numericEventId),
+          getEventApiCommunitiesCommunityIdEventsEventIdGet(communityId, eventId!),
           getCommunityApiCommunitiesCommunityIdGet(communityId),
         ])
         setEvent(e)
@@ -93,12 +94,12 @@ export default function EventDetail() {
       setLoading(false)
     }
     fetchData()
-  }, [communityId, numericEventId, user])
+  }, [communityId, eventId, user])
 
   const handleDelete = async () => {
     if (!confirm('Delete this event? This cannot be undone.')) return
     try {
-      await deleteEventApiCommunitiesCommunityIdEventsEventIdDelete(communityId, numericEventId)
+      await deleteEventApiCommunitiesCommunityIdEventsEventIdDelete(communityId, eventId!)
       navigate(`/communities/${communityId}`)
     } catch {
       alert('Failed to delete event')
@@ -132,7 +133,7 @@ export default function EventDetail() {
         {isOwner && (
           <div className="flex gap-2">
             <Link
-              to={`/communities/${communityId}/events/${numericEventId}/edit`}
+              to={`/communities/${communityId}/events/${eventId!}/edit`}
               className="px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
             >
               Edit
@@ -306,7 +307,9 @@ export default function EventDetail() {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm">🔴</span>
-                  <span className="text-sm font-medium">{r.description || `Report #${r.id}`}</span>
+                  <span className="text-sm font-medium">
+                    {r.description || `Report #${r.id.slice(-6)}`}
+                  </span>
                   {r.what3words && <span className="text-xs text-brand">/// {r.what3words}</span>}
                 </div>
               </Link>

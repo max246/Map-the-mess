@@ -1,5 +1,6 @@
 """Pydantic schemas for user authentication."""
 
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr
@@ -17,7 +18,7 @@ class UserLogin(BaseModel):
 
 
 class UserRead(BaseModel):
-    id: int
+    id: uuid.UUID
     email: str
     full_name: str
     is_verified: bool
@@ -62,7 +63,7 @@ class RefreshRequest(BaseModel):
 
 
 class LeaderboardEntry(BaseModel):
-    user_id: int
+    user_id: uuid.UUID
     rank: int
     name: str
     cleaned_count: int

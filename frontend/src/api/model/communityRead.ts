@@ -7,7 +7,7 @@
  */
 
 export interface CommunityRead {
-  id: number;
+  id: string;
   name: string;
   description: string;
   facebook_url?: string | null;
@@ -15,7 +15,7 @@ export interface CommunityRead {
   latitude: number;
   longitude: number;
   radius_km: number;
-  owner_id: number;
+  owner_id: string;
   status: string;
   created_at: string;
 }

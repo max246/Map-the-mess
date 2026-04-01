@@ -177,7 +177,7 @@ const logoutApiAuthLogoutPost = (
  * @summary Update User Type
  */
 const updateUserTypeApiAuthUsersUserIdTypePatch = (
-    userId: number,
+    userId: string,
     userUpdateType: UserUpdateType,
  ) => {
       return customInstance<UserRead>(
@@ -191,7 +191,7 @@ const updateUserTypeApiAuthUsersUserIdTypePatch = (
  * @summary Delete User
  */
 const deleteUserApiAuthUsersUserIdDelete = (
-    userId: number,
+    userId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/auth/users/${userId}`, method: 'DELETE'

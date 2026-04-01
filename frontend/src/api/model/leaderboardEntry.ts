@@ -7,7 +7,7 @@
  */
 
 export interface LeaderboardEntry {
-  user_id: number;
+  user_id: string;
   rank: number;
   name: string;
   cleaned_count: number;

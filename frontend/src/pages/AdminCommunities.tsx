@@ -21,7 +21,7 @@ export default function AdminCommunities() {
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
-  const [actionId, setActionId] = useState<number | null>(null)
+  const [actionId, setActionId] = useState<string | null>(null)
 
   const fetchCommunities = () => {
     setLoading(true)
@@ -57,7 +57,7 @@ export default function AdminCommunities() {
     setActionId(null)
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm(`Delete community #${id}? This cannot be undone.`)) return
     setActionId(id)
     try {

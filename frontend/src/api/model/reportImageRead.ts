@@ -7,7 +7,7 @@
  */
 
 export interface ReportImageRead {
-  id: number;
+  id: string;
   url: string;
   thumbnail_url?: string | null;
   image_type: string;

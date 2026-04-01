@@ -18,7 +18,7 @@ const {
 } = getVolunteers()
 
 export default function ReportDetail() {
-  const { id } = useParams()
+  const { id } = useParams() as { id: string }
   const navigate = useNavigate()
   const { token, canManageUsers, isLoggedIn } = useAuth()
   const [report, setReport] = useState<ReportRead | null>(null)
@@ -60,7 +60,7 @@ export default function ReportDetail() {
   useEffect(() => {
     if (!isLoggedIn || !id) return
     listFavouritesApiVolunteersFavouritesGet()
-      .then((favs) => setIsFavourite(favs.some((r) => r.id === Number(id))))
+      .then((favs) => setIsFavourite(favs.some((r) => r.id === id)))
       .catch(() => {})
   }, [id, isLoggedIn])
 
@@ -68,10 +68,10 @@ export default function ReportDetail() {
     if (!id) return
     try {
       if (isFavourite) {
-        await removeFavouriteApiVolunteersFavouritesReportIdDelete(Number(id))
+        await removeFavouriteApiVolunteersFavouritesReportIdDelete(id!)
         setIsFavourite(false)
       } else {
-        await addFavouriteApiVolunteersFavouritesReportIdPost(Number(id))
+        await addFavouriteApiVolunteersFavouritesReportIdPost(id!)
         setIsFavourite(true)
       }
     } catch {
@@ -184,7 +184,7 @@ export default function ReportDetail() {
     }
   }
 
-  const handleDeleteImage = async (imageId: number) => {
+  const handleDeleteImage = async (imageId: string) => {
     if (!confirm('Are you sure you want to delete this image?')) return
     try {
       await deleteImageApiReportsImagesImageIdDelete(imageId)
@@ -201,7 +201,7 @@ export default function ReportDetail() {
     setAddingPhoto(true)
     try {
       for (const file of files) {
-        await addImageApiReportsReportIdImagesPost(Number(id), {
+        await addImageApiReportsReportIdImagesPost(id!, {
           image_type: 'report',
           file,
         })
@@ -245,7 +245,7 @@ export default function ReportDetail() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <PageMeta
-        title={`Report #${id}`}
+        title={`Report #${id.slice(-6)}`}
         description="View litter report details, location, and photos. Help resolve reports in your area."
       />
       <Link to="/map" className="text-sm text-brand underline mb-4 inline-block">
@@ -254,7 +254,7 @@ export default function ReportDetail() {
 
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">
-          {report.status === 'cleaned' ? '✅' : '🔴'} Report #{report.id}
+          {report.status === 'cleaned' ? '✅' : '🔴'} Report #{report.id.slice(-6)}
         </h1>
         <div className="flex items-center gap-2">
           <button

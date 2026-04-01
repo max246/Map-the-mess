@@ -14,7 +14,7 @@ export default function VolunteerProfile() {
 
   useEffect(() => {
     if (!id) return
-    publicProfileApiVolunteersUserIdProfileGet(Number(id))
+    publicProfileApiVolunteersUserIdProfileGet(id)
       .then(setProfile)
       .catch(() => setError(true))
       .finally(() => setLoading(false))

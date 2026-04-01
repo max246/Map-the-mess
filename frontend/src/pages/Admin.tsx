@@ -16,7 +16,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
-  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchReports = () => {
     setLoading(true)
@@ -31,8 +31,8 @@ export default function Admin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter])
 
-  const handleDelete = async (reportId: number) => {
-    if (!confirm(`Are you sure you want to delete report #${reportId}?`)) return
+  const handleDelete = async (reportId: string) => {
+    if (!confirm(`Are you sure you want to delete report #${reportId.slice(-6)}?`)) return
     setDeletingId(reportId)
     try {
       await api.delete(`/api/reports/${reportId}`, {

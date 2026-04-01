@@ -1,5 +1,6 @@
 """Pydantic schemas for communities, posts, and events."""
 
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -20,7 +21,7 @@ class CommunityCreate(BaseModel):
 
 
 class CommunityRead(BaseModel):
-    id: int
+    id: uuid.UUID
     name: str
     description: str
     facebook_url: Optional[str] = None
@@ -28,7 +29,7 @@ class CommunityRead(BaseModel):
     latitude: float
     longitude: float
     radius_km: float
-    owner_id: int
+    owner_id: uuid.UUID
     status: str
     created_at: datetime
 
@@ -53,8 +54,8 @@ class PostUpdate(BaseModel):
 
 
 class PostRead(BaseModel):
-    id: int
-    community_id: int
+    id: uuid.UUID
+    community_id: uuid.UUID
     content: str
     created_at: datetime
 
@@ -72,7 +73,7 @@ class EventCreate(BaseModel):
     date: datetime
     meeting_latitude: float
     meeting_longitude: float
-    report_ids: list[int] = []
+    report_ids: list[uuid.UUID] = []
 
 
 class EventUpdate(BaseModel):
@@ -81,18 +82,18 @@ class EventUpdate(BaseModel):
     date: Optional[datetime] = None
     meeting_latitude: Optional[float] = None
     meeting_longitude: Optional[float] = None
-    report_ids: Optional[list[int]] = None
+    report_ids: Optional[list[uuid.UUID]] = None
 
 
 class EventRead(BaseModel):
-    id: int
-    community_id: int
+    id: uuid.UUID
+    community_id: uuid.UUID
     title: str
     description: Optional[str] = None
     date: datetime
     meeting_latitude: float
     meeting_longitude: float
-    report_ids: list[int] = []
+    report_ids: list[uuid.UUID] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -114,9 +115,9 @@ class CommunityDetail(CommunityRead):
 
 
 class MembershipRead(BaseModel):
-    id: int
-    community_id: int
-    user_id: int
+    id: uuid.UUID
+    community_id: uuid.UUID
+    user_id: uuid.UUID
     user_name: str = ""
     status: str
     created_at: datetime

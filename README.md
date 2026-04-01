@@ -19,16 +19,45 @@ Because clean streets shouldn't depend on the council noticing.
 | Layer | Tech |
 |-------|------|
 | Frontend | React (Vite), TailwindCSS, Leaflet.js, React Router |
-| Backend | Python FastAPI, SQLAlchemy, PostgreSQL |
-| Maps | Leaflet / OpenStreetMap |
+| Backend | Python FastAPI, SQLAlchemy, Alembic, PostgreSQL |
+| Auth | JWT (access + refresh tokens), bcrypt, email verification |
+| Maps | Leaflet / OpenStreetMap, Nominatim reverse geocoding, what3words |
+| Infra | Docker, nginx-proxy, Let's Encrypt (ACME), Watchtower |
+| Testing | Jest, Playwright, pytest |
+| API Client | Orval (auto-generated from OpenAPI spec) |
 
 ## Features
 
-- 📍 Interactive map with litter reports
-- 📸 Photo upload with geolocation
-- 🔍 Filter by status (pending / cleaned)
-- 👷 Volunteer dashboard to plan cleanups
+### Reporting & Map
+- 📍 Interactive map with litter reports (Leaflet / OpenStreetMap)
+- 📸 Photo upload with geolocation, auto-thumbnails, and Full-HD optimisation
+- 🔍 Filter by status (pending / cleaned / favourites)
+- 🏠 Reverse geocoding — reports automatically get a human-readable address
+- 🔤 what3words integration for precise location sharing
+
+### Communities
+- 🏘️ Create and join local cleanup communities
+- 📝 Community posts with Markdown support
+- 📅 Cleanup events with meeting points, linked reports, and map view
+- 👥 Membership workflow — request to join, owner approves/rejects
+- 🖼️ Community profile images
+
+### Volunteers
+- 👷 Volunteer dashboard to plan cleanups and manage favourites
+- 🏆 Leaderboard ranking volunteers by reports cleaned
+- 🎖️ Badge system — earn badges for reporting, cleaning, and loyalty
+- 👤 Public volunteer profiles
+
+### Auth & Admin
+- 🔐 Registration with email verification, password reset, JWT auth with refresh tokens
+- 👮 Role-based access — superuser, admin, moderator, volunteer
+- 🛠️ Admin panel for managing reports, users, and communities
+- 🆔 UUID-based IDs to prevent enumeration
+
+### General
 - 📱 Mobile-first responsive design
+- 🔒 Nginx version hiding (`server_tokens off`)
+- 📄 Static pages — disclaimer, privacy policy, contact, litter facts
 
 ## Getting Started
 
@@ -231,7 +260,7 @@ Ensure inbound rules allow:
 
 ### Nginx proxy config
 
-Custom per-host Nginx settings live in `proxy-conf/`. The file `proxy-conf/mapthemess.uk` sets `client_max_body_size 50m` to allow image uploads. This file is bind-mounted into the `nginx-proxy` container.
+Custom per-host Nginx settings live in `proxy-conf/`. The file `proxy-conf/mapthemess.uk` sets `client_max_body_size 50m` to allow image uploads. `proxy-conf/custom_proxy.conf` disables `server_tokens` to hide the Nginx version from responses and error pages. Both files are bind-mounted into the `nginx-proxy` container.
 
 ### Architecture
 

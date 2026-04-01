@@ -5,7 +5,7 @@ import ReportDetail from '../ReportDetail'
 
 /* ── mock data ─────────────────────────────────────────── */
 const REPORT_WITH_IMAGES = {
-  id: 42,
+  id: '00000000-0000-0000-0000-00000000ab42',
   description: 'Broken bottles near park',
   status: 'reported',
   latitude: 51.50735,
@@ -15,13 +15,13 @@ const REPORT_WITH_IMAGES = {
   address: '123 Test Street, London',
   resolved_at: null,
   images: [
-    { id: 101, image_type: 'report', path: 'images/101.jpg' },
-    { id: 102, image_type: 'report', path: 'images/102.jpg' },
+    { id: '00000000-0000-0000-0000-000000000101', image_type: 'report', path: 'images/101.jpg' },
+    { id: '00000000-0000-0000-0000-000000000102', image_type: 'report', path: 'images/102.jpg' },
   ],
 }
 
 const RESOLVED_REPORT = {
-  id: 43,
+  id: '00000000-0000-0000-0000-00000000cd43',
   description: 'Cleaned up bags',
   status: 'cleaned',
   latitude: 52.0,
@@ -30,8 +30,8 @@ const RESOLVED_REPORT = {
   what3words: '',
   resolved_at: '2026-01-12T14:00:00Z',
   images: [
-    { id: 201, image_type: 'report', path: 'images/201.jpg' },
-    { id: 202, image_type: 'resolved', path: 'images/202.jpg' },
+    { id: '00000000-0000-0000-0000-000000000201', image_type: 'report', path: 'images/201.jpg' },
+    { id: '00000000-0000-0000-0000-000000000202', image_type: 'resolved', path: 'images/202.jpg' },
   ],
 }
 
@@ -83,7 +83,7 @@ jest.mock('react-leaflet', () => ({
 
 jest.mock('../../components/LocateButton', () => () => <button data-testid="locate-button" />)
 
-function renderReportDetail(reportId: string = '42') {
+function renderReportDetail(reportId: string = '00000000-0000-0000-0000-00000000ab42') {
   return render(
     <MemoryRouter initialEntries={[`/report/${reportId}`]}>
       <Routes>
@@ -143,7 +143,7 @@ describe('ReportDetail', () => {
 
   it('does not show add photo button for resolved reports', async () => {
     mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
-    renderReportDetail('43')
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
     await waitFor(() => {
       expect(screen.getByText(/Cleaned up bags/i)).toBeInTheDocument()
     })
@@ -155,7 +155,7 @@ describe('ReportDetail', () => {
 
   it('shows the report title with ID', async () => {
     renderReportDetail()
-    expect(await screen.findByText(/Report #42/)).toBeInTheDocument()
+    expect(await screen.findByText(/Report #00ab42/)).toBeInTheDocument()
   })
 
   it('shows the report description', async () => {
@@ -304,26 +304,26 @@ describe('ReportDetail', () => {
 
   it('shows resolved banner for cleaned reports', async () => {
     mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
-    renderReportDetail('43')
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
     expect(await screen.findByText(/this report has been marked as cleaned/i)).toBeInTheDocument()
   })
 
   it('does not show Mark as Resolved for cleaned reports', async () => {
     mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
-    renderReportDetail('43')
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
     await screen.findByText(/Cleaned up bags/)
     expect(screen.queryByRole('button', { name: /mark as resolved/i })).not.toBeInTheDocument()
   })
 
   it('shows resolved date when available', async () => {
     mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
-    renderReportDetail('43')
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
     expect(await screen.findByText(/Resolved on/)).toBeInTheDocument()
   })
 
   it('shows Resolved label on resolved images', async () => {
     mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
-    renderReportDetail('43')
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
     await waitFor(() => {
       expect(screen.getAllByText('Resolved').length).toBeGreaterThan(0)
     })

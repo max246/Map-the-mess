@@ -6,21 +6,21 @@ import UserManagement from '../UserManagement'
 /* ── mock data ─────────────────────────────────────────── */
 const USERS = [
   {
-    id: 1,
+    id: 'a1b2c3d4-0001-0000-0000-000000000001',
     full_name: 'Alice Admin',
     email: 'alice@example.com',
     user_type: 'admin',
     created_at: '2025-06-01T00:00:00Z',
   },
   {
-    id: 2,
+    id: 'a1b2c3d4-0002-0000-0000-000000000002',
     full_name: 'Bob Volunteer',
     email: 'bob@example.com',
     user_type: 'volunteer',
     created_at: '2025-09-15T00:00:00Z',
   },
   {
-    id: 3,
+    id: 'a1b2c3d4-0003-0000-0000-000000000003',
     full_name: 'Charlie Mod',
     email: 'charlie@example.com',
     user_type: 'moderator',
@@ -93,7 +93,6 @@ describe('UserManagement', () => {
   it('shows table headers', async () => {
     renderUserManagement()
     await screen.findByText('Alice Admin')
-    expect(screen.getByText('ID')).toBeInTheDocument()
     expect(screen.getByText('Name')).toBeInTheDocument()
     expect(screen.getByText('Email')).toBeInTheDocument()
     expect(screen.getByText('Role')).toBeInTheDocument()
@@ -121,13 +120,6 @@ describe('UserManagement', () => {
     expect(await screen.findByText('alice@example.com')).toBeInTheDocument()
     expect(screen.getByText('bob@example.com')).toBeInTheDocument()
     expect(screen.getByText('charlie@example.com')).toBeInTheDocument()
-  })
-
-  it('displays user IDs', async () => {
-    renderUserManagement()
-    expect(await screen.findByText('#1')).toBeInTheDocument()
-    expect(screen.getByText('#2')).toBeInTheDocument()
-    expect(screen.getByText('#3')).toBeInTheDocument()
   })
 
   it('displays joined dates', async () => {
@@ -180,7 +172,7 @@ describe('UserManagement', () => {
     await user.selectOptions(selects[1], 'moderator')
 
     expect(mockPatch).toHaveBeenCalledWith(
-      '/api/auth/users/2/type',
+      '/api/auth/users/a1b2c3d4-0002-0000-0000-000000000002/type',
       { user_type: 'moderator' },
       expect.objectContaining({
         headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
@@ -223,7 +215,7 @@ describe('UserManagement', () => {
       'Are you sure you want to delete user bob@example.com?'
     )
     expect(mockDeleteApi).toHaveBeenCalledWith(
-      '/api/auth/users/2',
+      '/api/auth/users/a1b2c3d4-0002-0000-0000-000000000002',
       expect.objectContaining({
         headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
       })

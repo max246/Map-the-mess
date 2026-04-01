@@ -58,7 +58,7 @@ class TestAddFavourite:
 
     def test_add_favourite_nonexistent_report(self, client, db, volunteer):
         res = client.post(
-            "/api/volunteers/favourites/9999",
+            "/api/volunteers/favourites/00000000-0000-0000-0000-000000009999",
             headers=auth_header(volunteer),
         )
         assert res.status_code == 404

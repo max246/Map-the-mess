@@ -1,5 +1,6 @@
 """Pydantic schemas for litter reports and report images."""
 
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -7,7 +8,7 @@ from pydantic import BaseModel
 
 
 class ReportImageRead(BaseModel):
-    id: int
+    id: uuid.UUID
     url: str
     thumbnail_url: Optional[str] = None
     image_type: str
@@ -24,14 +25,14 @@ class ReportCreate(BaseModel):
 
 
 class ReportRead(BaseModel):
-    id: int
+    id: uuid.UUID
     latitude: float
     longitude: float
     description: str
     what3words: Optional[str] = None
     address: Optional[str] = None
-    created_by_user_id: Optional[int] = None
-    resolved_by_user_id: Optional[int] = None
+    created_by_user_id: Optional[uuid.UUID] = None
+    resolved_by_user_id: Optional[uuid.UUID] = None
     resolved_at: Optional[datetime] = None
     status: str
     created_at: datetime
