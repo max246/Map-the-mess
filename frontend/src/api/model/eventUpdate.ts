@@ -12,5 +12,5 @@ export interface EventUpdate {
   date?: string | null;
   meeting_latitude?: number | null;
   meeting_longitude?: number | null;
-  report_ids?: number[] | null;
+  report_ids?: string[] | null;
 }

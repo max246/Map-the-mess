@@ -28,11 +28,11 @@ export default function CommunitySearch() {
   const [myLoading, setMyLoading] = useState(true)
 
   // Track joined/owned/pending community IDs for search result badges
-  const [ownedIds, setOwnedIds] = useState<Set<number>>(new Set())
-  const [joinedIds, setJoinedIds] = useState<Set<number>>(new Set())
-  const [pendingIds, setPendingIds] = useState<Set<number>>(new Set())
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(new Set())
+  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
   // Pending membership request counts per owned community
-  const [pendingCounts, setPendingCounts] = useState<Map<number, number>>(new Map())
+  const [pendingCounts, setPendingCounts] = useState<Map<string, number>>(new Map())
 
   useEffect(() => {
     if (!isLoggedIn) navigate('/login', { replace: true })
@@ -56,7 +56,7 @@ export default function CommunitySearch() {
           Promise.all(
             o.map((c) => listMembershipsApiCommunitiesCommunityIdMembershipsGet(c.id))
           ).then((results) => {
-            const counts = new Map<number, number>()
+            const counts = new Map<string, number>()
             results.forEach((mems, i) => {
               const count = mems.filter((m) => m.status === 'pending').length
               if (count > 0) counts.set(o[i].id, count)
@@ -285,7 +285,7 @@ function CommunityList({
 }: {
   loading: boolean
   communities: CommunityRead[]
-  pendingCounts?: Map<number, number>
+  pendingCounts?: Map<string, number>
   emptyMessage: string
   emptyAction: React.ReactNode
 }) {

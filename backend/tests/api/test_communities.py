@@ -77,7 +77,7 @@ class TestCreateCommunity:
         assert res.status_code == 201
         data = res.json()
         assert data["name"] == "Cleanup Crew"
-        assert data["owner_id"] == volunteer.id
+        assert data["owner_id"] == str(volunteer.id)
         assert data["status"] == "active"
         assert data["facebook_url"] == "https://facebook.com/cleanupcrew"
 
@@ -164,7 +164,7 @@ class TestGetCommunity:
         assert res.status_code == 200
 
     def test_get_nonexistent(self, client, db):
-        res = client.get("/api/communities/9999")
+        res = client.get("/api/communities/00000000-0000-0000-0000-000000009999")
         assert res.status_code == 404
 
 
@@ -180,7 +180,9 @@ class TestDeleteCommunity:
         assert res.status_code == 403
 
     def test_delete_nonexistent(self, client, db, admin):
-        res = client.delete("/api/communities/9999", headers=auth_header(admin))
+        res = client.delete(
+            "/api/communities/00000000-0000-0000-0000-000000009999", headers=auth_header(admin)
+        )
         assert res.status_code == 404
 
 
@@ -306,14 +308,14 @@ class TestEvents:
                 "date": "2026-04-01T10:00:00",
                 "meeting_latitude": UK_LAT,
                 "meeting_longitude": UK_LON,
-                "report_ids": [report.id],
+                "report_ids": [str(report.id)],
             },
             headers=auth_header(volunteer),
         )
         assert res.status_code == 201
         data = res.json()
         assert data["title"] == "Saturday cleanup"
-        assert data["report_ids"] == [report.id]
+        assert data["report_ids"] == [str(report.id)]
         assert data["meeting_latitude"] == UK_LAT
 
     def test_event_has_correct_fields(self, client, db, volunteer):
@@ -327,12 +329,12 @@ class TestEvents:
                 "date": "2026-04-05T09:00:00",
                 "meeting_latitude": 51.6,
                 "meeting_longitude": -0.2,
-                "report_ids": [r1.id, r2.id],
+                "report_ids": [str(r1.id), str(r2.id)],
             },
             headers=auth_header(volunteer),
         )
         data = res.json()
-        assert set(data["report_ids"]) == {r1.id, r2.id}
+        assert set(data["report_ids"]) == {str(r1.id), str(r2.id)}
         assert data["meeting_latitude"] == 51.6
         assert data["meeting_longitude"] == -0.2
 
@@ -530,7 +532,7 @@ class TestJoinCommunity:
         )
         assert res.status_code == 201
         assert res.json()["status"] == "pending"
-        assert res.json()["user_id"] == other.id
+        assert res.json()["user_id"] == str(other.id)
 
     def test_join_duplicate(self, client, db, volunteer):
         other = _make_user(db, email="dup_joiner@example.com")

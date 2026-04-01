@@ -27,8 +27,7 @@ const {
 } = getCommunities()
 
 export default function CommunityDetail() {
-  const { id } = useParams<{ id: string }>()
-  const communityId = Number(id)
+  const { id: communityId } = useParams<{ id: string }>() as { id: string }
   const { user, isLoggedIn, isAdmin, canManageUsers } = useAuth()
   const navigate = useNavigate()
 
@@ -80,9 +79,9 @@ export default function CommunityDetail() {
           setMyMembership(
             (prev) =>
               prev || {
-                id: 0,
-                community_id: communityId,
-                user_id: user?.id || 0,
+                id: '',
+                community_id: communityId!,
+                user_id: user?.id || '',
                 user_name: '',
                 status: 'approved',
                 created_at: '',
@@ -92,9 +91,9 @@ export default function CommunityDetail() {
           setMyMembership(
             (prev) =>
               prev || {
-                id: 0,
-                community_id: communityId,
-                user_id: user?.id || 0,
+                id: '',
+                community_id: communityId!,
+                user_id: user?.id || '',
                 user_name: '',
                 status: 'pending',
                 created_at: '',
@@ -104,9 +103,9 @@ export default function CommunityDetail() {
           setMyMembership(
             (prev) =>
               prev || {
-                id: 0,
-                community_id: communityId,
-                user_id: user?.id || 0,
+                id: '',
+                community_id: communityId!,
+                user_id: user?.id || '',
                 user_name: '',
                 status: 'rejected',
                 created_at: '',
@@ -169,7 +168,7 @@ export default function CommunityDetail() {
 
   // --- Posts ---
 
-  const handleDeletePost = async (postId: number) => {
+  const handleDeletePost = async (postId: string) => {
     if (!confirm('Delete this post?')) return
     try {
       await deletePostApiCommunitiesCommunityIdPostsPostIdDelete(communityId, postId)
@@ -182,7 +181,7 @@ export default function CommunityDetail() {
   }
 
   // --- Events ---
-  const handleDeleteEvent = async (eventId: number) => {
+  const handleDeleteEvent = async (eventId: string) => {
     if (!confirm('Delete this event?')) return
     try {
       await deleteEventApiCommunitiesCommunityIdEventsEventIdDelete(communityId, eventId)
@@ -589,10 +588,10 @@ function EventCard({
   onDelete,
 }: {
   event: EventRead
-  communityId: number
+  communityId: string
   isOwner: boolean
   canManage: boolean
-  onDelete: (id: number) => void
+  onDelete: (id: string) => void
 }) {
   const date = new Date(event.date)
   const isPast = date < new Date()
@@ -655,10 +654,10 @@ function PostCard({
   onDelete,
 }: {
   post: PostRead
-  communityId: number
+  communityId: string
   isOwner: boolean
   canManage: boolean
-  onDelete: (id: number) => void
+  onDelete: (id: string) => void
 }) {
   const isLong = post.content.length > 300
 

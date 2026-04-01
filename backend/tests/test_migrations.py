@@ -328,6 +328,31 @@ def _check_avatar_url(conn):
     assert "avatar_url" in _column_names(conn, "users")
 
 
+# 12. b2f3a4c5d6e7 — migrate all integer IDs to UUID
+@_check("b2f3a4c5d6e7")
+def _check_uuid_ids(conn):
+    """Verify all primary keys and foreign keys are now UUID type."""
+    for table in [
+        "users",
+        "reports",
+        "report_images",
+        "communities",
+        "community_posts",
+        "community_events",
+        "community_memberships",
+        "favourites",
+        "refresh_tokens",
+    ]:
+        cols = {c["name"]: c for c in inspect(conn).get_columns(table)}
+        assert "id" in cols
+        assert cols["id"]["type"].__class__.__name__.upper() == "UUID"
+
+    # Check event_reports junction table has UUID columns
+    er_cols = {c["name"]: c for c in inspect(conn).get_columns("event_reports")}
+    assert er_cols["event_id"]["type"].__class__.__name__.upper() == "UUID"
+    assert er_cols["report_id"]["type"].__class__.__name__.upper() == "UUID"
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -344,6 +369,7 @@ MIGRATION_CHAIN = [
     "3a9e288db961",
     "190fb0515524",
     "a1b2c3d4e5f6",
+    "b2f3a4c5d6e7",
 ]
 
 # ---------------------------------------------------------------------------

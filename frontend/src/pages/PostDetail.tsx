@@ -14,10 +14,8 @@ const {
 } = getCommunities()
 
 export default function PostDetail() {
-  const { id, postId } = useParams<{ id: string; postId: string }>()
-  const communityId = Number(id)
+  const { id: communityId, postId } = useParams<{ id: string; postId: string }>() as { id: string; postId: string }
   const isNew = postId === 'new'
-  const numericPostId = isNew ? 0 : Number(postId)
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, canManageUsers } = useAuth()
   const navigate = useNavigate()
@@ -44,7 +42,7 @@ export default function PostDetail() {
       .then((c) => {
         setCommunity(c)
         if (!isNew) {
-          const found = c.posts?.find((p) => p.id === numericPostId)
+          const found = c.posts?.find((p) => p.id === postId)
           setPost(found || null)
           if (found && searchParams.get('edit') === 'true') {
             setEditContent(found.content)
@@ -53,7 +51,7 @@ export default function PostDetail() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [communityId, numericPostId, isNew, searchParams])
+  }, [communityId, postId, isNew, searchParams])
 
   const startEdit = () => {
     if (!post) return
@@ -85,7 +83,7 @@ export default function PostDetail() {
       } else {
         const updated = await updatePostApiCommunitiesCommunityIdPostsPostIdPatch(
           communityId,
-          numericPostId,
+          postId!,
           { content: editContent }
         )
         setPost(updated)
@@ -101,7 +99,7 @@ export default function PostDetail() {
   const handleDelete = async () => {
     if (!confirm('Delete this post?')) return
     try {
-      await deletePostApiCommunitiesCommunityIdPostsPostIdDelete(communityId, numericPostId)
+      await deletePostApiCommunitiesCommunityIdPostsPostIdDelete(communityId, postId!)
       navigate(`/communities/${communityId}`)
     } catch {
       alert('Failed to delete post')

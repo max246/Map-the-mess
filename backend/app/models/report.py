@@ -1,7 +1,8 @@
 """Report model — a single litter report from the public."""
 
+import uuid
 from datetime import datetime
-from sqlalchemy import Column, Integer, Float, String, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Float, String, DateTime, Enum, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 import enum
 
@@ -16,14 +17,14 @@ class ReportStatus(str, enum.Enum):
 class Report(Base):
     __tablename__ = "reports"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     description = Column(String, default="")
     what3words = Column(String, nullable=True)
     address = Column(String, nullable=True)
-    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    resolved_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by_user_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
+    resolved_by_user_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     status: Column[ReportStatus] = Column(Enum(ReportStatus), default=ReportStatus.pending)
     created_at = Column(DateTime, default=datetime.utcnow)

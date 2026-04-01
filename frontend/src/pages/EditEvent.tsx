@@ -27,9 +27,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 export default function EditEvent() {
-  const { id, eventId } = useParams<{ id: string; eventId: string }>()
-  const communityId = Number(id)
-  const numericEventId = Number(eventId)
+  const { id: communityId, eventId } = useParams<{ id: string; eventId: string }>() as { id: string; eventId: string }
   const { isLoggedIn } = useAuth()
   const navigate = useNavigate()
 
@@ -40,7 +38,7 @@ export default function EditEvent() {
   const [descriptionTab, setDescriptionTab] = useState<'write' | 'preview'>('write')
   const [date, setDate] = useState('')
   const [meetingPoint, setMeetingPoint] = useState({ lat: 53.5, lng: -1.5 })
-  const [selectedReportIds, setSelectedReportIds] = useState<Set<number>>(new Set())
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set())
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -55,7 +53,7 @@ export default function EditEvent() {
         const [communities, reports, event] = await Promise.all([
           listCommunitiesApiCommunitiesGet({ search: '' }),
           listReportsApiReportsGet({ status: 'pending' }),
-          getEventApiCommunitiesCommunityIdEventsEventIdGet(communityId, numericEventId),
+          getEventApiCommunitiesCommunityIdEventsEventIdGet(communityId, eventId!),
         ])
 
         const c = communities.find((x) => x.id === communityId)
@@ -73,7 +71,7 @@ export default function EditEvent() {
       setLoading(false)
     }
     fetchData()
-  }, [communityId, numericEventId])
+  }, [communityId, eventId])
 
   const nearbyReports = useMemo(() => {
     if (!community) return []
@@ -84,7 +82,7 @@ export default function EditEvent() {
     )
   }, [allReports, community, selectedReportIds])
 
-  const toggleReport = (reportId: number) => {
+  const toggleReport = (reportId: string) => {
     setSelectedReportIds((prev) => {
       const next = new Set(prev)
       if (next.has(reportId)) next.delete(reportId)
@@ -98,7 +96,7 @@ export default function EditEvent() {
     setError('')
     setSubmitting(true)
     try {
-      await updateEventApiCommunitiesCommunityIdEventsEventIdPatch(communityId, numericEventId, {
+      await updateEventApiCommunitiesCommunityIdEventsEventIdPatch(communityId, eventId!, {
         title: title.trim(),
         description: description.trim() || undefined,
         date: new Date(date).toISOString(),

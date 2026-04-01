@@ -1,5 +1,6 @@
 """Volunteer routes — favourite/star reports for planned cleanups."""
 
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -80,7 +81,7 @@ def leaderboard(
 
 
 @router.get("/{user_id}/profile", response_model=PublicProfile)
-def public_profile(user_id: int, db: Session = Depends(get_db)):
+def public_profile(user_id: uuid.UUID, db: Session = Depends(get_db)):
     """Return a volunteer's public profile."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user or user.user_type == UserType.superuser:
@@ -112,7 +113,7 @@ def list_favourites(
 
 @router.post("/favourites/{report_id}", status_code=201)
 def add_favourite(
-    report_id: int,
+    report_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -136,7 +137,7 @@ def add_favourite(
 
 @router.delete("/favourites/{report_id}", status_code=204)
 def remove_favourite(
-    report_id: int,
+    report_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

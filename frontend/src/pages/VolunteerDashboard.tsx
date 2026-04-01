@@ -38,7 +38,7 @@ function ReportCard({
 }: {
   report: ReportRead
   isFavourite: boolean
-  onToggleFavourite: (id: number, starred: boolean) => void
+  onToggleFavourite: (id: string, starred: boolean) => void
 }) {
   const firstImage = report.images?.find((img) => img.image_type === 'report')
   const isCleaned = report.status === 'cleaned'
@@ -409,7 +409,7 @@ export default function VolunteerDashboard() {
   const { isLoggedIn, user } = useAuth()
   const [tab, setTab] = useState<Tab>('favourites')
   const [favourites, setFavourites] = useState<ReportRead[]>([])
-  const [favouriteIds, setFavouriteIds] = useState<Set<number>>(new Set())
+  const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())
   const [reports, setReports] = useState<ReportRead[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -460,7 +460,7 @@ export default function VolunteerDashboard() {
     setPage(1)
   }, [tab])
 
-  const handleToggleFavourite = async (reportId: number, star: boolean) => {
+  const handleToggleFavourite = async (reportId: string, star: boolean) => {
     try {
       if (star) {
         await addFavouriteApiVolunteersFavouritesReportIdPost(reportId)

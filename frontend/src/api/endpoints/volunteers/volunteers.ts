@@ -48,7 +48,7 @@ const leaderboardApiVolunteersLeaderboardGet = (
  * @summary Public Profile
  */
 const publicProfileApiVolunteersUserIdProfileGet = (
-    userId: number,
+    userId: string,
  ) => {
       return customInstance<PublicProfile>(
       {url: `/api/volunteers/${userId}/profile`, method: 'GET'
@@ -73,7 +73,7 @@ const listFavouritesApiVolunteersFavouritesGet = (
  * @summary Add Favourite
  */
 const addFavouriteApiVolunteersFavouritesReportIdPost = (
-    reportId: number,
+    reportId: string,
  ) => {
       return customInstance<unknown>(
       {url: `/api/volunteers/favourites/${reportId}`, method: 'POST'
@@ -85,7 +85,7 @@ const addFavouriteApiVolunteersFavouritesReportIdPost = (
  * @summary Remove Favourite
  */
 const removeFavouriteApiVolunteersFavouritesReportIdDelete = (
-    reportId: number,
+    reportId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/volunteers/favourites/${reportId}`, method: 'DELETE'

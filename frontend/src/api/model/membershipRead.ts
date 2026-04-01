@@ -7,9 +7,9 @@
  */
 
 export interface MembershipRead {
-  id: number;
-  community_id: number;
-  user_id: number;
+  id: string;
+  community_id: string;
+  user_id: string;
   user_name?: string;
   status: string;
   created_at: string;

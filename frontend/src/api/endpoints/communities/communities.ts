@@ -75,7 +75,7 @@ const myCommunitiesApiCommunitiesMineGet = (
  * @summary Get Community
  */
 const getCommunityApiCommunitiesCommunityIdGet = (
-    communityId: number,
+    communityId: string,
  ) => {
       return customInstance<CommunityDetail>(
       {url: `/api/communities/${communityId}`, method: 'GET'
@@ -87,7 +87,7 @@ const getCommunityApiCommunitiesCommunityIdGet = (
  * @summary Delete Community
  */
 const deleteCommunityApiCommunitiesCommunityIdDelete = (
-    communityId: number,
+    communityId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/communities/${communityId}`, method: 'DELETE'
@@ -99,7 +99,7 @@ const deleteCommunityApiCommunitiesCommunityIdDelete = (
  * @summary Upload Profile Image
  */
 const uploadProfileImageApiCommunitiesCommunityIdImagePut = (
-    communityId: number,
+    communityId: string,
     bodyUploadProfileImageApiCommunitiesCommunityIdImagePut: BodyUploadProfileImageApiCommunitiesCommunityIdImagePut,
  ) => {const formData = new FormData();
 formData.append(`file`, bodyUploadProfileImageApiCommunitiesCommunityIdImagePut.file);
@@ -115,7 +115,7 @@ formData.append(`file`, bodyUploadProfileImageApiCommunitiesCommunityIdImagePut.
  * @summary Update Community Status
  */
 const updateCommunityStatusApiCommunitiesCommunityIdStatusPatch = (
-    communityId: number,
+    communityId: string,
     communityStatusUpdate: CommunityStatusUpdate,
  ) => {
       return customInstance<CommunityRead>(
@@ -130,7 +130,7 @@ const updateCommunityStatusApiCommunitiesCommunityIdStatusPatch = (
  * @summary Create Post
  */
 const createPostApiCommunitiesCommunityIdPostsPost = (
-    communityId: number,
+    communityId: string,
     postCreate: PostCreate,
  ) => {
       return customInstance<PostRead>(
@@ -145,8 +145,8 @@ const createPostApiCommunitiesCommunityIdPostsPost = (
  * @summary Update Post
  */
 const updatePostApiCommunitiesCommunityIdPostsPostIdPatch = (
-    communityId: number,
-    postId: number,
+    communityId: string,
+    postId: string,
     postUpdate: PostUpdate,
  ) => {
       return customInstance<PostRead>(
@@ -161,8 +161,8 @@ const updatePostApiCommunitiesCommunityIdPostsPostIdPatch = (
  * @summary Delete Post
  */
 const deletePostApiCommunitiesCommunityIdPostsPostIdDelete = (
-    communityId: number,
-    postId: number,
+    communityId: string,
+    postId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/communities/${communityId}/posts/${postId}`, method: 'DELETE'
@@ -174,7 +174,7 @@ const deletePostApiCommunitiesCommunityIdPostsPostIdDelete = (
  * @summary Create Event
  */
 const createEventApiCommunitiesCommunityIdEventsPost = (
-    communityId: number,
+    communityId: string,
     eventCreate: EventCreate,
  ) => {
       return customInstance<EventRead>(
@@ -189,8 +189,8 @@ const createEventApiCommunitiesCommunityIdEventsPost = (
  * @summary Get Event
  */
 const getEventApiCommunitiesCommunityIdEventsEventIdGet = (
-    communityId: number,
-    eventId: number,
+    communityId: string,
+    eventId: string,
  ) => {
       return customInstance<EventRead>(
       {url: `/api/communities/${communityId}/events/${eventId}`, method: 'GET'
@@ -202,8 +202,8 @@ const getEventApiCommunitiesCommunityIdEventsEventIdGet = (
  * @summary Update Event
  */
 const updateEventApiCommunitiesCommunityIdEventsEventIdPatch = (
-    communityId: number,
-    eventId: number,
+    communityId: string,
+    eventId: string,
     eventUpdate: EventUpdate,
  ) => {
       return customInstance<EventRead>(
@@ -218,8 +218,8 @@ const updateEventApiCommunitiesCommunityIdEventsEventIdPatch = (
  * @summary Delete Event
  */
 const deleteEventApiCommunitiesCommunityIdEventsEventIdDelete = (
-    communityId: number,
-    eventId: number,
+    communityId: string,
+    eventId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/communities/${communityId}/events/${eventId}`, method: 'DELETE'
@@ -231,7 +231,7 @@ const deleteEventApiCommunitiesCommunityIdEventsEventIdDelete = (
  * @summary Join Community
  */
 const joinCommunityApiCommunitiesCommunityIdJoinPost = (
-    communityId: number,
+    communityId: string,
  ) => {
       return customInstance<MembershipRead>(
       {url: `/api/communities/${communityId}/join`, method: 'POST'
@@ -243,7 +243,7 @@ const joinCommunityApiCommunitiesCommunityIdJoinPost = (
  * @summary List Memberships
  */
 const listMembershipsApiCommunitiesCommunityIdMembershipsGet = (
-    communityId: number,
+    communityId: string,
  ) => {
       return customInstance<MembershipRead[]>(
       {url: `/api/communities/${communityId}/memberships`, method: 'GET'
@@ -255,8 +255,8 @@ const listMembershipsApiCommunitiesCommunityIdMembershipsGet = (
  * @summary Update Membership
  */
 const updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch = (
-    communityId: number,
-    membershipId: number,
+    communityId: string,
+    membershipId: string,
     membershipAction: MembershipAction,
  ) => {
       return customInstance<MembershipRead>(
@@ -271,7 +271,7 @@ const updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch = (
  * @summary Leave Community
  */
 const leaveCommunityApiCommunitiesCommunityIdLeaveDelete = (
-    communityId: number,
+    communityId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/communities/${communityId}/leave`, method: 'DELETE'

@@ -11,7 +11,7 @@ export default function UserManagement() {
   const { isLoggedIn, canManageUsers, token } = useAuth()
   const [users, setUsers] = useState<UserRead[]>([])
   const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState<number | null>(null)
+  const [updating, setUpdating] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
@@ -28,7 +28,7 @@ export default function UserManagement() {
   if (!isLoggedIn) return <Navigate to="/login" replace />
   if (!canManageUsers) return <Navigate to="/volunteers" replace />
 
-  const handleRoleChange = async (userId: number, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: string) => {
     setUpdating(userId)
     setError('')
     try {
@@ -46,7 +46,7 @@ export default function UserManagement() {
     }
   }
 
-  const handleDelete = async (userId: number, email: string) => {
+  const handleDelete = async (userId: string, email: string) => {
     if (!confirm(`Are you sure you want to delete user ${email}?`)) return
     setError('')
     try {
@@ -73,7 +73,6 @@ export default function UserManagement() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-gray-50 text-left text-gray-500">
-              <th className="px-4 py-3 font-medium">ID</th>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Role</th>
@@ -84,20 +83,19 @@ export default function UserManagement() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
                   Loading...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
                   No users found.
                 </td>
               </tr>
             ) : (
               users.map((user) => (
                 <tr key={user.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-gray-700">#{user.id}</td>
                   <td className="px-4 py-3 text-gray-700">{user.full_name}</td>
                   <td className="px-4 py-3 text-gray-500">{user.email}</td>
                   <td className="px-4 py-3">

@@ -65,7 +65,7 @@ function ZoomMarker({ report }: { report: ReportRead }) {
 export default function MapView() {
   const { isLoggedIn } = useAuth()
   const [allReports, setAllReports] = useState<ReportRead[]>([])
-  const [favouriteIds, setFavouriteIds] = useState<Set<number>>(new Set())
+  const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {

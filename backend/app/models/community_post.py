@@ -1,8 +1,9 @@
 """CommunityPost model — owner updates posted to a community page."""
 
+import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, Uuid
 
 from app.database import Base
 
@@ -10,9 +11,9 @@ from app.database import Base
 class CommunityPost(Base):
     __tablename__ = "community_posts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
     community_id = Column(
-        Integer, ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
+        Uuid, ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
     )
     content = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

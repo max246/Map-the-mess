@@ -72,7 +72,7 @@ if(bodyCreateReportApiReportsPost.image !== undefined && bodyCreateReportApiRepo
  * @summary Get Report
  */
 const getReportApiReportsReportIdGet = (
-    reportId: number,
+    reportId: string,
  ) => {
       return customInstance<ReportRead>(
       {url: `/api/reports/${reportId}`, method: 'GET'
@@ -84,7 +84,7 @@ const getReportApiReportsReportIdGet = (
  * @summary Delete Report
  */
 const deleteReportApiReportsReportIdDelete = (
-    reportId: number,
+    reportId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/reports/${reportId}`, method: 'DELETE'
@@ -96,7 +96,7 @@ const deleteReportApiReportsReportIdDelete = (
  * @summary Add Image
  */
 const addImageApiReportsReportIdImagesPost = (
-    reportId: number,
+    reportId: string,
     bodyAddImageApiReportsReportIdImagesPost: BodyAddImageApiReportsReportIdImagesPost,
  ) => {const formData = new FormData();
 formData.append(`image_type`, bodyAddImageApiReportsReportIdImagesPost.image_type);
@@ -113,7 +113,7 @@ formData.append(`file`, bodyAddImageApiReportsReportIdImagesPost.file);
  * @summary Mark Cleaned
  */
 const markCleanedApiReportsReportIdCleanPatch = (
-    reportId: number,
+    reportId: string,
  ) => {
       return customInstance<ReportRead>(
       {url: `/api/reports/${reportId}/clean`, method: 'PATCH'
@@ -125,7 +125,7 @@ const markCleanedApiReportsReportIdCleanPatch = (
  * @summary Mark Unresolved
  */
 const markUnresolvedApiReportsReportIdUnresolvePatch = (
-    reportId: number,
+    reportId: string,
  ) => {
       return customInstance<ReportRead>(
       {url: `/api/reports/${reportId}/unresolve`, method: 'PATCH'
@@ -137,7 +137,7 @@ const markUnresolvedApiReportsReportIdUnresolvePatch = (
  * @summary Delete Image
  */
 const deleteImageApiReportsImagesImageIdDelete = (
-    imageId: number,
+    imageId: string,
  ) => {
       return customInstance<void>(
       {url: `/api/reports/images/${imageId}`, method: 'DELETE'

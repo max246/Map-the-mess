@@ -12,5 +12,5 @@ export interface EventCreate {
   date: string;
   meeting_latitude: number;
   meeting_longitude: number;
-  report_ids?: number[];
+  report_ids?: string[];
 }

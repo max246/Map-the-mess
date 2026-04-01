@@ -24,8 +24,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 export default function CreateEvent() {
-  const { id } = useParams<{ id: string }>()
-  const communityId = Number(id)
+  const { id: communityId } = useParams<{ id: string }>() as { id: string }
   const { isLoggedIn } = useAuth()
   const navigate = useNavigate()
 
@@ -36,7 +35,7 @@ export default function CreateEvent() {
   const [descriptionTab, setDescriptionTab] = useState<'write' | 'preview'>('write')
   const [date, setDate] = useState('')
   const [meetingPoint, setMeetingPoint] = useState({ lat: 53.5, lng: -1.5 })
-  const [selectedReportIds, setSelectedReportIds] = useState<Set<number>>(new Set())
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set())
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -69,7 +68,7 @@ export default function CreateEvent() {
     )
   }, [allReports, community])
 
-  const toggleReport = (reportId: number) => {
+  const toggleReport = (reportId: string) => {
     setSelectedReportIds((prev) => {
       const next = new Set(prev)
       if (next.has(reportId)) next.delete(reportId)

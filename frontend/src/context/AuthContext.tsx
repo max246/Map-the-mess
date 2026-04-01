@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useMemo, useCallback, type ReactNo
 import api from '../api/client'
 
 interface User {
-  id: number
+  id: string
   email: string
   userType: string
   exp: number

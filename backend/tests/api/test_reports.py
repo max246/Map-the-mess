@@ -59,10 +59,10 @@ class TestGetReport:
         report = _create_report(db)
         res = client.get(f"/api/reports/{report.id}")
         assert res.status_code == 200
-        assert res.json()["id"] == report.id
+        assert res.json()["id"] == str(report.id)
 
     def test_get_nonexistent(self, client, db):
-        res = client.get("/api/reports/9999")
+        res = client.get("/api/reports/00000000-0000-0000-0000-000000009999")
         assert res.status_code == 404
 
 
@@ -85,7 +85,7 @@ class TestCreateReport:
             headers=auth_header(volunteer),
         )
         assert res.status_code == 201
-        assert res.json()["created_by_user_id"] == volunteer.id
+        assert res.json()["created_by_user_id"] == str(volunteer.id)
 
     def test_create_with_image(self, client, db):
         res = client.post(
@@ -133,10 +133,10 @@ class TestMarkCleaned:
             headers=auth_header(volunteer),
         )
         assert res.status_code == 200
-        assert res.json()["resolved_by_user_id"] == volunteer.id
+        assert res.json()["resolved_by_user_id"] == str(volunteer.id)
 
     def test_mark_cleaned_nonexistent(self, client, db):
-        res = client.patch("/api/reports/9999/clean")
+        res = client.patch("/api/reports/00000000-0000-0000-0000-000000009999/clean")
         assert res.status_code == 404
 
 
@@ -184,7 +184,7 @@ class TestDeleteReport:
 
     def test_delete_nonexistent(self, client, db, moderator):
         res = client.delete(
-            "/api/reports/9999",
+            "/api/reports/00000000-0000-0000-0000-000000009999",
             headers=auth_header(moderator),
         )
         assert res.status_code == 404
@@ -203,7 +203,7 @@ class TestAddImage:
 
     def test_add_image_to_nonexistent_report(self, client, db):
         res = client.post(
-            "/api/reports/9999/images",
+            "/api/reports/00000000-0000-0000-0000-000000009999/images",
             data={"image_type": "report"},
             files=[("file", ("photo.jpg", _make_image_buf(), "image/jpeg"))],
         )
@@ -258,7 +258,7 @@ class TestDeleteImage:
 
     def test_delete_nonexistent_image(self, client, db, moderator):
         res = client.delete(
-            "/api/reports/images/9999",
+            "/api/reports/images/00000000-0000-0000-0000-000000009999",
             headers=auth_header(moderator),
         )
         assert res.status_code == 404
