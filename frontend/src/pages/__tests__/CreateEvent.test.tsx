@@ -47,7 +47,7 @@ jest.mock('../../components/MarkdownRenderer', () => ({ content }: { content: st
 
 function renderCreateEvent() {
   return render(
-    <MemoryRouter initialEntries={['/communities/1/events/new']}>
+    <MemoryRouter initialEntries={['/communities/00000000-0000-0000-0000-000000000001/events/new']}>
       <Routes>
         <Route path="/communities/:id/events/new" element={<CreateEvent />} />
       </Routes>
@@ -59,7 +59,7 @@ describe('CreateEvent', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockListCommunities.mockResolvedValue([
-      { id: 1, name: 'Test Community', latitude: 53.5, longitude: -1.5, radius_km: 10 },
+      { id: '00000000-0000-0000-0000-000000000001', name: 'Test Community', latitude: 53.5, longitude: -1.5, radius_km: 10 },
     ])
     mockListReports.mockResolvedValue([])
   })
@@ -94,7 +94,7 @@ describe('CreateEvent', () => {
   it('renders back to community link', () => {
     renderCreateEvent()
     const link = screen.getByRole('link', { name: /back to community/i })
-    expect(link).toHaveAttribute('href', '/communities/1')
+    expect(link).toHaveAttribute('href', '/communities/00000000-0000-0000-0000-000000000001')
   })
 
   it('submit button is disabled when title is empty', () => {
@@ -123,7 +123,7 @@ describe('CreateEvent', () => {
   })
 
   it('calls create event API on form submission', async () => {
-    mockCreateEvent.mockResolvedValue({ id: 10 })
+    mockCreateEvent.mockResolvedValue({ id: '00000000-0000-0000-0000-000000000010' })
     const user = userEvent.setup()
     renderCreateEvent()
 
@@ -136,7 +136,7 @@ describe('CreateEvent', () => {
     await user.click(screen.getByRole('button', { name: /create event/i }))
 
     expect(mockCreateEvent).toHaveBeenCalledWith(
-      1,
+      '00000000-0000-0000-0000-000000000001',
       expect.objectContaining({
         title: 'Beach Cleanup',
         description: 'Bring gloves',
@@ -145,7 +145,7 @@ describe('CreateEvent', () => {
   })
 
   it('navigates back to community on successful creation', async () => {
-    mockCreateEvent.mockResolvedValue({ id: 10 })
+    mockCreateEvent.mockResolvedValue({ id: '00000000-0000-0000-0000-000000000010' })
     const user = userEvent.setup()
     renderCreateEvent()
 
@@ -156,7 +156,7 @@ describe('CreateEvent', () => {
 
     await user.click(screen.getByRole('button', { name: /create event/i }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/communities/1')
+    expect(mockNavigate).toHaveBeenCalledWith('/communities/00000000-0000-0000-0000-000000000001')
   })
 
   it('shows error on failed creation', async () => {

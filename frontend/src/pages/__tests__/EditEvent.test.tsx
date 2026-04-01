@@ -49,20 +49,20 @@ jest.mock('../../components/MarkdownRenderer', () => ({ content }: { content: st
 ))
 
 const EXISTING_EVENT = {
-  id: 5,
-  community_id: 1,
+  id: '00000000-0000-0000-0000-000000000005',
+  community_id: '00000000-0000-0000-0000-000000000001',
   title: 'Park Cleanup',
   description: 'Bring **gloves** and bags',
   date: '2026-04-20T09:00:00Z',
   meeting_latitude: 53.5,
   meeting_longitude: -1.5,
-  report_ids: [10, 20],
+  report_ids: ['00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000020'],
   created_at: '2026-03-01T12:00:00Z',
 }
 
 function renderEditEvent() {
   return render(
-    <MemoryRouter initialEntries={['/communities/1/events/5/edit']}>
+    <MemoryRouter initialEntries={['/communities/00000000-0000-0000-0000-000000000001/events/00000000-0000-0000-0000-000000000005/edit']}>
       <Routes>
         <Route path="/communities/:id/events/:eventId/edit" element={<EditEvent />} />
       </Routes>
@@ -74,7 +74,7 @@ describe('EditEvent', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockListCommunities.mockResolvedValue([
-      { id: 1, name: 'Test Community', latitude: 53.5, longitude: -1.5, radius_km: 10 },
+      { id: '00000000-0000-0000-0000-000000000001', name: 'Test Community', latitude: 53.5, longitude: -1.5, radius_km: 10 },
     ])
     mockListReports.mockResolvedValue([])
     mockGetEvent.mockResolvedValue(EXISTING_EVENT)
@@ -130,8 +130,8 @@ describe('EditEvent', () => {
     await user.click(screen.getByRole('button', { name: /update event/i }))
 
     expect(mockUpdateEvent).toHaveBeenCalledWith(
-      1,
-      5,
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000005',
       expect.objectContaining({ title: 'Updated Cleanup' })
     )
   })
@@ -144,7 +144,7 @@ describe('EditEvent', () => {
     await screen.findByDisplayValue('Park Cleanup')
     await user.click(screen.getByRole('button', { name: /update event/i }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/communities/1')
+    expect(mockNavigate).toHaveBeenCalledWith('/communities/00000000-0000-0000-0000-000000000001')
   })
 
   it('shows error on failed update', async () => {
