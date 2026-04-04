@@ -98,6 +98,10 @@ def update_profile(
         current_user.full_name = payload.full_name  # type: ignore[assignment]
     if payload.avatar_url is not None:
         current_user.avatar_url = payload.avatar_url  # type: ignore[assignment]
+    if payload.city_latitude is not None:
+        current_user.city_latitude = payload.city_latitude  # type: ignore[assignment]
+    if payload.city_longitude is not None:
+        current_user.city_longitude = payload.city_longitude  # type: ignore[assignment]
     db.commit()
     db.refresh(current_user)
     return current_user
@@ -213,6 +217,8 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         email=payload.email,
         full_name=payload.full_name,
         hashed_password=pwd_context.hash(payload.password),
+        city_latitude=payload.city_latitude,
+        city_longitude=payload.city_longitude,
     )
     db.add(user)
     db.commit()

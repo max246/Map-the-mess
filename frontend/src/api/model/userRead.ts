@@ -13,5 +13,7 @@ export interface UserRead {
   is_verified: boolean;
   user_type: string;
   avatar_url?: string | null;
+  city_latitude: number;
+  city_longitude: number;
   created_at: string;
 }

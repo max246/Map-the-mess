@@ -10,4 +10,6 @@ export interface UserCreate {
   email: string;
   full_name: string;
   password: string;
+  city_latitude: number;
+  city_longitude: number;
 }

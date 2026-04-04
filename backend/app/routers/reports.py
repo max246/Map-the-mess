@@ -131,11 +131,37 @@ def serve_image(filename: str):
 
 
 @router.get("/", response_model=List[ReportRead])
-def list_reports(status: str | None = None, db: Session = Depends(get_db)):
-    """List all reports, optionally filtered by status."""
+def list_reports(
+    request: Request,
+    status: str | None = None,
+    radius_km: float = 30.0,
+    db: Session = Depends(get_db),
+):
+    """List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports."""
     q = db.query(Report)
     if status:
         q = q.filter(Report.status == status)
+
+    user = _get_optional_user(request, db)
+    if user and (user.city_latitude != 0 or user.city_longitude != 0):
+        from sqlalchemy import func
+        from math import radians
+
+        lat_r = radians(user.city_latitude)
+        lon_r = radians(user.city_longitude)
+        distance = (
+            6371
+            * func.acos(
+                func.min(
+                    1.0,
+                    func.cos(func.radians(Report.latitude))
+                    * func.cos(lat_r)
+                    * func.cos(func.radians(Report.longitude) - lon_r)
+                    + func.sin(func.radians(Report.latitude)) * func.sin(lat_r),
+                )
+            )
+        )
+        q = q.filter(distance <= radius_km)
     return q.order_by(Report.created_at.desc()).all()
 
 

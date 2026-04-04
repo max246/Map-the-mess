@@ -20,6 +20,8 @@ class TestRegister:
                     "email": "new@example.com",
                     "full_name": "New User",
                     "password": "securepass",
+                    "city_latitude": 51.5,
+                    "city_longitude": -0.1,
                 },
             )
         assert res.status_code == 200
@@ -28,6 +30,8 @@ class TestRegister:
         assert data["full_name"] == "New User"
         assert data["is_verified"] is False
         assert data["user_type"] == "volunteer"
+        assert data["city_latitude"] == 51.5
+        assert data["city_longitude"] == -0.1
 
     def test_register_duplicate_email(self, client, db, volunteer):
         with patch("app.routers.auth._send_verification_email"):
@@ -37,6 +41,8 @@ class TestRegister:
                     "email": volunteer.email,
                     "full_name": "Dup",
                     "password": "pass",
+                    "city_latitude": 0,
+                    "city_longitude": 0,
                 },
             )
         assert res.status_code == 400
@@ -45,7 +51,7 @@ class TestRegister:
     def test_register_invalid_email(self, client, db):
         res = client.post(
             "/api/auth/register",
-            json={"email": "not-an-email", "full_name": "X", "password": "pass"},
+            json={"email": "not-an-email", "full_name": "X", "password": "pass", "city_latitude": 0, "city_longitude": 0},
         )
         assert res.status_code == 422
 

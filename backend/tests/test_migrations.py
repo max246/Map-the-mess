@@ -328,6 +328,14 @@ def _check_avatar_url(conn):
     assert "avatar_url" in _column_names(conn, "users")
 
 
+# 13. c3d4e5f6a7b8 — add city coordinates to users
+@_check("c3d4e5f6a7b8")
+def _check_city_coordinates(conn):
+    user_cols = _column_names(conn, "users")
+    assert "city_latitude" in user_cols
+    assert "city_longitude" in user_cols
+
+
 # 12. b2f3a4c5d6e7 — migrate all integer IDs to UUID
 @_check("b2f3a4c5d6e7")
 def _check_uuid_ids(conn):
@@ -370,6 +378,7 @@ MIGRATION_CHAIN = [
     "190fb0515524",
     "a1b2c3d4e5f6",
     "b2f3a4c5d6e7",
+    "c3d4e5f6a7b8",
 ]
 
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, String, DateTime, Enum, Uuid
+from sqlalchemy import Boolean, Column, Float, String, DateTime, Enum, Uuid
 
 from app.database import Base
 
@@ -26,4 +26,6 @@ class User(Base):
     is_verified = Column(Boolean, default=False, nullable=False)
     user_type: Column[UserType] = Column(Enum(UserType), default=UserType.volunteer, nullable=False)
     avatar_url = Column(String, nullable=True)
+    city_latitude = Column(Float, nullable=False, default=0.0)
+    city_longitude = Column(Float, nullable=False, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
