@@ -92,6 +92,7 @@ jest.mock('react-leaflet', () => ({
   useMap: () => ({
     flyTo: mockFlyTo,
     getZoom: mockGetZoom,
+    removeLayer: jest.fn(),
   }),
 }))
 
@@ -110,13 +111,22 @@ const mockLayerGroup = {
   clearLayers: jest.fn(),
 }
 
+const mockHeatLayer = {
+  addTo: jest.fn().mockReturnThis(),
+  remove: jest.fn(),
+}
+const mockHeatLayerFn = jest.fn(() => mockHeatLayer)
+
 jest.mock('leaflet', () => ({
   icon: () => ({}),
   layerGroup: () => mockLayerGroup,
   circle: () => ({ addTo: jest.fn() }),
   divIcon: () => ({}),
   marker: () => ({ addTo: jest.fn() }),
+  heatLayer: (...args: unknown[]) => mockHeatLayerFn(...args),
 }))
+
+jest.mock('leaflet.heat', () => ({}))
 
 import MapView from '../MapView'
 
@@ -153,25 +163,8 @@ describe('MapView', () => {
     expect(screen.queryByRole('button', { name: 'Favourites' })).not.toBeInTheDocument()
   })
 
-  it('renders markers for all reports', async () => {
+  it('defaults to unresolved filter and shows only unresolved markers', async () => {
     renderMapView()
-    await waitFor(() => {
-      expect(screen.getAllByTestId('marker')).toHaveLength(3)
-    })
-  })
-
-  /* ── Filtering ──────────────────────────────────── */
-
-  it('filters to unresolved reports only', async () => {
-    const user = userEvent.setup()
-    renderMapView()
-
-    await waitFor(() => {
-      expect(screen.getAllByTestId('marker')).toHaveLength(3)
-    })
-
-    await user.click(screen.getByRole('button', { name: 'Unresolved' }))
-
     await waitFor(() => {
       expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
@@ -180,12 +173,29 @@ describe('MapView', () => {
     expect(screen.queryByText(/Bags in park/)).not.toBeInTheDocument()
   })
 
+  /* ── Filtering ──────────────────────────────────── */
+
+  it('shows all reports when All filter is clicked', async () => {
+    const user = userEvent.setup()
+    renderMapView()
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('marker')).toHaveLength(2)
+    })
+
+    await user.click(screen.getByRole('button', { name: 'All' }))
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('marker')).toHaveLength(3)
+    })
+  })
+
   it('filters to resolved reports only', async () => {
     const user = userEvent.setup()
     renderMapView()
 
     await waitFor(() => {
-      expect(screen.getAllByTestId('marker')).toHaveLength(3)
+      expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
     await user.click(screen.getByRole('button', { name: 'Resolved' }))
@@ -201,17 +211,17 @@ describe('MapView', () => {
     renderMapView()
 
     await waitFor(() => {
-      expect(screen.getAllByTestId('marker')).toHaveLength(3)
-    })
-
-    await user.click(screen.getByRole('button', { name: 'Unresolved' }))
-    await waitFor(() => {
       expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
     await user.click(screen.getByRole('button', { name: 'All' }))
     await waitFor(() => {
       expect(screen.getAllByTestId('marker')).toHaveLength(3)
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Unresolved' }))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
   })
 
@@ -223,7 +233,7 @@ describe('MapView', () => {
     renderMapView()
 
     await waitFor(() => {
-      expect(screen.getAllByTestId('marker')).toHaveLength(3)
+      expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
     await user.click(screen.getAllByTestId('marker')[0])
@@ -237,7 +247,7 @@ describe('MapView', () => {
     renderMapView()
 
     await waitFor(() => {
-      expect(screen.getAllByTestId('marker')).toHaveLength(3)
+      expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
     await user.click(screen.getAllByTestId('marker')[0])
@@ -257,7 +267,7 @@ describe('MapView', () => {
   it('shows status icons in popups', async () => {
     renderMapView()
     await waitFor(() => {
-      expect(screen.getAllByTestId('popup')).toHaveLength(3)
+      expect(screen.getAllByTestId('popup')).toHaveLength(2)
     })
   })
 
@@ -273,6 +283,56 @@ describe('MapView', () => {
     await waitFor(() => {
       const buttons = screen.getAllByRole('button', { name: /open report/i })
       expect(buttons.length).toBeGreaterThan(0)
+    })
+  })
+
+  /* ── Layer toggle ───────────────────────────────── */
+
+  it('shows Pins and Heatmap layer buttons', () => {
+    renderMapView()
+    expect(screen.getByRole('button', { name: 'Pins' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Heatmap' })).toBeInTheDocument()
+  })
+
+  it('defaults to pins layer with cluster group visible', async () => {
+    renderMapView()
+    await waitFor(() => {
+      expect(screen.getByTestId('cluster-group')).toBeInTheDocument()
+    })
+  })
+
+  it('switches to heatmap layer and hides markers', async () => {
+    const user = userEvent.setup()
+    renderMapView()
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('marker')).toHaveLength(2)
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Heatmap' }))
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('cluster-group')).not.toBeInTheDocument()
+    })
+    expect(mockHeatLayerFn).toHaveBeenCalled()
+  })
+
+  it('switches back to pins from heatmap', async () => {
+    const user = userEvent.setup()
+    renderMapView()
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('marker')).toHaveLength(2)
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Heatmap' }))
+    await waitFor(() => {
+      expect(screen.queryByTestId('cluster-group')).not.toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Pins' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('cluster-group')).toBeInTheDocument()
     })
   })
 })
