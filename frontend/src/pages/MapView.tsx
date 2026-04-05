@@ -1,6 +1,7 @@
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
+import 'leaflet.heat'
 import { useState, useEffect } from 'react'
 import PageMeta from '../components/PageMeta'
 import { getReports } from '../api/endpoints/reports/reports'
@@ -62,11 +63,35 @@ function ZoomMarker({ report }: { report: ReportRead }) {
   )
 }
 
+function HeatmapLayer({ reports }: { reports: ReportRead[] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    const points: [number, number][] = reports.map((r) => [r.latitude, r.longitude])
+    const heat = L.heatLayer(points, { radius: 25, blur: 15, maxZoom: 13, minOpacity: 0.3 }).addTo(
+      map
+    )
+
+    const onClick = (e: L.LeafletMouseEvent) => {
+      map.flyTo(e.latlng, Math.min(map.getZoom() + 3, 18))
+    }
+    map.on('click', onClick)
+
+    return () => {
+      map.removeLayer(heat)
+      map.off('click', onClick)
+    }
+  }, [map, reports])
+
+  return null
+}
+
 export default function MapView() {
   const { isLoggedIn } = useAuth()
   const [allReports, setAllReports] = useState<ReportRead[]>([])
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())
-  const [filter, setFilter] = useState<Filter>('all')
+  const [filter, setFilter] = useState<Filter>('unresolved')
+  const [layer, setLayer] = useState<'pins' | 'heatmap'>('pins')
 
   useEffect(() => {
     listReportsApiReportsGet()
@@ -111,16 +136,35 @@ export default function MapView() {
         ))}
       </div>
 
+      {/* Layer toggle */}
+      <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex gap-1 bg-white rounded-lg shadow-lg p-1">
+        {(['pins', 'heatmap'] as const).map((l) => (
+          <button
+            key={l}
+            onClick={() => setLayer(l)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+              layer === l ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {l === 'pins' ? 'Pins' : 'Heatmap'}
+          </button>
+        ))}
+      </div>
+
       <MapContainer center={UK_CENTER} zoom={6} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MarkerClusterGroup chunkedLoading>
-          {filteredReports.map((r) => (
-            <ZoomMarker key={r.id} report={r} />
-          ))}
-        </MarkerClusterGroup>
+        {layer === 'pins' ? (
+          <MarkerClusterGroup chunkedLoading>
+            {filteredReports.map((r) => (
+              <ZoomMarker key={r.id} report={r} />
+            ))}
+          </MarkerClusterGroup>
+        ) : (
+          <HeatmapLayer reports={filteredReports} />
+        )}
         <LocateButton />
       </MapContainer>
     </div>
