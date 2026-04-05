@@ -120,13 +120,27 @@ def wipe_users(db) -> None:
     print(f"Deleted {count} users (superuser kept).")
 
 
+def verify_user(db, email: str) -> None:
+    """Mark a user as verified by email address."""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        print(f"No user found with email: {email}")
+        sys.exit(1)
+    if user.is_verified:
+        print(f"{email} is already verified.")
+        return
+    user.is_verified = True
+    db.commit()
+    print(f"{email} is now verified.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Local dev helper — seed users, wipe reports, or reset the database."
     )
     parser.add_argument(
         "command",
-        choices=["users", "wipe-reports", "wipe-users", "reset"],
+        choices=["users", "wipe-reports", "wipe-users", "reset", "verify"],
         help="Action to perform",
     )
     parser.add_argument(
@@ -134,6 +148,11 @@ def main() -> None:
         type=int,
         default=5,
         help="Number of users to create (default: 5)",
+    )
+    parser.add_argument(
+        "--email",
+        type=str,
+        help="Email address for the verify command",
     )
     args = parser.parse_args()
 
@@ -149,6 +168,11 @@ def main() -> None:
             wipe_reports(db)
         elif args.command == "wipe-users":
             wipe_users(db)
+        elif args.command == "verify":
+            if not args.email:
+                print("Usage: python utils/dev_seed.py verify --email user@example.com")
+                sys.exit(1)
+            verify_user(db, args.email)
         elif args.command == "reset":
             wipe_reports(db)
             wipe_users(db)

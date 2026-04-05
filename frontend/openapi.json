@@ -47,13 +47,38 @@
         }
       }
     },
+    "/api/reports/export": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Export Reports",
+        "description": "Export all reports as a downloadable JSON file. Requires authentication.",
+        "operationId": "export_reports_api_reports_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/reports/": {
       "get": {
         "tags": [
           "Reports"
         ],
         "summary": "List Reports",
-        "description": "List all reports, optionally filtered by status.",
+        "description": "List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports.",
         "operationId": "list_reports_api_reports__get",
         "parameters": [
           {
@@ -70,6 +95,16 @@
                 }
               ],
               "title": "Status"
+            }
+          },
+          {
+            "name": "radius_km",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "default": 30.0,
+              "title": "Radius Km"
             }
           }
         ],
@@ -3127,6 +3162,28 @@
               }
             ],
             "title": "Avatar Url"
+          },
+          "city_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Latitude"
+          },
+          "city_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Longitude"
           }
         },
         "type": "object",
@@ -3409,13 +3466,23 @@
           "password": {
             "type": "string",
             "title": "Password"
+          },
+          "city_latitude": {
+            "type": "number",
+            "title": "City Latitude"
+          },
+          "city_longitude": {
+            "type": "number",
+            "title": "City Longitude"
           }
         },
         "type": "object",
         "required": [
           "email",
           "full_name",
-          "password"
+          "password",
+          "city_latitude",
+          "city_longitude"
         ],
         "title": "UserCreate"
       },
@@ -3472,10 +3539,26 @@
             ],
             "title": "Avatar Url"
           },
+          "city_latitude": {
+            "type": "number",
+            "title": "City Latitude"
+          },
+          "city_longitude": {
+            "type": "number",
+            "title": "City Longitude"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "badges": {
+            "items": {
+              "$ref": "#/components/schemas/BadgeRead"
+            },
+            "type": "array",
+            "title": "Badges",
+            "default": []
           }
         },
         "type": "object",
@@ -3485,6 +3568,8 @@
           "full_name",
           "is_verified",
           "user_type",
+          "city_latitude",
+          "city_longitude",
           "created_at"
         ],
         "title": "UserRead"

@@ -7,7 +7,7 @@ from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from PIL import Image
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -22,7 +22,7 @@ from app.database import get_db
 from app.models.report import Report, ReportStatus
 from app.models.report_image import ReportImage, ImageType
 from app.models.user import User
-from app.routers.auth import ALGORITHM, require_moderator_or_admin
+from app.routers.auth import ALGORITHM, get_current_user, require_moderator_or_admin
 from app.schemas.report import ReportRead, ReportImageRead
 
 router = APIRouter()
@@ -130,12 +130,66 @@ def serve_image(filename: str):
     return FileResponse(path)
 
 
+@router.get("/export")
+def export_reports(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export all reports as a downloadable JSON file. Requires authentication."""
+    reports = db.query(Report).order_by(Report.created_at.desc()).all()
+    data = [
+        {
+            "id": str(r.id),
+            "latitude": r.latitude,
+            "longitude": r.longitude,
+            "description": r.description,
+            "what3words": r.what3words,
+            "address": r.address,
+            "status": r.status.value if hasattr(r.status, "value") else r.status,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "resolved_at": r.resolved_at.isoformat() if r.resolved_at else None,
+        }
+        for r in reports
+    ]
+    return JSONResponse(
+        content=data,
+        headers={"Content-Disposition": "attachment; filename=reports.json"},
+    )
+
+
 @router.get("/", response_model=List[ReportRead])
-def list_reports(status: str | None = None, db: Session = Depends(get_db)):
-    """List all reports, optionally filtered by status."""
+def list_reports(
+    request: Request,
+    status: str | None = None,
+    radius_km: float = 30.0,
+    db: Session = Depends(get_db),
+):
+    """List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports."""
     q = db.query(Report)
     if status:
         q = q.filter(Report.status == status)
+
+    user = _get_optional_user(request, db)
+    if (
+        user
+        and user.user_type not in ("admin", "superuser")
+        and (user.city_latitude != 0 or user.city_longitude != 0)
+    ):
+        from sqlalchemy import func
+        from math import radians
+
+        lat_r = radians(user.city_latitude)
+        lon_r = radians(user.city_longitude)
+        distance = 6371 * func.acos(
+            func.least(
+                1.0,
+                func.cos(func.radians(Report.latitude))
+                * func.cos(lat_r)
+                * func.cos(func.radians(Report.longitude) - lon_r)
+                + func.sin(func.radians(Report.latitude)) * func.sin(lat_r),
+            )
+        )
+        q = q.filter(distance <= radius_km)
     return q.order_by(Report.created_at.desc()).all()
 
 

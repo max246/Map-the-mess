@@ -93,6 +93,17 @@ async function mockApi(page: Page) {
     })
   })
 
+  // Nominatim geocoding
+  await page.route('**/nominatim.openstreetmap.org/**', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { display_name: 'London, England, United Kingdom', lat: '51.5074', lon: '-0.1278' },
+      ]),
+    })
+  })
+
   // Catch-all for other /api/ calls to prevent hangs (must not match vite internals)
   await page.route('**/api/reports**', async (route: Route) => {
     await route.fulfill({
@@ -115,6 +126,33 @@ async function mockApi(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([]),
+    })
+  })
+
+  await page.route('**/api/communities**', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    })
+  })
+
+  await page.route('**/api/auth/me', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: '00000000-0000-0000-0000-000000000001',
+        email: 'volunteer@example.com',
+        full_name: 'Test User',
+        is_verified: true,
+        user_type: 'volunteer',
+        avatar_url: null,
+        city_latitude: 0,
+        city_longitude: 0,
+        created_at: '2026-01-01T00:00:00Z',
+        badges: [],
+      }),
     })
   })
 
@@ -141,12 +179,19 @@ test.describe('Register flow', () => {
     await expect(page.getByPlaceholder('Re-enter your password')).toBeVisible()
   })
 
-  test('register button is disabled until terms are accepted', async ({ page }) => {
+  test('register button is disabled until terms are accepted and city is selected', async ({ page }) => {
     await page.goto('/register')
     const registerBtn = page.getByRole('button', { name: /register/i })
     await expect(registerBtn).toBeDisabled()
 
+    // Accepting terms alone is not enough
     await page.getByRole('checkbox').check()
+    await expect(registerBtn).toBeDisabled()
+
+    // Select a city
+    await page.getByPlaceholder('Start typing your city...').fill('London')
+    await page.getByText('London, England, United Kingdom').click()
+
     await expect(registerBtn).toBeEnabled()
   })
 
@@ -166,6 +211,8 @@ test.describe('Register flow', () => {
     await page.getByPlaceholder('Enter your email').fill('newuser@example.com')
     await page.getByPlaceholder('At least 6 characters').fill('password123')
     await page.getByPlaceholder('Re-enter your password').fill('password123')
+    await page.getByPlaceholder('Start typing your city...').fill('London')
+    await page.getByText('London, England, United Kingdom').click()
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /register/i }).click()
 
@@ -180,6 +227,8 @@ test.describe('Register flow', () => {
     await page.getByPlaceholder('Enter your email').fill('test@example.com')
     await page.getByPlaceholder('At least 6 characters').fill('password123')
     await page.getByPlaceholder('Re-enter your password').fill('different')
+    await page.getByPlaceholder('Start typing your city...').fill('London')
+    await page.getByText('London, England, United Kingdom').click()
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /register/i }).click()
 
@@ -193,6 +242,8 @@ test.describe('Register flow', () => {
     await page.getByPlaceholder('Enter your email').fill('test@example.com')
     await page.getByPlaceholder('At least 6 characters').fill('12345')
     await page.getByPlaceholder('Re-enter your password').fill('12345')
+    await page.getByPlaceholder('Start typing your city...').fill('London')
+    await page.getByText('London, England, United Kingdom').click()
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /register/i }).click()
 
@@ -206,6 +257,8 @@ test.describe('Register flow', () => {
     await page.getByPlaceholder('Enter your email').fill('taken@example.com')
     await page.getByPlaceholder('At least 6 characters').fill('password123')
     await page.getByPlaceholder('Re-enter your password').fill('password123')
+    await page.getByPlaceholder('Start typing your city...').fill('London')
+    await page.getByText('London, England, United Kingdom').click()
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /register/i }).click()
 
@@ -357,6 +410,8 @@ test.describe('Register → Login full flow', () => {
     await page.getByPlaceholder('Enter your email').fill('newuser@example.com')
     await page.getByPlaceholder('At least 6 characters').fill('password123')
     await page.getByPlaceholder('Re-enter your password').fill('password123')
+    await page.getByPlaceholder('Start typing your city...').fill('London')
+    await page.getByText('London, England, United Kingdom').click()
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /register/i }).click()
 

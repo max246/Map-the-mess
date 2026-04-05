@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageMeta from '../components/PageMeta'
+import CityAutocomplete from '../components/CityAutocomplete'
 import { useAuth } from '../context/AuthContext'
 
 export default function Register() {
@@ -8,6 +9,9 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [cityDisplay, setCityDisplay] = useState('')
+  const [cityLat, setCityLat] = useState(0)
+  const [cityLon, setCityLon] = useState(0)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -30,7 +34,7 @@ export default function Register() {
 
     setLoading(true)
     try {
-      await register(email, fullName, password)
+      await register(email, fullName, password, cityLat, cityLon)
       setRegistered(true)
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
@@ -119,6 +123,35 @@ export default function Register() {
           />
         </label>
 
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Your city</span>
+          {cityDisplay ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 truncate">{cityDisplay}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setCityDisplay('')
+                  setCityLat(0)
+                  setCityLon(0)
+                }}
+                className="text-xs text-brand hover:underline"
+              >
+                Change
+              </button>
+            </div>
+          ) : (
+            <CityAutocomplete
+              onSelect={(displayName, lat, lon) => {
+                setCityDisplay(displayName)
+                setCityLat(lat)
+                setCityLon(lon)
+              }}
+              placeholder="Start typing your city..."
+            />
+          )}
+        </div>
+
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -142,7 +175,7 @@ export default function Register() {
 
         <button
           type="submit"
-          disabled={loading || !acceptedTerms}
+          disabled={loading || !acceptedTerms || !cityDisplay}
           className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
         >
           {loading ? 'Creating account...' : 'Register'}

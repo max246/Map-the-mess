@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import PageMeta from '../components/PageMeta'
+import CityAutocomplete from '../components/CityAutocomplete'
 import { getAuth } from '../api/endpoints/auth/auth'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
@@ -14,12 +15,11 @@ const {
   uploadAvatarApiAuthMeAvatarPut,
   changePasswordApiAuthMePasswordPatch,
 } = getAuth()
-const { listReportsApiReportsGet } = getReports()
+const { listReportsApiReportsGet, exportReportsApiReportsExportGet } = getReports()
 const {
   listFavouritesApiVolunteersFavouritesGet,
   addFavouriteApiVolunteersFavouritesReportIdPost,
   removeFavouriteApiVolunteersFavouritesReportIdDelete,
-  publicProfileApiVolunteersUserIdProfileGet,
 } = getVolunteers()
 
 const WOMBLE_AVATARS = [
@@ -120,6 +120,12 @@ function ProfileSection() {
   const [nameLoading, setNameLoading] = useState(false)
   const [nameMsg, setNameMsg] = useState('')
 
+  // City / location
+  const [cityName, setCityName] = useState('')
+  const [cityLoading, setCityLoading] = useState(false)
+  const [cityMsg, setCityMsg] = useState('')
+  const [editingCity, setEditingCity] = useState(false)
+
   // Badges
   const [badges, setBadges] = useState<BadgeRead[]>([])
 
@@ -137,13 +143,45 @@ function ProfileSection() {
       .then((profile) => {
         setFullName(profile.full_name || '')
         setAvatar(avatarSrc(profile.avatar_url))
-        // Fetch badges via public profile
-        publicProfileApiVolunteersUserIdProfileGet(profile.id)
-          .then((pub) => setBadges(pub.badges || []))
-          .catch(() => {})
+        setBadges(profile.badges || [])
+        // Reverse-geocode to show current city name
+        if (
+          profile.city_latitude &&
+          profile.city_longitude &&
+          !(profile.city_latitude === 0 && profile.city_longitude === 0)
+        ) {
+          fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${profile.city_latitude}&lon=${profile.city_longitude}&format=json&zoom=10`
+          )
+            .then((r) => r.json())
+            .then((data) => {
+              const addr = data.address
+              const name =
+                addr?.city || addr?.town || addr?.village || addr?.municipality || data.display_name
+              if (name) setCityName(name)
+            })
+            .catch(() => {})
+        }
       })
       .catch(() => {})
   }, [])
+
+  const handleCitySelect = async (displayName: string, lat: number, lon: number) => {
+    setCityLoading(true)
+    setCityMsg('')
+    try {
+      await updateProfileApiAuthMePatch({
+        city_latitude: lat,
+        city_longitude: lon,
+      })
+      setCityName(displayName)
+      setCityMsg('Location updated!')
+      setEditingCity(false)
+    } catch {
+      setCityMsg('Failed to update location.')
+    }
+    setCityLoading(false)
+  }
 
   const handleAvatarSelect = async (src: string) => {
     // Womble avatar — store the path in DB via PATCH /me
@@ -308,6 +346,39 @@ function ProfileSection() {
                 className={`text-xs mt-1 ${nameMsg.includes('Failed') ? 'text-red-500' : 'text-green-600'}`}
               >
                 {nameMsg}
+              </p>
+            )}
+          </div>
+
+          {/* City / Location */}
+          <div className="mt-3">
+            {editingCity ? (
+              <div className="max-w-sm">
+                <CityAutocomplete
+                  onSelect={handleCitySelect}
+                  onCancel={() => {
+                    setEditingCity(false)
+                    setCityMsg('')
+                  }}
+                />
+                {cityLoading && <p className="text-xs text-gray-400 mt-1">Saving...</p>}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">{cityName || 'No location set'}</span>
+                <button
+                  onClick={() => setEditingCity(true)}
+                  className="text-xs text-brand hover:underline"
+                >
+                  {cityName ? 'Change' : 'Set location'}
+                </button>
+              </div>
+            )}
+            {cityMsg && (
+              <p
+                className={`text-xs mt-1 ${cityMsg.includes('Failed') ? 'text-red-500' : 'text-green-600'}`}
+              >
+                {cityMsg}
               </p>
             )}
           </div>
@@ -502,7 +573,28 @@ export default function VolunteerDashboard() {
         title="Volunteer Dashboard"
         description="Manage your volunteer profile, view your reports, and track your litter-picking progress."
       />
-      <h1 className="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Volunteer Dashboard</h1>
+        <button
+          onClick={async () => {
+            try {
+              const data = await exportReportsApiReportsExportGet()
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = 'reports-export.json'
+              a.click()
+              URL.revokeObjectURL(url)
+            } catch {
+              alert('Failed to export reports.')
+            }
+          }}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+        >
+          Export Reports
+        </button>
+      </div>
 
       {/* Profile Section */}
       <ProfileSection />

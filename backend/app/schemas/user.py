@@ -10,6 +10,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     full_name: str
     password: str
+    city_latitude: float
+    city_longitude: float
 
 
 class UserLogin(BaseModel):
@@ -24,7 +26,10 @@ class UserRead(BaseModel):
     is_verified: bool
     user_type: str
     avatar_url: str | None = None
+    city_latitude: float
+    city_longitude: float
     created_at: datetime
+    badges: list["BadgeRead"] = []
 
     model_config = {"from_attributes": True}
 
@@ -32,6 +37,8 @@ class UserRead(BaseModel):
 class ProfileUpdate(BaseModel):
     full_name: str | None = None
     avatar_url: str | None = None
+    city_latitude: float | None = None
+    city_longitude: float | None = None
 
 
 class ChangePassword(BaseModel):

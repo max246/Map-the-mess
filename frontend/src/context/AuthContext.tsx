@@ -18,7 +18,13 @@ interface AuthContextType {
   sessionExpired: boolean
   dismissSessionExpired: () => void
   login: (email: string, password: string) => Promise<unknown>
-  register: (email: string, fullName: string, password: string) => Promise<unknown>
+  register: (
+    email: string,
+    fullName: string,
+    password: string,
+    cityLatitude?: number,
+    cityLongitude?: number
+  ) => Promise<unknown>
   forgotPassword: (email: string) => Promise<unknown>
   resetPassword: (resetToken: string, newPassword: string) => Promise<unknown>
   logout: () => void
@@ -97,11 +103,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.data
   }
 
-  const register = async (email: string, fullName: string, password: string) => {
+  const register = async (
+    email: string,
+    fullName: string,
+    password: string,
+    cityLatitude = 0,
+    cityLongitude = 0
+  ) => {
     const res = await api.post('/api/auth/register', {
       email,
       full_name: fullName,
       password,
+      city_latitude: cityLatitude,
+      city_longitude: cityLongitude,
     })
     return res.data
   }

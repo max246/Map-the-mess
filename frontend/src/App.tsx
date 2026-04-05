@@ -32,6 +32,7 @@ import Tools from './pages/Tools'
 import VolunteerProfile from './pages/VolunteerProfile'
 import NotFound from './pages/NotFound'
 import SessionExpiredOverlay from './components/SessionExpiredOverlay'
+import LocationBanner from './components/LocationBanner'
 import api from './api/client'
 
 function App() {
@@ -49,6 +50,7 @@ function App() {
       <AuthProvider>
         <div className="h-dvh flex flex-col overflow-hidden">
           <Navbar />
+          <LocationBanner />
           <SessionExpiredOverlay />
           <main className="flex-1 overflow-auto">
             <Routes>
