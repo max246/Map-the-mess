@@ -47,6 +47,31 @@
         }
       }
     },
+    "/api/reports/export": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Export Reports",
+        "description": "Export all reports as a downloadable JSON file. Requires authentication.",
+        "operationId": "export_reports_api_reports_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/reports/": {
       "get": {
         "tags": [

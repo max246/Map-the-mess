@@ -54,6 +54,54 @@ class TestListReports:
         assert res.json()[0]["status"] == "pending"
 
 
+class TestExportReports:
+    def test_export_requires_auth(self, client, db):
+        res = client.get("/api/reports/export")
+        assert res.status_code == 401
+
+    def test_export_empty(self, client, db):
+        user = _make_user(db)
+        res = client.get("/api/reports/export", headers=auth_header(user))
+        assert res.status_code == 200
+        assert res.json() == []
+        assert "attachment" in res.headers.get("content-disposition", "")
+
+    def test_export_returns_all_reports(self, client, db):
+        _create_report(db, description="first")
+        _create_report(db, description="second", status=ReportStatus.cleaned)
+        user = _make_user(db)
+        res = client.get("/api/reports/export", headers=auth_header(user))
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 2
+        assert set(r["description"] for r in data) == {"first", "second"}
+
+    def test_export_excludes_images(self, client, db):
+        _create_report(db)
+        user = _make_user(db)
+        res = client.get("/api/reports/export", headers=auth_header(user))
+        data = res.json()
+        assert "images" not in data[0]
+
+    def test_export_fields(self, client, db):
+        _create_report(db, description="test", address="123 Street")
+        user = _make_user(db)
+        res = client.get("/api/reports/export", headers=auth_header(user))
+        report = res.json()[0]
+        expected_keys = {
+            "id",
+            "latitude",
+            "longitude",
+            "description",
+            "what3words",
+            "address",
+            "status",
+            "created_at",
+            "resolved_at",
+        }
+        assert set(report.keys()) == expected_keys
+
+
 class TestGetReport:
     def test_get_existing(self, client, db):
         report = _create_report(db)

@@ -7,7 +7,7 @@ from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from PIL import Image
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -22,7 +22,7 @@ from app.database import get_db
 from app.models.report import Report, ReportStatus
 from app.models.report_image import ReportImage, ImageType
 from app.models.user import User
-from app.routers.auth import ALGORITHM, require_moderator_or_admin
+from app.routers.auth import ALGORITHM, get_current_user, require_moderator_or_admin
 from app.schemas.report import ReportRead, ReportImageRead
 
 router = APIRouter()
@@ -128,6 +128,33 @@ def serve_image(filename: str):
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(path)
+
+
+@router.get("/export")
+def export_reports(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export all reports as a downloadable JSON file. Requires authentication."""
+    reports = db.query(Report).order_by(Report.created_at.desc()).all()
+    data = [
+        {
+            "id": str(r.id),
+            "latitude": r.latitude,
+            "longitude": r.longitude,
+            "description": r.description,
+            "what3words": r.what3words,
+            "address": r.address,
+            "status": r.status.value if hasattr(r.status, "value") else r.status,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "resolved_at": r.resolved_at.isoformat() if r.resolved_at else None,
+        }
+        for r in reports
+    ]
+    return JSONResponse(
+        content=data,
+        headers={"Content-Disposition": "attachment; filename=reports.json"},
+    )
 
 
 @router.get("/", response_model=List[ReportRead])
