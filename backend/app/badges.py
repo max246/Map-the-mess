@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.models.community_event import CommunityEvent
 from app.models.community_post import CommunityPost
 from app.models.report import Report, ReportStatus
+from app.schemas.user import BadgeRead
 from app.models.user import User
 
 
@@ -99,9 +100,9 @@ def _had_activity_in_year(
     return False
 
 
-def evaluate_badges(db: Session, user: User) -> list[dict[str, str]]:
+def evaluate_badges(db: Session, user: User) -> list[BadgeRead]:
     """Return the list of badges earned by *user*."""
-    badges: list[dict[str, str]] = []
+    badges: list[BadgeRead] = []
 
     # ── Reporting ────────────────────────────────────────────────────
     reported_count: int = (
@@ -110,7 +111,7 @@ def evaluate_badges(db: Session, user: User) -> list[dict[str, str]]:
 
     for threshold, badge in REPORTING_BADGES:
         if reported_count >= threshold:
-            badges.append({"id": badge.id, "name": badge.name, "description": badge.description})
+            badges.append(BadgeRead(id=badge.id, name=badge.name, description=badge.description))
 
     # ── Resolving ────────────────────────────────────────────────────
     resolved_count: int = (
@@ -121,7 +122,7 @@ def evaluate_badges(db: Session, user: User) -> list[dict[str, str]]:
 
     for threshold, badge in RESOLVING_BADGES:
         if resolved_count >= threshold:
-            badges.append({"id": badge.id, "name": badge.name, "description": badge.description})
+            badges.append(BadgeRead(id=badge.id, name=badge.name, description=badge.description))
 
     # ── Loyalty ──────────────────────────────────────────────────────
     full_years = _years_since_signup(user)
@@ -136,6 +137,6 @@ def evaluate_badges(db: Session, user: User) -> list[dict[str, str]]:
         year_start = created.replace(year=created.year + year_threshold - 1)
         year_end = created.replace(year=created.year + year_threshold)
         if _had_activity_in_year(db, int(user.id), year_start, year_end):
-            badges.append({"id": badge.id, "name": badge.name, "description": badge.description})
+            badges.append(BadgeRead(id=badge.id, name=badge.name, description=badge.description))
 
     return badges
