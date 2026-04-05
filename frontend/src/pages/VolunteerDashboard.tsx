@@ -15,7 +15,7 @@ const {
   uploadAvatarApiAuthMeAvatarPut,
   changePasswordApiAuthMePasswordPatch,
 } = getAuth()
-const { listReportsApiReportsGet } = getReports()
+const { listReportsApiReportsGet, exportReportsApiReportsExportGet } = getReports()
 const {
   listFavouritesApiVolunteersFavouritesGet,
   addFavouriteApiVolunteersFavouritesReportIdPost,
@@ -573,7 +573,28 @@ export default function VolunteerDashboard() {
         title="Volunteer Dashboard"
         description="Manage your volunteer profile, view your reports, and track your litter-picking progress."
       />
-      <h1 className="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Volunteer Dashboard</h1>
+        <button
+          onClick={async () => {
+            try {
+              const data = await exportReportsApiReportsExportGet()
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = 'reports-export.json'
+              a.click()
+              URL.revokeObjectURL(url)
+            } catch {
+              alert('Failed to export reports.')
+            }
+          }}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+        >
+          Export Reports
+        </button>
+      </div>
 
       {/* Profile Section */}
       <ProfileSection />

@@ -31,6 +31,18 @@ const serveImageApiReportsImagesFilenameGet = (
       );
     }
   /**
+ * Export all reports as a downloadable JSON file. Requires authentication.
+ * @summary Export Reports
+ */
+const exportReportsApiReportsExportGet = (
+    
+ ) => {
+      return customInstance<unknown>(
+      {url: `/api/reports/export`, method: 'GET'
+    },
+      );
+    }
+  /**
  * List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports.
  * @summary List Reports
  */
@@ -144,8 +156,9 @@ const deleteImageApiReportsImagesImageIdDelete = (
     },
       );
     }
-  return {serveImageApiReportsImagesFilenameGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete}};
+  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete}};
 export type ServeImageApiReportsImagesFilenameGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['serveImageApiReportsImagesFilenameGet']>>>
+export type ExportReportsApiReportsExportGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['exportReportsApiReportsExportGet']>>>
 export type ListReportsApiReportsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listReportsApiReportsGet']>>>
 export type CreateReportApiReportsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['createReportApiReportsPost']>>>
 export type GetReportApiReportsReportIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['getReportApiReportsReportIdGet']>>>
