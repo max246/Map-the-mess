@@ -31,7 +31,7 @@ const serveImageApiReportsImagesFilenameGet = (
       );
     }
   /**
- * List all reports, optionally filtered by status.
+ * List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports.
  * @summary List Reports
  */
 const listReportsApiReportsGet = (

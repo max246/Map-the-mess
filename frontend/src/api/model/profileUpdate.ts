@@ -9,4 +9,6 @@
 export interface ProfileUpdate {
   full_name?: string | null;
   avatar_url?: string | null;
+  city_latitude?: number | null;
+  city_longitude?: number | null;
 }

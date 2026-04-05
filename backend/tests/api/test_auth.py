@@ -51,7 +51,24 @@ class TestRegister:
     def test_register_invalid_email(self, client, db):
         res = client.post(
             "/api/auth/register",
-            json={"email": "not-an-email", "full_name": "X", "password": "pass", "city_latitude": 0, "city_longitude": 0},
+            json={
+                "email": "not-an-email",
+                "full_name": "X",
+                "password": "pass",
+                "city_latitude": 0,
+                "city_longitude": 0,
+            },
+        )
+        assert res.status_code == 422
+
+    def test_register_missing_city(self, client, db):
+        res = client.post(
+            "/api/auth/register",
+            json={
+                "email": "nocoords@example.com",
+                "full_name": "No City",
+                "password": "securepass",
+            },
         )
         assert res.status_code == 422
 
@@ -346,6 +363,8 @@ class TestGetProfile:
         assert data["email"] == volunteer.email
         assert data["full_name"] == "Test User"
         assert data["avatar_url"] is None
+        assert data["city_latitude"] == 0.0
+        assert data["city_longitude"] == 0.0
 
     def test_unauthenticated(self, client, db):
         res = client.get("/api/auth/me")
@@ -382,6 +401,39 @@ class TestUpdateProfile:
         assert res.status_code == 200
         assert res.json()["full_name"] == "Updated"
         assert res.json()["avatar_url"] == "/avatars/womble3.png"
+
+    def test_update_city(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me",
+            json={"city_latitude": 48.8566, "city_longitude": 2.3522},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["city_latitude"] == 48.8566
+        assert res.json()["city_longitude"] == 2.3522
+        db.refresh(volunteer)
+        assert volunteer.city_latitude == 48.8566
+        assert volunteer.city_longitude == 2.3522
+
+    def test_update_city_partial_latitude(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me",
+            json={"city_latitude": 40.7128},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["city_latitude"] == 40.7128
+        assert res.json()["city_longitude"] == 0.0
+
+    def test_update_city_partial_longitude(self, client, db, volunteer):
+        res = client.patch(
+            "/api/auth/me",
+            json={"city_longitude": -74.006},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["city_longitude"] == -74.006
+        assert res.json()["city_latitude"] == 0.0
 
     def test_unauthenticated(self, client, db):
         res = client.patch("/api/auth/me", json={"full_name": "Hacker"})

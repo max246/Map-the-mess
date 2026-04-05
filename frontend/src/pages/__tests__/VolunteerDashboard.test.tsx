@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import VolunteerDashboard from '../VolunteerDashboard'
@@ -91,6 +91,10 @@ jest.mock('../../api/client', () => ({
   thumbnailUrl: () => 'thumb.jpg',
 }))
 
+const NOMINATIM_RESULTS = [
+  { display_name: 'London, England, United Kingdom', lat: '51.5074', lon: '-0.1278' },
+]
+
 const mockGetProfile = jest.fn()
 const mockUpdateProfile = jest.fn()
 const mockUploadAvatar = jest.fn()
@@ -121,14 +125,26 @@ function renderDashboard() {
 describe('VolunteerDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.useFakeTimers()
     mockAuth = { isLoggedIn: true, user: { id: 1, email: 'volunteer@example.com' } }
-    mockGetProfile.mockResolvedValue({ full_name: 'Test User', avatar_url: null })
+    mockGetProfile.mockResolvedValue({
+      full_name: 'Test User',
+      avatar_url: null,
+      city_latitude: 0,
+      city_longitude: 0,
+    })
     mockUpdateProfile.mockResolvedValue({})
     mockChangePassword.mockResolvedValue({})
     mockListFavourites.mockResolvedValue(FAVOURITES)
     mockListReports.mockResolvedValue([])
     mockAddFavourite.mockResolvedValue({})
     mockRemoveFavourite.mockResolvedValue({})
+    global.fetch = jest.fn()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+    jest.restoreAllMocks()
   })
 
   /* ── Access control ──────────────────────────────── */
@@ -174,7 +190,7 @@ describe('VolunteerDashboard', () => {
 
   it('switches to unresolved tab', async () => {
     mockListReports.mockResolvedValue(UNRESOLVED)
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Bottles on path')
 
@@ -186,7 +202,7 @@ describe('VolunteerDashboard', () => {
 
   it('switches to resolved tab', async () => {
     mockListReports.mockResolvedValue(RESOLVED)
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Bottles on path')
 
@@ -245,7 +261,7 @@ describe('VolunteerDashboard', () => {
 
   it('removes favourite when unstarring on favourites tab', async () => {
     mockRemoveFavourite.mockResolvedValue({})
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Bottles on path')
 
@@ -277,9 +293,16 @@ describe('VolunteerDashboard', () => {
   })
 
   it('shows avatar from profile when avatar_url is a womble', async () => {
-    mockGetProfile.mockResolvedValue({ full_name: 'Test User', avatar_url: '/avatars/womble3.png' })
+    mockGetProfile.mockResolvedValue({
+      full_name: 'Test User',
+      avatar_url: '/avatars/womble3.png',
+      city_latitude: 0,
+      city_longitude: 0,
+    })
     renderDashboard()
-    const avatar = await screen.findByAltText('Avatar')
+    // Wait for profile to load (indicated by the name appearing)
+    await screen.findByText('Test User')
+    const avatar = screen.getByAltText('Avatar')
     expect(avatar).toHaveAttribute('src', '/avatars/womble3.png')
   })
 
@@ -290,7 +313,7 @@ describe('VolunteerDashboard', () => {
   })
 
   it('opens name editing form when Edit is clicked', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -303,7 +326,7 @@ describe('VolunteerDashboard', () => {
 
   it('saves updated name via API', async () => {
     mockUpdateProfile.mockResolvedValue({ full_name: 'New Name', avatar_url: null })
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -319,7 +342,7 @@ describe('VolunteerDashboard', () => {
 
   it('shows error when name update fails', async () => {
     mockUpdateProfile.mockRejectedValue(new Error('Server error'))
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -330,7 +353,7 @@ describe('VolunteerDashboard', () => {
   })
 
   it('cancels name editing', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -348,7 +371,7 @@ describe('VolunteerDashboard', () => {
   })
 
   it('opens password form when Change password is clicked', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -360,7 +383,7 @@ describe('VolunteerDashboard', () => {
   })
 
   it('validates password minimum length', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -375,7 +398,7 @@ describe('VolunteerDashboard', () => {
   })
 
   it('validates password match', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -390,7 +413,7 @@ describe('VolunteerDashboard', () => {
   })
 
   it('calls change password API with correct data', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -409,7 +432,7 @@ describe('VolunteerDashboard', () => {
 
   it('shows error when password change fails', async () => {
     mockChangePassword.mockRejectedValue(new Error('Wrong password'))
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -427,7 +450,7 @@ describe('VolunteerDashboard', () => {
       full_name: 'Test User',
       avatar_url: '/avatars/womble2.png',
     })
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
 
@@ -458,7 +481,7 @@ describe('VolunteerDashboard', () => {
 
   it('shows empty unresolved message', async () => {
     mockListReports.mockResolvedValue([])
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Bottles on path')
 
@@ -469,12 +492,112 @@ describe('VolunteerDashboard', () => {
 
   it('shows empty resolved message', async () => {
     mockListReports.mockResolvedValue([])
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Bottles on path')
 
     await user.click(screen.getByRole('button', { name: 'Resolved Reports' }))
 
     expect(await screen.findByText(/no resolved reports yet/i)).toBeInTheDocument()
+  })
+
+  /* ── City / Location ─────────────────────────────── */
+
+  it('shows "No location set" when city is 0,0', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    expect(await screen.findByText('No location set')).toBeInTheDocument()
+  })
+
+  it('shows "Set location" button when no city is set', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+    expect(screen.getByRole('button', { name: /set location/i })).toBeInTheDocument()
+  })
+
+  it('opens city autocomplete when Set location is clicked', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /set location/i }))
+
+    expect(screen.getByPlaceholderText('Start typing your city...')).toBeInTheDocument()
+  })
+
+  it('selects a city and calls updateProfile with coordinates', async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValue({
+      json: () => Promise.resolve(NOMINATIM_RESULTS),
+    })
+    mockUpdateProfile.mockResolvedValue({})
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /set location/i }))
+    await user.type(screen.getByPlaceholderText('Start typing your city...'), 'Lon')
+    act(() => {
+      jest.advanceTimersByTime(300)
+    })
+
+    await user.click(await screen.findByText('London, England, United Kingdom'))
+
+    expect(mockUpdateProfile).toHaveBeenCalledWith({
+      city_latitude: 51.5074,
+      city_longitude: -0.1278,
+    })
+    expect(await screen.findByText('Location updated!')).toBeInTheDocument()
+  })
+
+  it('shows error when city update fails', async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValue({
+      json: () => Promise.resolve(NOMINATIM_RESULTS),
+    })
+    mockUpdateProfile.mockRejectedValue(new Error('Server error'))
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /set location/i }))
+    await user.type(screen.getByPlaceholderText('Start typing your city...'), 'Lon')
+    act(() => {
+      jest.advanceTimersByTime(300)
+    })
+
+    await user.click(await screen.findByText('London, England, United Kingdom'))
+
+    expect(await screen.findByText('Failed to update location.')).toBeInTheDocument()
+  })
+
+  it('cancels city editing', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /set location/i }))
+    expect(screen.getByPlaceholderText('Start typing your city...')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByPlaceholderText('Start typing your city...')).not.toBeInTheDocument()
+  })
+
+  it('reverse-geocodes and displays existing city name', async () => {
+    mockGetProfile.mockResolvedValue({
+      full_name: 'Test User',
+      avatar_url: null,
+      city_latitude: 51.5074,
+      city_longitude: -0.1278,
+    })
+    ;(global.fetch as jest.Mock).mockResolvedValue({
+      json: () => Promise.resolve({ address: { city: 'London' } }),
+    })
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+
+    expect(await screen.findByText('London')).toBeInTheDocument()
+    // The city section should show a "Change" button (not the avatar one)
+    const citySection = screen.getByText('London').closest('div')!
+    expect(citySection.querySelector('button')).toHaveTextContent('Change')
   })
 })

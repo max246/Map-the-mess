@@ -29,6 +29,7 @@ class UserRead(BaseModel):
     city_latitude: float
     city_longitude: float
     created_at: datetime
+    badges: list["BadgeRead"] = []
 
     model_config = {"from_attributes": True}
 

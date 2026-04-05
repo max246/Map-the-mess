@@ -11,7 +11,6 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision: str = "c3d4e5f6a7b8"
 down_revision: Union[str, None] = "b2f3a4c5d6e7"
@@ -20,8 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("city_latitude", sa.Float(), nullable=False, server_default="0"))
-    op.add_column("users", sa.Column("city_longitude", sa.Float(), nullable=False, server_default="0"))
+    op.add_column(
+        "users", sa.Column("city_latitude", sa.Float(), nullable=False, server_default="0")
+    )
+    op.add_column(
+        "users", sa.Column("city_longitude", sa.Float(), nullable=False, server_default="0")
+    )
 
 
 def downgrade() -> None:

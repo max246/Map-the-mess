@@ -5,6 +5,7 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: dev
  */
+import type { BadgeRead } from './badgeRead';
 
 export interface UserRead {
   id: string;
@@ -16,4 +17,5 @@ export interface UserRead {
   city_latitude: number;
   city_longitude: number;
   created_at: string;
+  badges?: BadgeRead[];
 }
