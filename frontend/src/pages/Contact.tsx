@@ -14,10 +14,21 @@ export default function Contact() {
       </p>
 
       <a
-        href="mailto:max246@gmail.com"
+        href="mailto:info@mapthemess.uk"
         className="bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-3 rounded-lg text-lg transition"
       >
-        max246@gmail.com
+        info@mapthemess.uk
+      </a>
+
+      <p className="text-lg text-gray-600 max-w-xl mb-8 mt-8">
+        Having any issues? Send us an email and we'll get back to you.
+      </p>
+
+      <a
+        href="mailto:support@mapthemess.uk"
+        className="bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-3 rounded-lg text-lg transition"
+      >
+        support@mapthemess.uk
       </a>
 
       <div className="mt-12 text-gray-500">
