@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 from PIL import Image as PILImage
 
+from app.models.community import Community, CommunityStatus
+from app.models.report import Report
 from app.models.user import User, UserType
 from app.routers.auth import pwd_context
 
@@ -212,6 +214,76 @@ class TestUpdateUserType:
         assert res.status_code == 404
 
 
+class TestDeleteMe:
+    def test_delete_self(self, client, db, volunteer):
+        res = client.delete("/api/auth/me", headers=auth_header(volunteer))
+        assert res.status_code == 204
+        assert db.query(User).filter(User.id == volunteer.id).first() is None
+
+    def test_delete_self_nullifies_reports(self, client, db, volunteer):
+        report = Report(
+            latitude=51.5,
+            longitude=-0.1,
+            description="litter",
+            created_by_user_id=volunteer.id,
+        )
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        report_id = report.id
+
+        res = client.delete("/api/auth/me", headers=auth_header(volunteer))
+        assert res.status_code == 204
+
+        db.expire_all()
+        report = db.query(Report).filter(Report.id == report_id).first()
+        assert report is not None
+        assert report.created_by_user_id is None
+
+    def test_delete_self_nullifies_resolved_reports(self, client, db, volunteer):
+        report = Report(
+            latitude=51.5,
+            longitude=-0.1,
+            description="litter",
+            resolved_by_user_id=volunteer.id,
+        )
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        report_id = report.id
+
+        res = client.delete("/api/auth/me", headers=auth_header(volunteer))
+        assert res.status_code == 204
+
+        db.expire_all()
+        report = db.query(Report).filter(Report.id == report_id).first()
+        assert report is not None
+        assert report.resolved_by_user_id is None
+
+    def test_delete_self_blocked_if_community_owner(self, client, db, volunteer):
+        community = Community(
+            name="Test",
+            description="desc",
+            latitude=51.5,
+            longitude=-0.1,
+            radius_km=5.0,
+            owner_id=volunteer.id,
+            status=CommunityStatus.active,
+        )
+        db.add(community)
+        db.commit()
+
+        res = client.delete("/api/auth/me", headers=auth_header(volunteer))
+        assert res.status_code == 403
+        assert "Transfer ownership" in res.json()["detail"]
+        # user should still exist
+        assert db.query(User).filter(User.id == volunteer.id).first() is not None
+
+    def test_delete_self_requires_auth(self, client, db):
+        res = client.delete("/api/auth/me")
+        assert res.status_code == 401
+
+
 class TestDeleteUser:
     def test_admin_can_delete_volunteer(self, client, db, admin, volunteer):
         res = client.delete(
@@ -248,6 +320,50 @@ class TestDeleteUser:
             headers=auth_header(admin),
         )
         assert res.status_code == 404
+
+    def test_cannot_delete_community_owner(self, client, db, admin, volunteer):
+        community = Community(
+            name="Test",
+            description="desc",
+            latitude=51.5,
+            longitude=-0.1,
+            radius_km=5.0,
+            owner_id=volunteer.id,
+            status=CommunityStatus.active,
+        )
+        db.add(community)
+        db.commit()
+
+        res = client.delete(
+            f"/api/auth/users/{volunteer.id}",
+            headers=auth_header(admin),
+        )
+        assert res.status_code == 409
+        assert "Transfer ownership" in res.json()["detail"]
+        assert db.query(User).filter(User.id == volunteer.id).first() is not None
+
+    def test_delete_user_nullifies_reports(self, client, db, admin, volunteer):
+        report = Report(
+            latitude=51.5,
+            longitude=-0.1,
+            description="litter",
+            created_by_user_id=volunteer.id,
+        )
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        report_id = report.id
+
+        res = client.delete(
+            f"/api/auth/users/{volunteer.id}",
+            headers=auth_header(admin),
+        )
+        assert res.status_code == 204
+
+        db.expire_all()
+        report = db.query(Report).filter(Report.id == report_id).first()
+        assert report is not None
+        assert report.created_by_user_id is None
 
 
 class TestForgotPassword:

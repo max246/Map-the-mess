@@ -19,6 +19,7 @@ from app.email import send_email
 from app.database import get_db
 from app.models.user import User, UserType
 from app.models.community import Community
+from app.models.report import Report
 from app.models.refresh_token import RefreshToken
 from app.schemas.user import (
     ChangePassword,
@@ -115,18 +116,30 @@ def update_profile(
     data.badges = evaluate_badges(db, current_user)
     return data
 
+
 @router.delete("/me", status_code=204)
 def delete_profile(
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Delete current user profile"""
     community = db.query(Community).filter(Community.owner_id == current_user.id).first()
     if community:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User connected to a community, please contact support")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You own a community. Transfer ownership before deleting your account.",
+        )
+
+    db.query(Report).filter(Report.created_by_user_id == current_user.id).update(
+        {Report.created_by_user_id: None}
+    )
+    db.query(Report).filter(Report.resolved_by_user_id == current_user.id).update(
+        {Report.resolved_by_user_id: None}
+    )
 
     db.delete(current_user)
     db.commit()
+
 
 @router.put("/me/avatar", response_model=UserRead)
 def upload_avatar(
@@ -390,6 +403,7 @@ def update_user_type(
 def delete_user(
     user_id: uuid.UUID,
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
@@ -407,6 +421,20 @@ def delete_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only a superuser can delete an admin",
         )
+    community = db.query(Community).filter(Community.owner_id == target_user.id).first()
+    if community:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"User owns community '{community.name}'. Transfer ownership before deleting.",
+        )
+
+    db.query(Report).filter(Report.created_by_user_id == target_user.id).update(
+        {Report.created_by_user_id: None}
+    )
+    db.query(Report).filter(Report.resolved_by_user_id == target_user.id).update(
+        {Report.resolved_by_user_id: None}
+    )
+
     db.delete(target_user)
     db.commit()
 

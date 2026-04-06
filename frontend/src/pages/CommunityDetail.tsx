@@ -23,6 +23,7 @@ const {
   leaveCommunityApiCommunitiesCommunityIdLeaveDelete,
   listMembershipsApiCommunitiesCommunityIdMembershipsGet,
   updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,
+  updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,
   myCommunitiesApiCommunitiesMineGet,
 } = getCommunities()
 
@@ -39,6 +40,12 @@ export default function CommunityDetail() {
   const [memberships, setMemberships] = useState<MembershipRead[]>([])
   const [myMembership, setMyMembership] = useState<MembershipRead | null>(null)
   const [joining, setJoining] = useState(false)
+
+  // Transfer ownership
+  const [showTransferOwner, setShowTransferOwner] = useState(false)
+  const [selectedNewOwner, setSelectedNewOwner] = useState('')
+  const [transferLoading, setTransferLoading] = useState(false)
+  const [transferError, setTransferError] = useState('')
 
   // Image upload
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -166,9 +173,23 @@ export default function CommunityDetail() {
     }
   }
 
-  const handleUpdateOwner = async () => {
-
-
+  const handleTransferOwner = async () => {
+    if (!selectedNewOwner) return
+    setTransferLoading(true)
+    setTransferError('')
+    try {
+      await updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch(communityId, {
+        user_id: selectedNewOwner,
+      })
+      setShowTransferOwner(false)
+      setSelectedNewOwner('')
+      refresh()
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to transfer ownership. Please try again.'
+      setTransferError(message)
+    }
+    setTransferLoading(false)
   }
 
   // --- Posts ---
@@ -474,8 +495,8 @@ export default function CommunityDetail() {
         </div>
       )}
 
-      {/* Moderator / admin actions */}
-      {(canManageUsers || isAdmin) && (
+      {/* Moderator / admin / owner actions */}
+      {(canManageUsers || isAdmin || isOwner) && (
         <div className="flex gap-2 mb-6 flex-wrap">
           {canManageUsers && (
             <button
@@ -489,19 +510,25 @@ export default function CommunityDetail() {
               {isUnderReview ? 'Set Active' : 'Put Under Review'}
             </button>
           )}
-          {isAdmin && (
-              <>
+          {(isOwner || canManageUsers || isAdmin) && (
             <button
               onClick={handleDelete}
               className="px-3 py-1.5 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 transition"
             >
               Delete Community
             </button>
+          )}
+          {(isOwner || canManageUsers || isAdmin) && (
             <button
-                  onClick={handleUpdateOwner}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 transition"
-              >Update owner</button>
-            </>
+              onClick={() => {
+                setTransferError('')
+                setSelectedNewOwner('')
+                setShowTransferOwner(true)
+              }}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 transition"
+            >
+              Transfer Owner
+            </button>
           )}
         </div>
       )}
@@ -517,6 +544,60 @@ export default function CommunityDetail() {
             </Link>
             .
           </p>
+        </div>
+      )}
+
+      {/* Transfer ownership modal */}
+      {showTransferOwner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4 w-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Transfer Ownership</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Select an approved member to become the new owner of this community.
+            </p>
+            {memberships.filter((m) => m.status === 'approved' && m.user_id !== community.owner_id)
+              .length === 0 ? (
+              <p className="text-sm text-gray-400 mb-4">
+                No approved members to transfer ownership to.
+              </p>
+            ) : (
+              <select
+                value={selectedNewOwner}
+                onChange={(e) => setSelectedNewOwner(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4"
+              >
+                <option value="">Select a member...</option>
+                {memberships
+                  .filter((m) => m.status === 'approved' && m.user_id !== community.owner_id)
+                  .map((m) => (
+                    <option key={m.id} value={m.user_id}>
+                      {m.user_name || `User #${m.user_id}`}
+                    </option>
+                  ))}
+              </select>
+            )}
+            {transferError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {transferError}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowTransferOwner(false)}
+                disabled={transferLoading}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTransferOwner}
+                disabled={transferLoading || !selectedNewOwner}
+                className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+              >
+                {transferLoading ? 'Transferring...' : 'Transfer'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

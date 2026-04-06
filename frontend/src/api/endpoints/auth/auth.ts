@@ -38,6 +38,18 @@ const getProfileApiAuthMeGet = (
       );
     }
   /**
+ * Delete current user profile
+ * @summary Delete Profile
+ */
+const deleteProfileApiAuthMeDelete = (
+    
+ ) => {
+      return customInstance<void>(
+      {url: `/api/auth/me`, method: 'DELETE'
+    },
+      );
+    }
+  /**
  * Update the current user's profile (name, avatar_url).
  * @summary Update Profile
  */
@@ -226,8 +238,9 @@ const resetPasswordApiAuthResetPasswordPost = (
     },
       );
     }
-  return {getProfileApiAuthMeGet,updateProfileApiAuthMePatch,uploadAvatarApiAuthMeAvatarPut,changePasswordApiAuthMePasswordPatch,listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,refreshTokenApiAuthRefreshPost,logoutApiAuthLogoutPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+  return {getProfileApiAuthMeGet,deleteProfileApiAuthMeDelete,updateProfileApiAuthMePatch,uploadAvatarApiAuthMeAvatarPut,changePasswordApiAuthMePasswordPatch,listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,refreshTokenApiAuthRefreshPost,logoutApiAuthLogoutPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
 export type GetProfileApiAuthMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getProfileApiAuthMeGet']>>>
+export type DeleteProfileApiAuthMeDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deleteProfileApiAuthMeDelete']>>>
 export type UpdateProfileApiAuthMePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['updateProfileApiAuthMePatch']>>>
 export type UploadAvatarApiAuthMeAvatarPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['uploadAvatarApiAuthMeAvatarPut']>>>
 export type ChangePasswordApiAuthMePasswordPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['changePasswordApiAuthMePasswordPatch']>>>

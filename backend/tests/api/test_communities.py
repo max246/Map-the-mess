@@ -132,7 +132,6 @@ class TestListCommunities:
         assert "Active" in names
         assert "Under Review" in names
 
-
     def test_search_by_name(self, client, db, volunteer):
         _create_community(db, volunteer, name="Beach Cleanup")
         _create_community(db, volunteer, name="Park Rangers")
@@ -226,18 +225,84 @@ class TestModeration:
         c = _create_community(db, volunteer, status=CommunityStatus.under_review)
         res = client.patch(
             f"/api/communities/{c.id}/owner",
-            json={"user_id":  moderator.id},
+            json={"user_id": str(moderator.id)},
             headers=auth_header(moderator),
         )
         assert res.status_code == 200
-        assert res.json()["owner_id"] == moderator.id
+        assert res.json()["owner_id"] == str(moderator.id)
 
-    def test_volunteer_cannot_change_owner(self, client, db, volunteer):
+    def test_owner_can_transfer_ownership(self, client, db, volunteer, moderator):
         c = _create_community(db, volunteer)
         res = client.patch(
             f"/api/communities/{c.id}/owner",
-            json={"user_id": volunteer.id},
+            json={"user_id": str(moderator.id)},
             headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["owner_id"] == str(moderator.id)
+
+        db.expire_all()
+
+        # new owner should be an approved member
+        new_membership = (
+            db.query(CommunityMembership)
+            .filter(
+                CommunityMembership.community_id == c.id,
+                CommunityMembership.user_id == moderator.id,
+            )
+            .first()
+        )
+        assert new_membership is not None
+        assert new_membership.status == MembershipStatus.approved
+
+        # previous owner should also be an approved member
+        old_membership = (
+            db.query(CommunityMembership)
+            .filter(
+                CommunityMembership.community_id == c.id,
+                CommunityMembership.user_id == volunteer.id,
+            )
+            .first()
+        )
+        assert old_membership is not None
+        assert old_membership.status == MembershipStatus.approved
+
+    def test_transfer_upgrades_pending_membership(self, client, db, volunteer, moderator):
+        c = _create_community(db, volunteer)
+        db.add(
+            CommunityMembership(
+                community_id=c.id,
+                user_id=moderator.id,
+                status=MembershipStatus.pending,
+            )
+        )
+        db.commit()
+
+        res = client.patch(
+            f"/api/communities/{c.id}/owner",
+            json={"user_id": str(moderator.id)},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+
+        db.expire_all()
+        membership = (
+            db.query(CommunityMembership)
+            .filter(
+                CommunityMembership.community_id == c.id,
+                CommunityMembership.user_id == moderator.id,
+            )
+            .first()
+        )
+        assert membership.status == MembershipStatus.approved
+
+    def test_non_owner_volunteer_cannot_change_owner(self, client, db, volunteer):
+        other = _make_user(db, email="other@example.com")
+        c = _create_community(db, volunteer)
+        res = client.patch(
+            f"/api/communities/{c.id}/owner",
+            json={"user_id": str(volunteer.id)},
+            headers=auth_header(other),
         )
         assert res.status_code == 403
 

@@ -99,6 +99,7 @@ const mockGetProfile = jest.fn()
 const mockUpdateProfile = jest.fn()
 const mockUploadAvatar = jest.fn()
 const mockChangePassword = jest.fn()
+const mockDeleteProfile = jest.fn()
 
 jest.mock('../../api/endpoints/auth/auth', () => ({
   getAuth: () => ({
@@ -106,10 +107,16 @@ jest.mock('../../api/endpoints/auth/auth', () => ({
     updateProfileApiAuthMePatch: (...args: unknown[]) => mockUpdateProfile(...args),
     uploadAvatarApiAuthMeAvatarPut: (...args: unknown[]) => mockUploadAvatar(...args),
     changePasswordApiAuthMePasswordPatch: (...args: unknown[]) => mockChangePassword(...args),
+    deleteProfileApiAuthMeDelete: (...args: unknown[]) => mockDeleteProfile(...args),
   }),
 }))
 
-let mockAuth = { isLoggedIn: true, user: { id: 1, email: 'volunteer@example.com' } }
+const mockLogout = jest.fn()
+let mockAuth: Record<string, unknown> = {
+  isLoggedIn: true,
+  user: { id: 1, email: 'volunteer@example.com' },
+  logout: mockLogout,
+}
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => mockAuth,
 }))
@@ -126,7 +133,11 @@ describe('VolunteerDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.useFakeTimers()
-    mockAuth = { isLoggedIn: true, user: { id: 1, email: 'volunteer@example.com' } }
+    mockAuth = {
+      isLoggedIn: true,
+      user: { id: 1, email: 'volunteer@example.com' },
+      logout: mockLogout,
+    }
     mockGetProfile.mockResolvedValue({
       full_name: 'Test User',
       avatar_url: null,
@@ -150,7 +161,7 @@ describe('VolunteerDashboard', () => {
   /* ── Access control ──────────────────────────────── */
 
   it('redirects to login when not logged in', () => {
-    mockAuth = { isLoggedIn: false, user: null as never }
+    mockAuth = { isLoggedIn: false, user: null as never, logout: mockLogout }
     renderDashboard()
     expect(screen.queryByText('Volunteer Dashboard')).not.toBeInTheDocument()
   })
@@ -580,6 +591,88 @@ describe('VolunteerDashboard', () => {
 
     await user.click(screen.getByRole('button', { name: /cancel/i }))
     expect(screen.queryByPlaceholderText('Start typing your city...')).not.toBeInTheDocument()
+  })
+
+  /* ── Delete account ──────────────────────────────── */
+
+  it('shows delete account button', async () => {
+    renderDashboard()
+    await screen.findByText('Test User')
+    expect(screen.getByRole('button', { name: /delete my account/i })).toBeInTheDocument()
+  })
+
+  it('opens confirmation modal when delete is clicked', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /delete my account/i }))
+
+    expect(screen.getByText('Delete your account?')).toBeInTheDocument()
+    expect(screen.getByText(/this action is permanent/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /yes, delete my account/i })).toBeInTheDocument()
+  })
+
+  it('calls delete API and logs out on success', async () => {
+    mockDeleteProfile.mockResolvedValue({})
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /delete my account/i }))
+    await user.click(screen.getByRole('button', { name: /yes, delete my account/i }))
+
+    expect(mockDeleteProfile).toHaveBeenCalled()
+    await waitFor(() => {
+      expect(mockLogout).toHaveBeenCalled()
+    })
+  })
+
+  it('displays API error detail when delete fails', async () => {
+    mockDeleteProfile.mockRejectedValue({
+      response: {
+        data: { detail: 'You must leave or transfer your community before deleting your account.' },
+      },
+    })
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /delete my account/i }))
+    await user.click(screen.getByRole('button', { name: /yes, delete my account/i }))
+
+    expect(
+      await screen.findByText(
+        'You must leave or transfer your community before deleting your account.'
+      )
+    ).toBeInTheDocument()
+    expect(mockLogout).not.toHaveBeenCalled()
+  })
+
+  it('displays fallback error when delete fails without detail', async () => {
+    mockDeleteProfile.mockRejectedValue(new Error('Network error'))
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /delete my account/i }))
+    await user.click(screen.getByRole('button', { name: /yes, delete my account/i }))
+
+    expect(
+      await screen.findByText('Failed to delete account. Please try again later.')
+    ).toBeInTheDocument()
+  })
+
+  it('closes delete modal when cancel is clicked', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+    await screen.findByText('Test User')
+
+    await user.click(screen.getByRole('button', { name: /delete my account/i }))
+    expect(screen.getByText('Delete your account?')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }))
+    expect(screen.queryByText('Delete your account?')).not.toBeInTheDocument()
   })
 
   it('reverse-geocodes and displays existing city name', async () => {

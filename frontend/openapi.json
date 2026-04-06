@@ -474,6 +474,24 @@
           }
         ]
       },
+      "delete": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Delete Profile",
+        "description": "Delete current user profile",
+        "operationId": "delete_profile_api_auth_me_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
       "patch": {
         "tags": [
           "Auth"
@@ -1570,7 +1588,7 @@
           "Communities"
         ],
         "summary": "Delete Community",
-        "description": "Delete a community. Admin/superuser only.",
+        "description": "Delete a community. Owner, moderator, or admin only.",
         "operationId": "delete_community_api_communities__community_id__delete",
         "security": [
           {
@@ -1696,6 +1714,65 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CommunityStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/owner": {
+      "patch": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Update Community Owner",
+        "description": "Transfer community ownership. Allowed for the current owner or moderator+.",
+        "operationId": "update_community_owner_api_communities__community_id__owner_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityOwnerUpdate"
               }
             }
           }
@@ -2635,6 +2712,20 @@
           "created_at"
         ],
         "title": "CommunityDetail"
+      },
+      "CommunityOwnerUpdate": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "CommunityOwnerUpdate"
       },
       "CommunityRead": {
         "properties": {
