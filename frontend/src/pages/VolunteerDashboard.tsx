@@ -7,6 +7,7 @@ import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
+import ShareCleanupModal from '../components/ShareCleanupModal'
 import type { ReportRead, BadgeRead } from '../api/model'
 
 const {
@@ -14,6 +15,7 @@ const {
   updateProfileApiAuthMePatch,
   uploadAvatarApiAuthMeAvatarPut,
   changePasswordApiAuthMePasswordPatch,
+  deleteProfileApiAuthMeDelete,
 } = getAuth()
 const { listReportsApiReportsGet, exportReportsApiReportsExportGet } = getReports()
 const {
@@ -108,7 +110,7 @@ function avatarSrc(avatarUrl: string | null | undefined): string {
 }
 
 function ProfileSection() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [avatar, setAvatar] = useState(WOMBLE_AVATARS[0])
@@ -128,6 +130,11 @@ function ProfileSection() {
 
   // Badges
   const [badges, setBadges] = useState<BadgeRead[]>([])
+
+  // Delete account
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   // Change password
   const [editingPassword, setEditingPassword] = useState(false)
@@ -244,6 +251,19 @@ function ProfileSection() {
       setPwMsg('Failed to change password. Please try again later.')
     }
     setPwLoading(false)
+  }
+
+  const handleDeleteUser = async () => {
+    setDeleteLoading(true)
+    setDeleteError('')
+    try {
+      await deleteProfileApiAuthMeDelete()
+      logout()
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setDeleteError(detail || 'Failed to delete account. Please try again later.')
+    }
+    setDeleteLoading(false)
   }
 
   return (
@@ -446,6 +466,51 @@ function ProfileSection() {
               </p>
             )}
           </div>
+
+          <div className="mt-3">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 transition"
+            >
+              Delete my account
+            </button>
+          </div>
+
+          {/* Delete confirmation modal */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete your account?</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  This action is permanent and cannot be undone. All your data will be deleted.
+                </p>
+                {deleteError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    {deleteError}
+                  </div>
+                )}
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => {
+                      setShowDeleteConfirm(false)
+                      setDeleteError('')
+                    }}
+                    disabled={deleteLoading}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteUser}
+                    disabled={deleteLoading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50"
+                  >
+                    {deleteLoading ? 'Deleting...' : 'Yes, delete my account'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -483,6 +548,12 @@ export default function VolunteerDashboard() {
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())
   const [reports, setReports] = useState<ReportRead[]>([])
   const [loading, setLoading] = useState(true)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareData, setShareData] = useState<{
+    volunteerName: string
+    avatarUrl: string
+    todayResolvedCount: number
+  } | null>(null)
 
   const fetchFavourites = () => {
     setLoading(true)
@@ -531,6 +602,30 @@ export default function VolunteerDashboard() {
     setPage(1)
   }, [tab])
 
+  const handleOpenShare = async () => {
+    try {
+      const [profile, cleanedReports] = await Promise.all([
+        getProfileApiAuthMeGet(),
+        listReportsApiReportsGet({ status: 'cleaned' }),
+      ])
+      const today = new Date().toDateString()
+      const todayResolved = cleanedReports.filter(
+        (r) =>
+          r.resolved_by_user_id === user?.id &&
+          r.resolved_at &&
+          new Date(r.resolved_at).toDateString() === today
+      )
+      setShareData({
+        volunteerName: profile.full_name || 'Volunteer',
+        avatarUrl: avatarSrc(profile.avatar_url),
+        todayResolvedCount: todayResolved.length,
+      })
+      setShowShareModal(true)
+    } catch {
+      alert('Failed to load cleanup data.')
+    }
+  }
+
   const handleToggleFavourite = async (reportId: string, star: boolean) => {
     try {
       if (star) {
@@ -575,25 +670,33 @@ export default function VolunteerDashboard() {
       />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Volunteer Dashboard</h1>
-        <button
-          onClick={async () => {
-            try {
-              const data = await exportReportsApiReportsExportGet()
-              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = 'reports-export.json'
-              a.click()
-              URL.revokeObjectURL(url)
-            } catch {
-              alert('Failed to export reports.')
-            }
-          }}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-        >
-          Export Reports
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleOpenShare}
+            className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition"
+          >
+            Share My Cleanup
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const data = await exportReportsApiReportsExportGet()
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'reports-export.json'
+                a.click()
+                URL.revokeObjectURL(url)
+              } catch {
+                alert('Failed to export reports.')
+              }
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+          >
+            Export Reports
+          </button>
+        </div>
       </div>
 
       {/* Profile Section */}
@@ -678,6 +781,15 @@ export default function VolunteerDashboard() {
             Next
           </button>
         </div>
+      )}
+
+      {showShareModal && shareData && (
+        <ShareCleanupModal
+          onClose={() => setShowShareModal(false)}
+          volunteerName={shareData.volunteerName}
+          avatarUrl={shareData.avatarUrl}
+          todayResolvedCount={shareData.todayResolvedCount}
+        />
       )}
     </div>
   )

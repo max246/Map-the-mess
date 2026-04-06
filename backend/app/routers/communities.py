@@ -29,6 +29,7 @@ from app.schemas.community import (
     CommunityDetail,
     CommunityRead,
     CommunityStatusUpdate,
+    CommunityOwnerUpdate,
     EventCreate,
     EventRead,
     EventUpdate,
@@ -338,10 +339,14 @@ def get_community(
 def delete_community(
     community_id: uuid_mod.UUID,
     db: Session = Depends(get_db),
-    _admin: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ):
-    """Delete a community. Admin/superuser only."""
+    """Delete a community. Owner, moderator, or admin only."""
     community = _get_community_or_404(community_id, db)
+    if community.owner_id != current_user.id and not _is_moderator_or_above(current_user):
+        raise HTTPException(
+            status_code=403, detail="Only the community owner or a moderator can do this"
+        )
     db.delete(community)
     db.commit()
 
@@ -398,6 +403,73 @@ def update_community_status(
         )
 
     community.status = new_status  # type: ignore[assignment]
+    db.commit()
+    db.refresh(community)
+    return community
+
+
+@router.patch("/{community_id}/owner", response_model=CommunityRead)
+def update_community_owner(
+    community_id: uuid_mod.UUID,
+    payload: CommunityOwnerUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Transfer community ownership. Allowed for the current owner or moderator+."""
+    community = _get_community_or_404(community_id, db)
+
+    is_owner = community.owner_id == current_user.id
+    is_mod_or_admin = current_user.user_type in (
+        UserType.moderator,
+        UserType.admin,
+        UserType.superuser,
+    )
+    if not is_owner and not is_mod_or_admin:
+        raise HTTPException(status_code=403, detail="Not authorised to transfer ownership")
+
+    new_owner = db.query(User).filter(User.id == payload.user_id).first()
+    if not new_owner:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    # Ensure the new owner is an approved member of the community
+    new_membership = (
+        db.query(CommunityMembership)
+        .filter(
+            CommunityMembership.community_id == community.id,
+            CommunityMembership.user_id == payload.user_id,
+        )
+        .first()
+    )
+    if new_membership:
+        new_membership.status = MembershipStatus.approved  # type: ignore[assignment]
+    else:
+        db.add(
+            CommunityMembership(
+                community_id=community.id,
+                user_id=payload.user_id,
+                status=MembershipStatus.approved,
+            )
+        )
+
+    # Ensure the previous owner stays as an approved member
+    old_membership = (
+        db.query(CommunityMembership)
+        .filter(
+            CommunityMembership.community_id == community.id,
+            CommunityMembership.user_id == community.owner_id,
+        )
+        .first()
+    )
+    if not old_membership:
+        db.add(
+            CommunityMembership(
+                community_id=community.id,
+                user_id=community.owner_id,
+                status=MembershipStatus.approved,
+            )
+        )
+
+    community.owner_id = payload.user_id  # type: ignore[assignment]
     db.commit()
     db.refresh(community)
     return community

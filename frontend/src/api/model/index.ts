@@ -14,6 +14,7 @@ export * from './bodyUploadProfileImageApiCommunitiesCommunityIdImagePut';
 export * from './changePassword';
 export * from './communityCreate';
 export * from './communityDetail';
+export * from './communityOwnerUpdate';
 export * from './communityRead';
 export * from './communityStatusUpdate';
 export * from './eventCreate';
