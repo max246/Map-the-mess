@@ -7,6 +7,7 @@ import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
+import ShareCleanupModal from '../components/ShareCleanupModal'
 import type { ReportRead, BadgeRead } from '../api/model'
 
 const {
@@ -547,6 +548,12 @@ export default function VolunteerDashboard() {
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())
   const [reports, setReports] = useState<ReportRead[]>([])
   const [loading, setLoading] = useState(true)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareData, setShareData] = useState<{
+    volunteerName: string
+    avatarUrl: string
+    todayResolvedCount: number
+  } | null>(null)
 
   const fetchFavourites = () => {
     setLoading(true)
@@ -595,6 +602,30 @@ export default function VolunteerDashboard() {
     setPage(1)
   }, [tab])
 
+  const handleOpenShare = async () => {
+    try {
+      const [profile, cleanedReports] = await Promise.all([
+        getProfileApiAuthMeGet(),
+        listReportsApiReportsGet({ status: 'cleaned' }),
+      ])
+      const today = new Date().toDateString()
+      const todayResolved = cleanedReports.filter(
+        (r) =>
+          r.resolved_by_user_id === user?.id &&
+          r.resolved_at &&
+          new Date(r.resolved_at).toDateString() === today
+      )
+      setShareData({
+        volunteerName: profile.full_name || 'Volunteer',
+        avatarUrl: avatarSrc(profile.avatar_url),
+        todayResolvedCount: todayResolved.length,
+      })
+      setShowShareModal(true)
+    } catch {
+      alert('Failed to load cleanup data.')
+    }
+  }
+
   const handleToggleFavourite = async (reportId: string, star: boolean) => {
     try {
       if (star) {
@@ -639,25 +670,33 @@ export default function VolunteerDashboard() {
       />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Volunteer Dashboard</h1>
-        <button
-          onClick={async () => {
-            try {
-              const data = await exportReportsApiReportsExportGet()
-              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = 'reports-export.json'
-              a.click()
-              URL.revokeObjectURL(url)
-            } catch {
-              alert('Failed to export reports.')
-            }
-          }}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-        >
-          Export Reports
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleOpenShare}
+            className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition"
+          >
+            Share My Cleanup
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const data = await exportReportsApiReportsExportGet()
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'reports-export.json'
+                a.click()
+                URL.revokeObjectURL(url)
+              } catch {
+                alert('Failed to export reports.')
+              }
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+          >
+            Export Reports
+          </button>
+        </div>
       </div>
 
       {/* Profile Section */}
@@ -742,6 +781,15 @@ export default function VolunteerDashboard() {
             Next
           </button>
         </div>
+      )}
+
+      {showShareModal && shareData && (
+        <ShareCleanupModal
+          onClose={() => setShowShareModal(false)}
+          volunteerName={shareData.volunteerName}
+          avatarUrl={shareData.avatarUrl}
+          todayResolvedCount={shareData.todayResolvedCount}
+        />
       )}
     </div>
   )
