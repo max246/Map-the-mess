@@ -166,6 +166,11 @@ export default function CommunityDetail() {
     }
   }
 
+  const handleUpdateOwner = async () => {
+
+
+  }
+
   // --- Posts ---
 
   const handleDeletePost = async (postId: string) => {
@@ -485,12 +490,18 @@ export default function CommunityDetail() {
             </button>
           )}
           {isAdmin && (
+              <>
             <button
               onClick={handleDelete}
               className="px-3 py-1.5 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 transition"
             >
               Delete Community
             </button>
+            <button
+                  onClick={handleUpdateOwner}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium border border-blue-300 text-blue-700 hover:bg-blue-50 transition"
+              >Update owner</button>
+            </>
           )}
         </div>
       )}

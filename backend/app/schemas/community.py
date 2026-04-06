@@ -39,6 +39,9 @@ class CommunityRead(BaseModel):
 class CommunityStatusUpdate(BaseModel):
     status: str
 
+class CommunityOwnerUpdate(BaseModel):
+    user_id: uuid.UUID
+
 
 # ---------------------------------------------------------------------------
 # Posts

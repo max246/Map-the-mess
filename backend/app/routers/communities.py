@@ -29,6 +29,7 @@ from app.schemas.community import (
     CommunityDetail,
     CommunityRead,
     CommunityStatusUpdate,
+    CommunityOwnerUpdate,
     EventCreate,
     EventRead,
     EventUpdate,
@@ -398,6 +399,30 @@ def update_community_status(
         )
 
     community.status = new_status  # type: ignore[assignment]
+    db.commit()
+    db.refresh(community)
+    return community
+
+
+@router.patch("/{community_id}/owner", response_model=CommunityRead)
+def update_community_owner(
+    community_id: uuid_mod.UUID,
+    payload: CommunityOwnerUpdate,
+    db: Session = Depends(get_db),
+    _mod: User = Depends(require_moderator_or_admin),
+):
+    """Set community owner to active or under_review. Moderator+ only."""
+    community = _get_community_or_404(community_id, db)
+
+    try:
+        new_owner = CommunityOwnerUpdate(payload.user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid user id. Must be one of: {', '.join(s.value for s in CommunityOwnerUpdate)}",
+        )
+
+    community.owner_id = new_owner  # type: ignore[assignment]
     db.commit()
     db.refresh(community)
     return community

@@ -132,6 +132,7 @@ class TestListCommunities:
         assert "Active" in names
         assert "Under Review" in names
 
+
     def test_search_by_name(self, client, db, volunteer):
         _create_community(db, volunteer, name="Beach Cleanup")
         _create_community(db, volunteer, name="Park Rangers")
@@ -217,6 +218,25 @@ class TestModeration:
         res = client.patch(
             f"/api/communities/{c.id}/status",
             json={"status": "under_review"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 403
+
+    def test_moderator_update_owner_community(self, client, db, volunteer, moderator):
+        c = _create_community(db, volunteer, status=CommunityStatus.under_review)
+        res = client.patch(
+            f"/api/communities/{c.id}/owner",
+            json={"user_id":  moderator.id},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 200
+        assert res.json()["owner_id"] == moderator.id
+
+    def test_volunteer_cannot_change_owner(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        res = client.patch(
+            f"/api/communities/{c.id}/owner",
+            json={"user_id": volunteer.id},
             headers=auth_header(volunteer),
         )
         assert res.status_code == 403

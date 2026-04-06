@@ -246,6 +246,10 @@ function ProfileSection() {
     setPwLoading(false)
   }
 
+  const handleDeleteUser = async ()=>  {
+
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
       <div className="flex items-start gap-6">
@@ -445,6 +449,12 @@ function ProfileSection() {
                 {pwMsg}
               </p>
             )}
+          </div>
+
+          <div>
+            <button onClick={handleDeleteUser}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 transition">
+              Delete my account</button>
           </div>
         </div>
       </div>
