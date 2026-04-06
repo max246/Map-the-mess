@@ -9,6 +9,7 @@ import type {
   BodyUploadProfileImageApiCommunitiesCommunityIdImagePut,
   CommunityCreate,
   CommunityDetail,
+  CommunityOwnerUpdate,
   CommunityRead,
   CommunityStatusUpdate,
   EventCreate,
@@ -83,7 +84,7 @@ const getCommunityApiCommunitiesCommunityIdGet = (
       );
     }
   /**
- * Delete a community. Admin/superuser only.
+ * Delete a community. Owner, moderator, or admin only.
  * @summary Delete Community
  */
 const deleteCommunityApiCommunitiesCommunityIdDelete = (
@@ -122,6 +123,21 @@ const updateCommunityStatusApiCommunitiesCommunityIdStatusPatch = (
       {url: `/api/communities/${communityId}/status`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: communityStatusUpdate
+    },
+      );
+    }
+  /**
+ * Transfer community ownership. Allowed for the current owner or moderator+.
+ * @summary Update Community Owner
+ */
+const updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch = (
+    communityId: string,
+    communityOwnerUpdate: CommunityOwnerUpdate,
+ ) => {
+      return customInstance<CommunityRead>(
+      {url: `/api/communities/${communityId}/owner`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: communityOwnerUpdate
     },
       );
     }
@@ -278,7 +294,7 @@ const leaveCommunityApiCommunitiesCommunityIdLeaveDelete = (
     },
       );
     }
-  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete}};
+  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete}};
 export type CreateCommunityApiCommunitiesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createCommunityApiCommunitiesPost']>>>
 export type ListCommunitiesApiCommunitiesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listCommunitiesApiCommunitiesGet']>>>
 export type MyCommunitiesApiCommunitiesMineGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['myCommunitiesApiCommunitiesMineGet']>>>
@@ -286,6 +302,7 @@ export type GetCommunityApiCommunitiesCommunityIdGetResult = NonNullable<Awaited
 export type DeleteCommunityApiCommunitiesCommunityIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['deleteCommunityApiCommunitiesCommunityIdDelete']>>>
 export type UploadProfileImageApiCommunitiesCommunityIdImagePutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['uploadProfileImageApiCommunitiesCommunityIdImagePut']>>>
 export type UpdateCommunityStatusApiCommunitiesCommunityIdStatusPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateCommunityStatusApiCommunitiesCommunityIdStatusPatch']>>>
+export type UpdateCommunityOwnerApiCommunitiesCommunityIdOwnerPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch']>>>
 export type CreatePostApiCommunitiesCommunityIdPostsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createPostApiCommunitiesCommunityIdPostsPost']>>>
 export type UpdatePostApiCommunitiesCommunityIdPostsPostIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updatePostApiCommunitiesCommunityIdPostsPostIdPatch']>>>
 export type DeletePostApiCommunitiesCommunityIdPostsPostIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['deletePostApiCommunitiesCommunityIdPostsPostIdDelete']>>>

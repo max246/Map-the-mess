@@ -30,10 +30,12 @@ Because clean streets shouldn't depend on the council noticing.
 
 ### Reporting & Map
 - 📍 Interactive map with litter reports (Leaflet / OpenStreetMap)
+- 🔥 Heatmap view — toggle between pin markers and a density heatmap to spot litter hotspots at a glance
 - 📸 Photo upload with geolocation, auto-thumbnails, and Full-HD optimisation
 - 🔍 Filter by status (pending / cleaned / favourites)
 - 🏠 Reverse geocoding — reports automatically get a human-readable address
 - 🔤 what3words integration for precise location sharing
+- 📤 Export reports — download all reports as JSON from the volunteer dashboard
 
 ### Communities
 - 🏘️ Create and join local cleanup communities
@@ -41,12 +43,15 @@ Because clean streets shouldn't depend on the council noticing.
 - 📅 Cleanup events with meeting points, linked reports, and map view
 - 👥 Membership workflow — request to join, owner approves/rejects
 - 🖼️ Community profile images
+- 🔄 Transfer ownership — community owners (and admins/moderators) can transfer ownership to an approved member
+- 🗑️ Community deletion — owners, moderators, and admins can delete a community
 
 ### Volunteers
 - 👷 Volunteer dashboard to plan cleanups and manage favourites
 - 🏆 Leaderboard ranking volunteers by reports cleaned
 - 🎖️ Badge system — earn badges for reporting, cleaning, and loyalty
 - 👤 Public volunteer profiles
+- ❌ Account deletion — users can delete their own account (with confirmation), must transfer community ownership first if they own one
 
 ### Auth & Admin
 - 🔐 Registration with email verification, password reset, JWT auth with refresh tokens
@@ -342,6 +347,7 @@ docker system prune -a -f
 
 ## Connect With Us
 
+- Email: info@mapthemess.uk
 - [Facebook](https://www.facebook.com/profile.php?id=61577665256083)
 - [GitHub](https://github.com/max246/Map-the-mess)
 
