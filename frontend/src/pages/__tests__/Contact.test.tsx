@@ -25,6 +25,15 @@ describe('Contact', () => {
     expect(emailLink).toHaveAttribute('href', 'mailto:info@mapthemess.uk')
   })
 
+  it('displays the support email address', () => {
+    expect(screen.getByText('support@mapthemess.uk')).toBeInTheDocument()
+  })
+
+  it('has a mailto link for the support email', () => {
+    const emailLink = screen.getByRole('link', { name: /support@mapthemess.uk/i })
+    expect(emailLink).toHaveAttribute('href', 'mailto:support@mapthemess.uk')
+  })
+
   it('displays the GitHub repo link', () => {
     const githubLink = screen.getByRole('link', { name: /github\.com\/max246\/Map-the-mess/i })
     expect(githubLink).toHaveAttribute('href', 'https://github.com/max246/Map-the-mess')
