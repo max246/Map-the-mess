@@ -8,17 +8,29 @@ export default function Contact() {
         description="Have questions, feedback, or want to get involved? Get in touch with the Map the Mess team."
       />
       <h1 className="text-4xl md:text-5xl font-bold mb-4">Contact Us</h1>
-      <p className="text-lg text-gray-600 max-w-xl mb-8">
-        Have questions, feedback, or want to get involved? Send us an email and we'll get back to
-        you.
-      </p>
+        <p className="text-lg text-gray-600 max-w-xl mb-8">
+            Have questions, feedback, or want to get involved? Send us an email and we'll get back to
+            you.
+        </p>
 
-      <a
-        href="mailto:max246@gmail.com"
-        className="bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-3 rounded-lg text-lg transition"
-      >
-        max246@gmail.com
-      </a>
+        <a
+            href="mailto:info@mapthemess.uk"
+            className="bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-3 rounded-lg text-lg transition"
+        >
+            info@mapthemess.uk
+        </a>
+
+        <p className="text-lg text-gray-600 max-w-xl mb-8">
+            Having any issues? Send us an email and we'll get back to
+            you.
+        </p>
+
+        <a
+            href="mailto:support@mapthemess.uk"
+            className="bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-3 rounded-lg text-lg transition"
+        >
+            support@mapthemess.uk
+        </a>
 
       <div className="mt-12 text-gray-500">
         <p className="mb-2">You can also find us on:</p>
