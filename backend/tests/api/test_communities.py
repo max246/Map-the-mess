@@ -174,9 +174,10 @@ class TestDeleteCommunity:
         res = client.delete(f"/api/communities/{c.id}", headers=auth_header(admin))
         assert res.status_code == 204
 
-    def test_volunteer_cannot_delete(self, client, db, volunteer):
+    def test_non_owner_volunteer_cannot_delete(self, client, db, volunteer):
+        other = _make_user(db, email="other@example.com")
         c = _create_community(db, volunteer)
-        res = client.delete(f"/api/communities/{c.id}", headers=auth_header(volunteer))
+        res = client.delete(f"/api/communities/{c.id}", headers=auth_header(other))
         assert res.status_code == 403
 
     def test_delete_nonexistent(self, client, db, admin):
