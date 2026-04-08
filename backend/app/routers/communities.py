@@ -7,6 +7,7 @@ from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from PIL import Image
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -16,7 +17,7 @@ from app.models.community import Community, CommunityStatus, CommunityVisibility
 from app.models.community_membership import CommunityMembership, MembershipStatus
 from app.models.community_post import CommunityPost
 from app.models.community_event import CommunityEvent, event_reports
-from app.models.report import Report
+from app.models.report import Report, ReportStatus
 from app.models.user import User, UserType
 from app.routers.auth import (
     ALGORITHM,
@@ -42,6 +43,7 @@ from app.schemas.community import (
     PostRead,
     PostUpdate,
 )
+from app.schemas.user import LeaderboardEntry
 from jose import JWTError, jwt
 
 router = APIRouter()
@@ -892,3 +894,128 @@ def leave_community(
 
     db.delete(membership)
     db.commit()
+
+
+def _abbreviate_name(full_name: str) -> str:
+    """'Zoe Brum' -> 'Zoe B.', 'Zoe' -> 'Zoe'."""
+    parts = full_name.split()
+    if len(parts) <= 1:
+        return full_name
+    return f"{parts[0]} {parts[-1][0]}."
+
+
+@router.get("/{community_id}/members", response_model=list[MembershipRead])
+def list_public_members(
+    community_id: uuid_mod.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List approved members of a community. Only the community owner or an admin can access."""
+    community = _get_community_or_404(community_id, db)
+
+    is_owner = community.owner_id == current_user.id
+    is_admin = current_user.user_type in (UserType.superuser, UserType.admin)
+    if not is_owner and not is_admin:
+        raise HTTPException(
+            status_code=403, detail="Only the community owner or an admin can view members"
+        )
+
+    memberships = (
+        db.query(CommunityMembership)
+        .filter(
+            CommunityMembership.community_id == community.id,
+            CommunityMembership.status == MembershipStatus.approved,
+        )
+        .order_by(CommunityMembership.created_at.desc())
+        .all()
+    )
+
+    user_ids = [m.user_id for m in memberships]
+    users = (
+        {u.id: u.full_name for u in db.query(User).filter(User.id.in_(user_ids)).all()}
+        if user_ids
+        else {}
+    )
+
+    return [
+        MembershipRead(
+            id=m.id,  # type: ignore[arg-type]
+            community_id=m.community_id,  # type: ignore[arg-type]
+            user_id=m.user_id,  # type: ignore[arg-type]
+            user_name=users.get(m.user_id, ""),  # type: ignore[arg-type]
+            status=m.status.value if hasattr(m.status, "value") else m.status,  # type: ignore[arg-type]
+            created_at=m.created_at,  # type: ignore[arg-type]
+            updated_at=m.updated_at,  # type: ignore[arg-type]
+        )
+        for m in memberships
+    ]
+
+
+@router.get("/{community_id}/leaderboard", response_model=list[LeaderboardEntry])
+def community_leaderboard(
+    community_id: uuid_mod.UUID,
+    months: int = Query(1, ge=1, le=12, description="Number of months to look back"),
+    limit: int = Query(15, ge=1, le=50, description="Number of top members to return"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return community members ranked by number of reports cleaned globally. Only members and the owner can access."""
+    community = _get_community_or_404(community_id, db)
+
+    if not _is_member_or_owner(community, current_user, db) and not _is_moderator_or_above(
+        current_user
+    ):
+        raise HTTPException(
+            status_code=403, detail="Only community members can view the leaderboard"
+        )
+
+    now = datetime.now(timezone.utc)
+    month = now.month - months
+    year = now.year
+    while month < 1:
+        month += 12
+        year -= 1
+    since = datetime(year, month, 1, tzinfo=timezone.utc)
+
+    # Get approved member user IDs (+ owner)
+    member_ids = [
+        m.user_id
+        for m in db.query(CommunityMembership.user_id)
+        .filter(
+            CommunityMembership.community_id == community.id,
+            CommunityMembership.status == MembershipStatus.approved,
+        )
+        .all()
+    ]
+    member_ids.append(community.owner_id)
+
+    if not member_ids:
+        return []
+
+    rows = (
+        db.query(
+            User.id,
+            User.full_name,
+            func.count(Report.id).label("cleaned_count"),
+        )
+        .join(Report, Report.resolved_by_user_id == User.id)
+        .filter(
+            User.id.in_(member_ids),
+            Report.status == ReportStatus.cleaned,
+            Report.resolved_at >= since,
+        )
+        .group_by(User.id, User.full_name)
+        .order_by(func.count(Report.id).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        LeaderboardEntry(
+            user_id=row.id,
+            rank=i + 1,
+            name=_abbreviate_name(row.full_name),
+            cleaned_count=row.cleaned_count,
+        )
+        for i, row in enumerate(rows)
+    ]

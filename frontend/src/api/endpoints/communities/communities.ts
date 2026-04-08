@@ -9,12 +9,15 @@ import type {
   BodyUploadProfileImageApiCommunitiesCommunityIdImagePut,
   CommunityCreate,
   CommunityDetail,
+  CommunityLeaderboardApiCommunitiesCommunityIdLeaderboardGetParams,
   CommunityOwnerUpdate,
   CommunityRead,
   CommunityStatusUpdate,
+  CommunityVisibilityUpdate,
   EventCreate,
   EventRead,
   EventUpdate,
+  LeaderboardEntry,
   ListCommunitiesApiCommunitiesGetParams,
   MembershipAction,
   MembershipRead,
@@ -132,7 +135,7 @@ const updateCommunityStatusApiCommunitiesCommunityIdStatusPatch = (
  */
 const updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch = (
     communityId: string,
-    communityVisibilityUpdate: { visibility: string },
+    communityVisibilityUpdate: CommunityVisibilityUpdate,
  ) => {
       return customInstance<CommunityRead>(
       {url: `/api/communities/${communityId}/visibility`, method: 'PATCH',
@@ -309,7 +312,33 @@ const leaveCommunityApiCommunitiesCommunityIdLeaveDelete = (
     },
       );
     }
-  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete}};
+  /**
+ * List approved members of a community. Only the community owner or an admin can access.
+ * @summary List Public Members
+ */
+const listPublicMembersApiCommunitiesCommunityIdMembersGet = (
+    communityId: string,
+ ) => {
+      return customInstance<MembershipRead[]>(
+      {url: `/api/communities/${communityId}/members`, method: 'GET'
+    },
+      );
+    }
+  /**
+ * Return community members ranked by number of reports cleaned globally. Only members and the owner can access.
+ * @summary Community Leaderboard
+ */
+const communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet = (
+    communityId: string,
+    params?: CommunityLeaderboardApiCommunitiesCommunityIdLeaderboardGetParams,
+ ) => {
+      return customInstance<LeaderboardEntry[]>(
+      {url: `/api/communities/${communityId}/leaderboard`, method: 'GET',
+        params
+    },
+      );
+    }
+  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete,listPublicMembersApiCommunitiesCommunityIdMembersGet,communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet}};
 export type CreateCommunityApiCommunitiesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createCommunityApiCommunitiesPost']>>>
 export type ListCommunitiesApiCommunitiesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listCommunitiesApiCommunitiesGet']>>>
 export type MyCommunitiesApiCommunitiesMineGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['myCommunitiesApiCommunitiesMineGet']>>>
@@ -317,6 +346,7 @@ export type GetCommunityApiCommunitiesCommunityIdGetResult = NonNullable<Awaited
 export type DeleteCommunityApiCommunitiesCommunityIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['deleteCommunityApiCommunitiesCommunityIdDelete']>>>
 export type UploadProfileImageApiCommunitiesCommunityIdImagePutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['uploadProfileImageApiCommunitiesCommunityIdImagePut']>>>
 export type UpdateCommunityStatusApiCommunitiesCommunityIdStatusPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateCommunityStatusApiCommunitiesCommunityIdStatusPatch']>>>
+export type UpdateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch']>>>
 export type UpdateCommunityOwnerApiCommunitiesCommunityIdOwnerPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch']>>>
 export type CreatePostApiCommunitiesCommunityIdPostsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createPostApiCommunitiesCommunityIdPostsPost']>>>
 export type UpdatePostApiCommunitiesCommunityIdPostsPostIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updatePostApiCommunitiesCommunityIdPostsPostIdPatch']>>>
@@ -329,3 +359,5 @@ export type JoinCommunityApiCommunitiesCommunityIdJoinPostResult = NonNullable<A
 export type ListMembershipsApiCommunitiesCommunityIdMembershipsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listMembershipsApiCommunitiesCommunityIdMembershipsGet']>>>
 export type UpdateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch']>>>
 export type LeaveCommunityApiCommunitiesCommunityIdLeaveDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['leaveCommunityApiCommunitiesCommunityIdLeaveDelete']>>>
+export type ListPublicMembersApiCommunitiesCommunityIdMembersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listPublicMembersApiCommunitiesCommunityIdMembersGet']>>>
+export type CommunityLeaderboardApiCommunitiesCommunityIdLeaderboardGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet']>>>
