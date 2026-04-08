@@ -32,7 +32,8 @@ Because clean streets shouldn't depend on the council noticing.
 - 📍 Interactive map with litter reports (Leaflet / OpenStreetMap)
 - 🔥 Heatmap view — toggle between pin markers and a density heatmap to spot litter hotspots at a glance
 - 📸 Photo upload with geolocation, auto-thumbnails, and Full-HD optimisation
-- 🔍 Filter by status (pending / cleaned / favourites)
+- 🔍 Filter by status (pending / cleaned / favourites) and report type (litter / gas canister)
+- 🏷️ Report types — categorise reports as litter or gas canister
 - 🏠 Reverse geocoding — reports automatically get a human-readable address
 - 🔤 what3words integration for precise location sharing
 - 📤 Export reports — download all reports as JSON from the volunteer dashboard
@@ -45,6 +46,8 @@ Because clean streets shouldn't depend on the council noticing.
 - 🖼️ Community profile images
 - 🔄 Transfer ownership — community owners (and admins/moderators) can transfer ownership to an approved member
 - 🗑️ Community deletion — owners, moderators, and admins can delete a community
+- 🏆 Community leaderboard — members ranked by reports cleaned
+- 📑 Tabbed community page — Main (events & posts), Members, and Leaderboard tabs
 
 ### Volunteers
 - 👷 Volunteer dashboard to plan cleanups and manage favourites
@@ -61,8 +64,10 @@ Because clean streets shouldn't depend on the council noticing.
 
 ### General
 - 📱 Mobile-first responsive design
+- 🔗 Share button — share reports, communities, events, and leaderboards via link, Facebook, or X
 - 🔒 Nginx version hiding (`server_tokens off`)
 - 📄 Static pages — disclaimer, privacy policy, contact, litter facts
+- 🧹 Recommended tools page — curated litter-picking equipment with ratings
 
 ## Getting Started
 
