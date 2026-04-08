@@ -5,11 +5,13 @@ import { getCommunities } from '../api/endpoints/communities/communities'
 import { useAuth } from '../context/AuthContext'
 import { communityImageUrl } from '../api/client'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import ShareButton from '../components/ShareButton'
 import type {
   CommunityDetail as CommunityDetailType,
   PostRead,
   EventRead,
   MembershipRead,
+  LeaderboardEntry,
 } from '../api/model'
 
 const {
@@ -23,8 +25,11 @@ const {
   leaveCommunityApiCommunitiesCommunityIdLeaveDelete,
   listMembershipsApiCommunitiesCommunityIdMembershipsGet,
   updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,
+  updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,
   updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,
   myCommunitiesApiCommunitiesMineGet,
+  listPublicMembersApiCommunitiesCommunityIdMembersGet,
+  communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet,
 } = getCommunities()
 
 export default function CommunityDetail() {
@@ -41,6 +46,17 @@ export default function CommunityDetail() {
   const [myMembership, setMyMembership] = useState<MembershipRead | null>(null)
   const [joining, setJoining] = useState(false)
 
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'main' | 'members' | 'leaderboard'>('main')
+
+  // Public members (visible to all)
+  const [publicMembers, setPublicMembers] = useState<MembershipRead[]>([])
+
+  // Leaderboard
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false)
+  const [leaderboardMonths, setLeaderboardMonths] = useState(1)
+
   // Transfer ownership
   const [showTransferOwner, setShowTransferOwner] = useState(false)
   const [selectedNewOwner, setSelectedNewOwner] = useState('')
@@ -51,6 +67,7 @@ export default function CommunityDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isOwner = !!(user && community && user.id === community.owner_id)
+  const isMember = !!(myMembership && myMembership.status === 'approved')
 
   useEffect(() => {
     setLoading(true)
@@ -129,8 +146,32 @@ export default function CommunityDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId, isLoggedIn, user, community?.owner_id])
 
+  // Fetch members (owner/admin only)
+  useEffect(() => {
+    if (!isOwner && !isAdmin) return
+    listPublicMembersApiCommunitiesCommunityIdMembersGet(communityId)
+      .then(setPublicMembers)
+      .catch(() => {})
+  }, [communityId, isOwner, isAdmin])
+
+  // Fetch leaderboard when tab is active or months change
+  useEffect(() => {
+    if (activeTab !== 'leaderboard') return
+    setLeaderboardLoading(true)
+    communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet(communityId, {
+      months: leaderboardMonths,
+      limit: 15,
+    })
+      .then(setLeaderboard)
+      .catch(() => {})
+      .finally(() => setLeaderboardLoading(false))
+  }, [communityId, activeTab, leaderboardMonths])
+
   const refresh = () => {
     getCommunityApiCommunitiesCommunityIdGet(communityId).then(setCommunity).catch(console.error)
+    listPublicMembersApiCommunitiesCommunityIdMembersGet(communityId)
+      .then(setPublicMembers)
+      .catch(() => {})
     fetchMemberships()
   }
 
@@ -159,6 +200,20 @@ export default function CommunityDetail() {
       setCommunity((prev) => (prev ? { ...prev, status: newStatus } : prev))
     } catch {
       alert('Failed to update status')
+    }
+  }
+
+  // --- Visibility toggle ---
+  const handleVisibilityToggle = async () => {
+    if (!community) return
+    const newVisibility = community.visibility === 'public' ? 'private' : 'public'
+    try {
+      await updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch(communityId, {
+        visibility: newVisibility,
+      })
+      setCommunity((prev) => (prev ? { ...prev, visibility: newVisibility } : prev))
+    } catch {
+      alert('Failed to update visibility')
     }
   }
 
@@ -246,16 +301,9 @@ export default function CommunityDetail() {
           <p className="text-red-700 text-sm">
             <span className="font-medium">{pendingCount}</span> membership{' '}
             {pendingCount === 1 ? 'request' : 'requests'} pending approval.{' '}
-            <a
-              href="#members"
-              className="underline"
-              onClick={(e) => {
-                e.preventDefault()
-                document.getElementById('pending-requests')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-            >
+            <button className="underline" onClick={() => setActiveTab('members')}>
               Review now
-            </a>
+            </button>
           </p>
         </div>
       )}
@@ -296,11 +344,23 @@ export default function CommunityDetail() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold">{community.name}</h1>
+            <span
+              className={`text-xs px-2 py-0.5 rounded font-medium ${
+                community.visibility === 'public'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {community.visibility === 'public' ? 'Public' : 'Private'}
+            </span>
             {isUnderReview && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
                 Under review
               </span>
             )}
+            <div className="ml-auto">
+              <ShareButton title={community.name} />
+            </div>
           </div>
           {community.description && <p className="text-gray-600 mt-1">{community.description}</p>}
           <div className="flex items-center gap-3 mt-2 text-sm text-gray-400">
@@ -407,97 +467,21 @@ export default function CommunityDetail() {
         </div>
       )}
 
-      {/* Membership management (owner only) */}
-      {isOwner && pendingCount > 0 && (
-        <div id="pending-requests" className="bg-white rounded-lg shadow p-4 mb-6">
-          <h2 className="font-semibold mb-3">Pending Requests ({pendingCount})</h2>
-          <div className="divide-y divide-gray-100">
-            {memberships
-              .filter((m) => m.status === 'pending')
-              .map((m) => (
-                <div key={m.id} className="flex items-center justify-between py-2">
-                  <span className="text-sm">{m.user_name || `User #${m.user_id}`}</span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={async () => {
-                        try {
-                          await updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch(
-                            communityId,
-                            m.id,
-                            { status: 'approved' }
-                          )
-                          refresh()
-                        } catch {
-                          alert('Failed to approve')
-                        }
-                      }}
-                      className="px-2 py-1 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 transition"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch(
-                            communityId,
-                            m.id,
-                            { status: 'rejected' }
-                          )
-                          refresh()
-                        } catch {
-                          alert('Failed to reject')
-                        }
-                      }}
-                      className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 transition"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Members list (owner only) */}
-      {isOwner && memberships.filter((m) => m.status === 'approved').length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <h2 className="font-semibold mb-3">
-            Members ({memberships.filter((m) => m.status === 'approved').length})
-          </h2>
-          <div className="divide-y divide-gray-100">
-            {memberships
-              .filter((m) => m.status === 'approved')
-              .map((m) => (
-                <div key={m.id} className="flex items-center justify-between py-2">
-                  <span className="text-sm">{m.user_name || `User #${m.user_id}`}</span>
-                  <button
-                    onClick={async () => {
-                      if (!confirm('Remove this member?')) return
-                      try {
-                        await updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch(
-                          communityId,
-                          m.id,
-                          { status: 'rejected' }
-                        )
-                        refresh()
-                      } catch {
-                        alert('Failed to remove member')
-                      }
-                    }}
-                    className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 transition"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
       {/* Moderator / admin / owner actions */}
       {(canManageUsers || isAdmin || isOwner) && (
         <div className="flex gap-2 mb-6 flex-wrap">
+          {isOwner && (
+            <button
+              onClick={handleVisibilityToggle}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                community.visibility === 'public'
+                  ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  : 'border-green-300 text-green-700 hover:bg-green-50'
+              }`}
+            >
+              {community.visibility === 'public' ? 'Make Private' : 'Make Public'}
+            </button>
+          )}
           {canManageUsers && (
             <button
               onClick={handleStatusToggle}
@@ -601,71 +585,267 @@ export default function CommunityDetail() {
         </div>
       )}
 
-      {/* Content only visible when active (or to moderators) */}
+      {/* Tab bar */}
       {(!isUnderReview || canManageUsers) && (
         <>
-          {/* Events section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold">Events</h2>
-              {isOwner && (
-                <Link
-                  to={`/communities/${communityId}/events/new`}
-                  className="text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
-                >
-                  New Event
-                </Link>
-              )}
-            </div>
-            {events.length === 0 ? (
-              <p className="text-gray-400 text-sm">No events yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {events.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    communityId={communityId}
-                    isOwner={isOwner}
-                    canManage={canManageUsers}
-                    onDelete={handleDeleteEvent}
-                  />
-                ))}
-              </div>
-            )}
+          <div className="flex border-b border-gray-200 mb-6">
+            {[
+              { key: 'main' as const, label: 'Main' },
+              ...(isOwner || isAdmin
+                ? [{ key: 'members' as const, label: `Members (${publicMembers.length})` }]
+                : []),
+              ...(isOwner || isMember
+                ? [{ key: 'leaderboard' as const, label: 'Leaderboard' }]
+                : []),
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${
+                  activeTab === tab.key
+                    ? 'border-brand text-brand'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* Posts section */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold">Posts</h2>
-              {isOwner && (
-                <Link
-                  to={`/communities/${communityId}/posts/new`}
-                  className="text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
-                >
-                  New Post
-                </Link>
-              )}
-            </div>
-
-            {posts.length === 0 ? (
-              <p className="text-gray-400 text-sm">No posts yet.</p>
-            ) : (
-              <div className="space-y-4">
-                {posts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    communityId={communityId}
-                    isOwner={isOwner}
-                    canManage={canManageUsers}
-                    onDelete={handleDeletePost}
-                  />
-                ))}
+          {/* Main tab — Events & Posts */}
+          {activeTab === 'main' && (
+            <>
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold">Events</h2>
+                  {isOwner && (
+                    <Link
+                      to={`/communities/${communityId}/events/new`}
+                      className="text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+                    >
+                      New Event
+                    </Link>
+                  )}
+                </div>
+                {events.length === 0 ? (
+                  <p className="text-gray-400 text-sm">No events yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {events.map((event) => (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        communityId={communityId}
+                        isOwner={isOwner}
+                        canManage={canManageUsers}
+                        onDelete={handleDeleteEvent}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold">Posts</h2>
+                  {isOwner && (
+                    <Link
+                      to={`/communities/${communityId}/posts/new`}
+                      className="text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+                    >
+                      New Post
+                    </Link>
+                  )}
+                </div>
+                {posts.length === 0 ? (
+                  <p className="text-gray-400 text-sm">No posts yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {posts.map((post) => (
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        communityId={communityId}
+                        isOwner={isOwner}
+                        canManage={canManageUsers}
+                        onDelete={handleDeletePost}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Members tab */}
+          {activeTab === 'members' && (
+            <>
+              {/* Pending requests (owner only) */}
+              {isOwner && pendingCount > 0 && (
+                <div className="bg-white rounded-lg shadow p-4 mb-6">
+                  <h2 className="font-semibold mb-3">Pending Requests ({pendingCount})</h2>
+                  <div className="divide-y divide-gray-100">
+                    {memberships
+                      .filter((m) => m.status === 'pending')
+                      .map((m) => (
+                        <div key={m.id} className="flex items-center justify-between py-2">
+                          <span className="text-sm">{m.user_name || `User #${m.user_id}`}</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch(
+                                    communityId,
+                                    m.id,
+                                    { status: 'approved' }
+                                  )
+                                  refresh()
+                                } catch {
+                                  alert('Failed to approve')
+                                }
+                              }}
+                              className="px-2 py-1 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 transition"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch(
+                                    communityId,
+                                    m.id,
+                                    { status: 'rejected' }
+                                  )
+                                  refresh()
+                                } catch {
+                                  alert('Failed to reject')
+                                }
+                              }}
+                              className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 transition"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Approved members list (visible to all) */}
+              {publicMembers.length > 0 ? (
+                <div className="bg-white rounded-lg shadow p-4">
+                  <h2 className="font-semibold mb-3">Members ({publicMembers.length})</h2>
+                  <div className="divide-y divide-gray-100">
+                    {publicMembers.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between py-2">
+                        <Link
+                          to={`/volunteers/${m.user_id}`}
+                          className="text-sm text-brand hover:underline"
+                        >
+                          {m.user_name || `User #${m.user_id}`}
+                        </Link>
+                        {isOwner && m.user_id !== community.owner_id && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm('Remove this member?')) return
+                              try {
+                                await updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch(
+                                  communityId,
+                                  m.id,
+                                  { status: 'rejected' }
+                                )
+                                refresh()
+                              } catch {
+                                alert('Failed to remove member')
+                              }
+                            }}
+                            className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 transition"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No members yet.</p>
+              )}
+            </>
+          )}
+
+          {/* Leaderboard tab */}
+          {activeTab === 'leaderboard' && (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold">Community Leaderboard</h2>
+                <select
+                  value={leaderboardMonths}
+                  onChange={(e) => setLeaderboardMonths(Number(e.target.value))}
+                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>
+                      Last {m} month{m > 1 ? 's' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {leaderboardLoading ? (
+                <div className="text-center text-gray-400 py-16">Loading...</div>
+              ) : leaderboard.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-5xl mb-4">🧹</div>
+                  <p className="text-gray-500">
+                    No reports cleaned by community members in this period.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 text-left text-sm text-gray-500">
+                        <th className="px-4 py-3 w-16">Rank</th>
+                        <th className="px-4 py-3">Member</th>
+                        <th className="px-4 py-3 text-right">Cleaned</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {leaderboard.map((entry) => (
+                        <tr
+                          key={entry.user_id}
+                          className={entry.rank <= 3 ? 'bg-yellow-50' : 'hover:bg-gray-50'}
+                        >
+                          <td className="px-4 py-3 font-medium">
+                            {entry.rank <= 3 ? (
+                              <span className="text-xl">{['🥇', '🥈', '🥉'][entry.rank - 1]}</span>
+                            ) : (
+                              <span className="text-gray-400">{entry.rank}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-medium">
+                            <Link
+                              to={`/volunteers/${entry.user_id}`}
+                              className="text-brand hover:underline"
+                            >
+                              {entry.name}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="bg-brand bg-opacity-10 text-brand font-semibold px-2 py-0.5 rounded text-sm">
+                              {entry.cleaned_count}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
         </>
       )}
     </div>

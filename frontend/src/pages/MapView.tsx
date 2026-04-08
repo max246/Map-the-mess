@@ -35,12 +35,19 @@ const pendingIcon = createPinIcon('#ef4444')
 const cleanedIcon = createPinIcon('#22c55e')
 
 type Filter = 'all' | 'unresolved' | 'resolved' | 'favourites'
+type TypeFilter = 'all' | 'litter' | 'gas_canister'
 
 const FILTERS: { key: Filter; label: string; auth?: boolean }[] = [
   { key: 'all', label: 'All' },
   { key: 'unresolved', label: 'Unresolved' },
   { key: 'resolved', label: 'Resolved' },
   { key: 'favourites', label: 'Favourites', auth: true },
+]
+
+const TYPE_FILTERS: { key: TypeFilter; label: string }[] = [
+  { key: 'all', label: 'All Types' },
+  { key: 'litter', label: 'Litter' },
+  { key: 'gas_canister', label: 'Gas Canister' },
 ]
 
 function ZoomMarker({ report }: { report: ReportRead }) {
@@ -91,7 +98,11 @@ export default function MapView() {
   const [allReports, setAllReports] = useState<ReportRead[]>([])
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<Filter>('unresolved')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [layer, setLayer] = useState<'pins' | 'heatmap'>('pins')
+  const [openPanel, setOpenPanel] = useState<'status' | 'type' | 'layer' | null>(null)
+  const togglePanel = (p: 'status' | 'type' | 'layer') =>
+    setOpenPanel((prev) => (prev === p ? null : p))
 
   useEffect(() => {
     listReportsApiReportsGet()
@@ -107,9 +118,10 @@ export default function MapView() {
   }, [isLoggedIn])
 
   const filteredReports = allReports.filter((r) => {
-    if (filter === 'unresolved') return r.status !== 'cleaned'
-    if (filter === 'resolved') return r.status === 'cleaned'
-    if (filter === 'favourites') return favouriteIds.has(r.id)
+    if (filter === 'unresolved' && r.status === 'cleaned') return false
+    if (filter === 'resolved' && r.status !== 'cleaned') return false
+    if (filter === 'favourites' && !favouriteIds.has(r.id)) return false
+    if (typeFilter !== 'all' && r.report_type !== typeFilter) return false
     return true
   })
 
@@ -121,34 +133,130 @@ export default function MapView() {
         title="Litter Map"
         description="View reported litter on an interactive map of Britain. Find nearby reports and help clean up your area."
       />
-      {/* Filter bar */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex gap-1 bg-white rounded-lg shadow-lg p-1">
-        {visibleFilters.map((f) => (
+      {/* Filter icon stack — top right */}
+      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">
+        {/* Status filter */}
+        <div className="flex flex-col items-end md:flex-row md:items-center gap-2 md:justify-end">
           <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-              filter === f.key ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'
+            onClick={() => togglePanel('status')}
+            className={`w-10 h-10 flex items-center justify-center rounded-lg shadow-lg transition order-first md:order-last ${
+              openPanel === 'status' || filter !== 'unresolved'
+                ? 'bg-brand text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
             }`}
+            title="Status filter"
           >
-            {f.label}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                fillRule="evenodd"
+                d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z"
+                clipRule="evenodd"
+              />
+            </svg>
           </button>
-        ))}
-      </div>
+          {openPanel === 'status' && (
+            <div className="flex flex-col md:flex-row gap-1 bg-white rounded-lg shadow-lg p-1">
+              {visibleFilters.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap ${
+                    filter === f.key ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-      {/* Layer toggle */}
-      <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex gap-1 bg-white rounded-lg shadow-lg p-1">
-        {(['pins', 'heatmap'] as const).map((l) => (
+        {/* Type filter */}
+        <div className="flex flex-col items-end md:flex-row md:items-center gap-2 md:justify-end">
           <button
-            key={l}
-            onClick={() => setLayer(l)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-              layer === l ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'
+            onClick={() => togglePanel('type')}
+            className={`w-10 h-10 flex items-center justify-center rounded-lg shadow-lg transition order-first md:order-last ${
+              openPanel === 'type' || typeFilter !== 'all'
+                ? 'bg-brand text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
             }`}
+            title="Type filter"
           >
-            {l === 'pins' ? 'Pins' : 'Heatmap'}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.5 3A2.5 2.5 0 003 5.5v2.879a2.5 2.5 0 00.732 1.767l6.5 6.5a2.5 2.5 0 003.536 0l2.878-2.878a2.5 2.5 0 000-3.536l-6.5-6.5A2.5 2.5 0 008.38 3H5.5zM6 7a1 1 0 100-2 1 1 0 000 2z"
+                clipRule="evenodd"
+              />
+            </svg>
           </button>
-        ))}
+          {openPanel === 'type' && (
+            <div className="flex flex-col md:flex-row gap-1 bg-white rounded-lg shadow-lg p-1">
+              {TYPE_FILTERS.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setTypeFilter(f.key)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap ${
+                    typeFilter === f.key ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Layer toggle */}
+        <div className="flex flex-col items-end md:flex-row md:items-center gap-2 md:justify-end">
+          <button
+            onClick={() => togglePanel('layer')}
+            className={`w-10 h-10 flex items-center justify-center rounded-lg shadow-lg transition order-first md:order-last ${
+              openPanel === 'layer' || layer !== 'pins'
+                ? 'bg-brand text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+            title="Layer toggle"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-5 h-5"
+            >
+              <path d="M10 1.588l-7.5 4.48L10 10.547l7.5-4.48L10 1.589z" />
+              <path
+                d="M2.5 10.588L10 15.068l7.5-4.48-1.5-.896L10 13.172l-5.5-3.48-2 1.196-.5-.3z"
+                opacity="0.6"
+              />
+            </svg>
+          </button>
+          {openPanel === 'layer' && (
+            <div className="flex flex-col md:flex-row gap-1 bg-white rounded-lg shadow-lg p-1">
+              {(['pins', 'heatmap'] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLayer(l)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap ${
+                    layer === l ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {l === 'pins' ? 'Pins' : 'Heatmap'}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <MapContainer center={UK_CENTER} zoom={6} className="h-full w-full">

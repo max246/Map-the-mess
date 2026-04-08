@@ -48,6 +48,15 @@ export default function CommunityCard({ community, badge, pendingRequests }: Com
                 {BADGE_LABELS[badge]}
               </span>
             )}
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded whitespace-nowrap ${
+                community.visibility === 'public'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              {community.visibility === 'public' ? 'Public' : 'Private'}
+            </span>
             {community.status === 'under_review' && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded whitespace-nowrap">
                 Under review

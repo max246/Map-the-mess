@@ -336,6 +336,12 @@ def _check_city_coordinates(conn):
     assert "city_longitude" in user_cols
 
 
+# 14. d4e5f6a7b8c9 — add report_type to reports
+@_check("d4e5f6a7b8c9")
+def _check_report_type(conn):
+    assert "report_type" in _column_names(conn, "reports")
+
+
 # 12. b2f3a4c5d6e7 — migrate all integer IDs to UUID
 @_check("b2f3a4c5d6e7")
 def _check_uuid_ids(conn):
@@ -361,6 +367,12 @@ def _check_uuid_ids(conn):
     assert er_cols["report_id"]["type"].__class__.__name__.upper() == "UUID"
 
 
+# 14. e5f6a7b8c9d0 — add visibility to communities
+@_check("e5f6a7b8c9d0")
+def _check_visibility(conn):
+    assert "visibility" in _column_names(conn, "communities")
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -379,6 +391,8 @@ MIGRATION_CHAIN = [
     "a1b2c3d4e5f6",
     "b2f3a4c5d6e7",
     "c3d4e5f6a7b8",
+    "d4e5f6a7b8c9",
+    "e5f6a7b8c9d0",
 ]
 
 # ---------------------------------------------------------------------------

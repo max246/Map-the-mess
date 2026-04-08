@@ -78,7 +78,7 @@
           "Reports"
         ],
         "summary": "List Reports",
-        "description": "List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports.",
+        "description": "List all reports, optionally filtered by status and/or report type. Authenticated users with city coordinates get nearby reports.",
         "operationId": "list_reports_api_reports__get",
         "parameters": [
           {
@@ -95,6 +95,22 @@
                 }
               ],
               "title": "Status"
+            }
+          },
+          {
+            "name": "report_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Report Type"
             }
           },
           {
@@ -1742,6 +1758,65 @@
         }
       }
     },
+    "/api/communities/{community_id}/visibility": {
+      "patch": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Update Community Visibility",
+        "description": "Toggle community visibility between public and private. Owner only.",
+        "operationId": "update_community_visibility_api_communities__community_id__visibility_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityVisibilityUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/communities/{community_id}/owner": {
       "patch": {
         "tags": [
@@ -2422,6 +2497,140 @@
         }
       }
     },
+    "/api/communities/{community_id}/members": {
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "List Public Members",
+        "description": "List approved members of a community. Only the community owner or an admin can access.",
+        "operationId": "list_public_members_api_communities__community_id__members_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Community Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MembershipRead"
+                  },
+                  "title": "Response List Public Members Api Communities  Community Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/communities/{community_id}/leaderboard": {
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Community Leaderboard",
+        "description": "Return community members ranked by number of reports cleaned globally. Only members and the owner can access.",
+        "operationId": "community_leaderboard_api_communities__community_id__leaderboard_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "description": "Number of months to look back",
+              "default": 1,
+              "title": "Months"
+            },
+            "description": "Number of months to look back"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "Number of top members to return",
+              "default": 15,
+              "title": "Limit"
+            },
+            "description": "Number of top members to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeaderboardEntry"
+                  },
+                  "title": "Response Community Leaderboard Api Communities  Community Id  Leaderboard Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -2493,6 +2702,10 @@
             "type": "number",
             "title": "Longitude"
           },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type"
+          },
           "description": {
             "type": "string",
             "title": "Description",
@@ -2525,7 +2738,8 @@
         "type": "object",
         "required": [
           "latitude",
-          "longitude"
+          "longitude",
+          "report_type"
         ],
         "title": "Body_create_report_api_reports__post"
       },
@@ -2608,6 +2822,11 @@
               }
             ],
             "title": "Facebook Url"
+          },
+          "visibility": {
+            "type": "string",
+            "title": "Visibility",
+            "default": "private"
           }
         },
         "type": "object",
@@ -2673,6 +2892,10 @@
             "format": "uuid",
             "title": "Owner Id"
           },
+          "visibility": {
+            "type": "string",
+            "title": "Visibility"
+          },
           "status": {
             "type": "string",
             "title": "Status"
@@ -2708,6 +2931,7 @@
           "longitude",
           "radius_km",
           "owner_id",
+          "visibility",
           "status",
           "created_at"
         ],
@@ -2781,6 +3005,10 @@
             "format": "uuid",
             "title": "Owner Id"
           },
+          "visibility": {
+            "type": "string",
+            "title": "Visibility"
+          },
           "status": {
             "type": "string",
             "title": "Status"
@@ -2800,6 +3028,7 @@
           "longitude",
           "radius_km",
           "owner_id",
+          "visibility",
           "status",
           "created_at"
         ],
@@ -2817,6 +3046,19 @@
           "status"
         ],
         "title": "CommunityStatusUpdate"
+      },
+      "CommunityVisibilityUpdate": {
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "title": "Visibility"
+          }
+        },
+        "type": "object",
+        "required": [
+          "visibility"
+        ],
+        "title": "CommunityVisibilityUpdate"
       },
       "EventCreate": {
         "properties": {
@@ -3411,6 +3653,10 @@
             "type": "number",
             "title": "Longitude"
           },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type"
+          },
           "description": {
             "type": "string",
             "title": "Description"
@@ -3496,6 +3742,7 @@
           "id",
           "latitude",
           "longitude",
+          "report_type",
           "description",
           "status",
           "created_at"
