@@ -939,13 +939,13 @@ def list_public_members(
 
     return [
         MembershipRead(
-            id=m.id,
-            community_id=m.community_id,
-            user_id=m.user_id,
-            user_name=users.get(m.user_id, ""),
-            status=m.status.value if hasattr(m.status, "value") else m.status,
-            created_at=m.created_at,
-            updated_at=m.updated_at,
+            id=m.id,  # type: ignore[arg-type]
+            community_id=m.community_id,  # type: ignore[arg-type]
+            user_id=m.user_id,  # type: ignore[arg-type]
+            user_name=users.get(m.user_id, ""),  # type: ignore[arg-type]
+            status=m.status.value if hasattr(m.status, "value") else m.status,  # type: ignore[arg-type]
+            created_at=m.created_at,  # type: ignore[arg-type]
+            updated_at=m.updated_at,  # type: ignore[arg-type]
         )
         for m in memberships
     ]
