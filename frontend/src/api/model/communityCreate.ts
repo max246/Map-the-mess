@@ -13,4 +13,5 @@ export interface CommunityCreate {
   longitude: number;
   radius_km: number;
   facebook_url?: string | null;
+  visibility?: string;
 }

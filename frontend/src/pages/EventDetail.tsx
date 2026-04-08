@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
 import LocateButton from '../components/LocateButton'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import ShareButton from '../components/ShareButton'
 import type { EventRead, ReportRead } from '../api/model'
 
 const {
@@ -129,6 +130,7 @@ export default function EventDetail() {
           {isPast && (
             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Past</span>
           )}
+          <ShareButton title={event.title} />
         </div>
         {isOwner && (
           <div className="flex gap-2">

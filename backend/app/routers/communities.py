@@ -12,7 +12,7 @@ from typing import Optional
 
 from app.config import IMAGES_DIR, SECRET_KEY
 from app.database import get_db
-from app.models.community import Community, CommunityStatus
+from app.models.community import Community, CommunityStatus, CommunityVisibility
 from app.models.community_membership import CommunityMembership, MembershipStatus
 from app.models.community_post import CommunityPost
 from app.models.community_event import CommunityEvent, event_reports
@@ -29,6 +29,7 @@ from app.schemas.community import (
     CommunityDetail,
     CommunityRead,
     CommunityStatusUpdate,
+    CommunityVisibilityUpdate,
     CommunityOwnerUpdate,
     EventCreate,
     EventRead,
@@ -107,7 +108,12 @@ def _is_member_or_owner(community: Community, user: User | None, db: Session) ->
 
 
 def _require_content_access(community: Community, user: User | None, db: Session) -> None:
-    """Raise 403 if the user is not an approved member, owner, or moderator+."""
+    """Raise 403 if the user is not an approved member, owner, or moderator+.
+
+    Public communities allow everyone to view content.
+    """
+    if community.visibility == CommunityVisibility.public:
+        return
     if _is_moderator_or_above(user):
         return
     if not _is_member_or_owner(community, user, db):
@@ -166,6 +172,7 @@ def _community_to_detail(community: Community, show_content: bool = True) -> Com
         longitude=community.longitude,  # type: ignore[arg-type]
         radius_km=community.radius_km,  # type: ignore[arg-type]
         owner_id=community.owner_id,  # type: ignore[arg-type]
+        visibility=community.visibility.value if isinstance(community.visibility, CommunityVisibility) else community.visibility,  # type: ignore[arg-type]
         status=community.status.value if isinstance(community.status, CommunityStatus) else community.status,  # type: ignore[arg-type]
         created_at=community.created_at,  # type: ignore[arg-type]
         posts=[PostRead.model_validate(p) for p in community.posts] if show_content else [],
@@ -189,6 +196,14 @@ def create_community(
     if existing:
         raise HTTPException(status_code=409, detail="A community with this name already exists")
 
+    try:
+        validated_visibility = CommunityVisibility(payload.visibility)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid visibility. Must be one of: {', '.join(v.value for v in CommunityVisibility)}",
+        )
+
     community = Community(
         name=payload.name,
         description=payload.description,
@@ -196,6 +211,7 @@ def create_community(
         longitude=payload.longitude,
         radius_km=payload.radius_km,
         facebook_url=payload.facebook_url,
+        visibility=validated_visibility,
         owner_id=current_user.id,
     )
     db.add(community)
@@ -327,9 +343,12 @@ def get_community(
             if not current_user or community.owner_id != current_user.id:
                 raise HTTPException(status_code=404, detail="Community not found")
 
-    # Posts/events visible only to owner, approved members, or moderator+
-    show_content = _is_moderator_or_above(current_user) or _is_member_or_owner(
-        community, current_user, db
+    # Public communities show content to everyone; private requires membership
+    is_public = community.visibility == CommunityVisibility.public
+    show_content: bool = (
+        bool(is_public)
+        or _is_moderator_or_above(current_user)
+        or _is_member_or_owner(community, current_user, db)
     )
 
     return _community_to_detail(community, show_content=show_content)
@@ -403,6 +422,31 @@ def update_community_status(
         )
 
     community.status = new_status  # type: ignore[assignment]
+    db.commit()
+    db.refresh(community)
+    return community
+
+
+@router.patch("/{community_id}/visibility", response_model=CommunityRead)
+def update_community_visibility(
+    community_id: uuid_mod.UUID,
+    payload: CommunityVisibilityUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Toggle community visibility between public and private. Owner only."""
+    community = _get_community_or_404(community_id, db)
+    _require_owner(community, current_user)
+
+    try:
+        new_visibility = CommunityVisibility(payload.visibility)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid visibility. Must be one of: {', '.join(v.value for v in CommunityVisibility)}",
+        )
+
+    community.visibility = new_visibility  # type: ignore[assignment]
     db.commit()
     db.refresh(community)
     return community

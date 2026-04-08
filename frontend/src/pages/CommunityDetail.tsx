@@ -5,6 +5,7 @@ import { getCommunities } from '../api/endpoints/communities/communities'
 import { useAuth } from '../context/AuthContext'
 import { communityImageUrl } from '../api/client'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import ShareButton from '../components/ShareButton'
 import type {
   CommunityDetail as CommunityDetailType,
   PostRead,
@@ -23,6 +24,7 @@ const {
   leaveCommunityApiCommunitiesCommunityIdLeaveDelete,
   listMembershipsApiCommunitiesCommunityIdMembershipsGet,
   updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,
+  updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,
   updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,
   myCommunitiesApiCommunitiesMineGet,
 } = getCommunities()
@@ -162,6 +164,20 @@ export default function CommunityDetail() {
     }
   }
 
+  // --- Visibility toggle ---
+  const handleVisibilityToggle = async () => {
+    if (!community) return
+    const newVisibility = community.visibility === 'public' ? 'private' : 'public'
+    try {
+      await updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch(communityId, {
+        visibility: newVisibility,
+      })
+      setCommunity((prev) => (prev ? { ...prev, visibility: newVisibility } : prev))
+    } catch {
+      alert('Failed to update visibility')
+    }
+  }
+
   // --- Delete community ---
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this community? This cannot be undone.')) return
@@ -296,11 +312,23 @@ export default function CommunityDetail() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold">{community.name}</h1>
+            <span
+              className={`text-xs px-2 py-0.5 rounded font-medium ${
+                community.visibility === 'public'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {community.visibility === 'public' ? 'Public' : 'Private'}
+            </span>
             {isUnderReview && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
                 Under review
               </span>
             )}
+            <div className="ml-auto">
+              <ShareButton title={community.name} />
+            </div>
           </div>
           {community.description && <p className="text-gray-600 mt-1">{community.description}</p>}
           <div className="flex items-center gap-3 mt-2 text-sm text-gray-400">
@@ -498,6 +526,18 @@ export default function CommunityDetail() {
       {/* Moderator / admin / owner actions */}
       {(canManageUsers || isAdmin || isOwner) && (
         <div className="flex gap-2 mb-6 flex-wrap">
+          {isOwner && (
+            <button
+              onClick={handleVisibilityToggle}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                community.visibility === 'public'
+                  ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  : 'border-green-300 text-green-700 hover:bg-green-50'
+              }`}
+            >
+              {community.visibility === 'public' ? 'Make Private' : 'Make Public'}
+            </button>
+          )}
           {canManageUsers && (
             <button
               onClick={handleStatusToggle}

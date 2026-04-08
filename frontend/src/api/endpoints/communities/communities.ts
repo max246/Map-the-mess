@@ -127,6 +127,21 @@ const updateCommunityStatusApiCommunitiesCommunityIdStatusPatch = (
       );
     }
   /**
+ * Toggle community visibility between public and private. Owner only.
+ * @summary Update Community Visibility
+ */
+const updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch = (
+    communityId: string,
+    communityVisibilityUpdate: { visibility: string },
+ ) => {
+      return customInstance<CommunityRead>(
+      {url: `/api/communities/${communityId}/visibility`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: communityVisibilityUpdate
+    },
+      );
+    }
+  /**
  * Transfer community ownership. Allowed for the current owner or moderator+.
  * @summary Update Community Owner
  */
@@ -294,7 +309,7 @@ const leaveCommunityApiCommunitiesCommunityIdLeaveDelete = (
     },
       );
     }
-  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete}};
+  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete}};
 export type CreateCommunityApiCommunitiesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createCommunityApiCommunitiesPost']>>>
 export type ListCommunitiesApiCommunitiesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listCommunitiesApiCommunitiesGet']>>>
 export type MyCommunitiesApiCommunitiesMineGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['myCommunitiesApiCommunitiesMineGet']>>>

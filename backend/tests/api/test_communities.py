@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from PIL import Image as PILImage
 
-from app.models.community import Community, CommunityStatus
+from app.models.community import Community, CommunityStatus, CommunityVisibility
 from app.models.community_membership import CommunityMembership, MembershipStatus
 from app.models.community_post import CommunityPost
 from app.models.community_event import CommunityEvent, event_reports
@@ -817,6 +817,150 @@ class TestContentVisibility:
         res = client.get(f"/api/communities/{c.id}", headers=auth_header(moderator))
         assert res.status_code == 200
         assert len(res.json()["posts"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Visibility (public/private)
+# ---------------------------------------------------------------------------
+
+
+class TestVisibility:
+    def test_public_community_shows_posts_to_anon(self, client, db, volunteer):
+        c = _create_community(db, volunteer, visibility=CommunityVisibility.public)
+        db.add(CommunityPost(community_id=c.id, content="Public post"))
+        db.commit()
+
+        res = client.get(f"/api/communities/{c.id}")
+        assert res.status_code == 200
+        assert len(res.json()["posts"]) == 1
+
+    def test_public_community_shows_events_to_anon(self, client, db, volunteer):
+        c = _create_community(db, volunteer, visibility=CommunityVisibility.public)
+        db.add(
+            CommunityEvent(
+                community_id=c.id,
+                title="Public event",
+                date=datetime(2026, 5, 1, 10, 0, tzinfo=timezone.utc),
+                meeting_latitude=UK_LAT,
+                meeting_longitude=UK_LON,
+            )
+        )
+        db.commit()
+
+        res = client.get(f"/api/communities/{c.id}")
+        assert res.status_code == 200
+        assert len(res.json()["events"]) == 1
+
+    def test_private_community_hides_posts_from_anon(self, client, db, volunteer):
+        c = _create_community(db, volunteer, visibility=CommunityVisibility.private)
+        db.add(CommunityPost(community_id=c.id, content="Private post"))
+        db.commit()
+
+        res = client.get(f"/api/communities/{c.id}")
+        assert res.status_code == 200
+        assert res.json()["posts"] == []
+
+    def test_anon_can_view_public_event(self, client, db, volunteer):
+        c = _create_community(db, volunteer, visibility=CommunityVisibility.public)
+        db.add(
+            CommunityEvent(
+                community_id=c.id,
+                title="Viewable",
+                date=datetime(2026, 5, 1, 10, 0, tzinfo=timezone.utc),
+                meeting_latitude=UK_LAT,
+                meeting_longitude=UK_LON,
+            )
+        )
+        db.commit()
+        event = db.query(CommunityEvent).filter(CommunityEvent.community_id == c.id).first()
+
+        res = client.get(f"/api/communities/{c.id}/events/{event.id}")
+        assert res.status_code == 200
+
+    def test_anon_cannot_view_private_event(self, client, db, volunteer):
+        c = _create_community(db, volunteer, visibility=CommunityVisibility.private)
+        db.add(
+            CommunityEvent(
+                community_id=c.id,
+                title="Hidden",
+                date=datetime(2026, 5, 1, 10, 0, tzinfo=timezone.utc),
+                meeting_latitude=UK_LAT,
+                meeting_longitude=UK_LON,
+            )
+        )
+        db.commit()
+        event = db.query(CommunityEvent).filter(CommunityEvent.community_id == c.id).first()
+
+        res = client.get(f"/api/communities/{c.id}/events/{event.id}")
+        assert res.status_code == 403
+
+    def test_owner_toggles_visibility(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        assert c.visibility == CommunityVisibility.private
+
+        res = client.patch(
+            f"/api/communities/{c.id}/visibility",
+            json={"visibility": "public"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["visibility"] == "public"
+
+        res = client.patch(
+            f"/api/communities/{c.id}/visibility",
+            json={"visibility": "private"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["visibility"] == "private"
+
+    def test_non_owner_cannot_toggle_visibility(self, client, db, volunteer):
+        other = _make_user(db, email="vis_other@example.com")
+        c = _create_community(db, volunteer)
+        res = client.patch(
+            f"/api/communities/{c.id}/visibility",
+            json={"visibility": "public"},
+            headers=auth_header(other),
+        )
+        assert res.status_code == 403
+
+    def test_invalid_visibility_rejected(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        res = client.patch(
+            f"/api/communities/{c.id}/visibility",
+            json={"visibility": "invalid"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 400
+
+    def test_create_with_visibility(self, client, db, volunteer):
+        res = client.post(
+            "/api/communities/",
+            json={
+                "name": "Public Group",
+                "latitude": UK_LAT,
+                "longitude": UK_LON,
+                "radius_km": 5.0,
+                "visibility": "public",
+            },
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 201
+        assert res.json()["visibility"] == "public"
+
+    def test_create_defaults_to_private(self, client, db, volunteer):
+        res = client.post(
+            "/api/communities/",
+            json={
+                "name": "Default Vis",
+                "latitude": UK_LAT,
+                "longitude": UK_LON,
+                "radius_km": 5.0,
+            },
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 201
+        assert res.json()["visibility"] == "private"
 
 
 # ---------------------------------------------------------------------------
