@@ -82,15 +82,17 @@ test.describe('Map View', () => {
   test('defaults to Unresolved filter', async ({ page }) => {
     await page.goto('/map')
 
+    // Expand status panel
+    await page.getByTitle('Status filter').click()
     const unresolvedBtn = page.getByRole('button', { name: 'Unresolved' })
     await expect(unresolvedBtn).toBeVisible()
-    // Active filter has brand background class
     await expect(unresolvedBtn).toHaveClass(/bg-brand/)
   })
 
   test('shows filter buttons (All, Unresolved, Resolved)', async ({ page }) => {
     await page.goto('/map')
 
+    await page.getByTitle('Status filter').click()
     await expect(page.getByRole('button', { name: 'All' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Unresolved' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Resolved', exact: true })).toBeVisible()
@@ -99,6 +101,7 @@ test.describe('Map View', () => {
   test('shows layer toggle buttons (Pins, Heatmap)', async ({ page }) => {
     await page.goto('/map')
 
+    await page.getByTitle('Layer toggle').click()
     await expect(page.getByRole('button', { name: 'Pins' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Heatmap' })).toBeVisible()
   })
@@ -106,12 +109,15 @@ test.describe('Map View', () => {
   test('Pins layer is active by default', async ({ page }) => {
     await page.goto('/map')
 
+    await page.getByTitle('Layer toggle').click()
     const pinsBtn = page.getByRole('button', { name: 'Pins' })
     await expect(pinsBtn).toHaveClass(/bg-brand/)
   })
 
   test('can switch between All and Unresolved filters', async ({ page }) => {
     await page.goto('/map')
+
+    await page.getByTitle('Status filter').click()
 
     // Default is Unresolved
     await expect(page.getByRole('button', { name: 'Unresolved' })).toHaveClass(/bg-brand/)
@@ -125,6 +131,7 @@ test.describe('Map View', () => {
   test('can switch to Heatmap layer', async ({ page }) => {
     await page.goto('/map')
 
+    await page.getByTitle('Layer toggle').click()
     await page.getByRole('button', { name: 'Heatmap' }).click()
     await expect(page.getByRole('button', { name: 'Heatmap' })).toHaveClass(/bg-brand/)
     await expect(page.getByRole('button', { name: 'Pins' })).not.toHaveClass(/bg-brand/)
@@ -133,6 +140,7 @@ test.describe('Map View', () => {
   test('can switch back to Pins layer from Heatmap', async ({ page }) => {
     await page.goto('/map')
 
+    await page.getByTitle('Layer toggle').click()
     await page.getByRole('button', { name: 'Heatmap' }).click()
     await expect(page.getByRole('button', { name: 'Heatmap' })).toHaveClass(/bg-brand/)
 
@@ -143,14 +151,17 @@ test.describe('Map View', () => {
   test('filter persists when switching layers', async ({ page }) => {
     await page.goto('/map')
 
-    // Switch to Resolved filter
+    // Expand status panel and switch to Resolved filter
+    await page.getByTitle('Status filter').click()
     await page.getByRole('button', { name: 'Resolved', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Resolved', exact: true })).toHaveClass(/bg-brand/)
 
-    // Switch to Heatmap
+    // Expand layer panel and switch to Heatmap
+    await page.getByTitle('Layer toggle').click()
     await page.getByRole('button', { name: 'Heatmap' }).click()
 
-    // Resolved filter should still be active
+    // Re-expand status panel — Resolved filter should still be active
+    await page.getByTitle('Status filter').click()
     await expect(page.getByRole('button', { name: 'Resolved', exact: true })).toHaveClass(/bg-brand/)
   })
 })
