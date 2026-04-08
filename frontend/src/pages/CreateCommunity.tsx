@@ -18,6 +18,7 @@ export default function CreateCommunity() {
   const [facebookUrl, setFacebookUrl] = useState('')
   const [position, setPosition] = useState(UK_CENTER)
   const [radiusKm, setRadiusKm] = useState(5)
+  const [visibility, setVisibility] = useState('private')
   const [image, setImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -61,6 +62,7 @@ export default function CreateCommunity() {
         longitude: position.lng,
         radius_km: radiusKm,
         facebook_url: facebookUrl.trim() || undefined,
+        visibility,
       })
       if (image) {
         await uploadProfileImageApiCommunitiesCommunityIdImagePut(community.id, { file: image })
@@ -166,6 +168,50 @@ export default function CreateCommunity() {
             placeholder="https://facebook.com/..."
           />
         </div>
+
+        <fieldset>
+          <legend className="block text-sm font-medium mb-1">Visibility</legend>
+          <div className="flex gap-3">
+            <label
+              className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-lg py-3 px-4 cursor-pointer transition text-sm ${
+                visibility === 'private'
+                  ? 'border-brand bg-brand/5 text-brand font-semibold'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                name="visibility"
+                value="private"
+                checked={visibility === 'private'}
+                onChange={(e) => setVisibility(e.target.value)}
+                className="sr-only"
+              />
+              Private
+            </label>
+            <label
+              className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-lg py-3 px-4 cursor-pointer transition text-sm ${
+                visibility === 'public'
+                  ? 'border-brand bg-brand/5 text-brand font-semibold'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                name="visibility"
+                value="public"
+                checked={visibility === 'public'}
+                onChange={(e) => setVisibility(e.target.value)}
+                className="sr-only"
+              />
+              Public
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Public communities show posts and events to everyone. Private communities require
+            membership.
+          </p>
+        </fieldset>
 
         <div>
           <label className="block text-sm font-medium mb-1">Location & coverage area</label>

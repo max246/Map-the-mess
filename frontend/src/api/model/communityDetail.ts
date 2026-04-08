@@ -18,6 +18,7 @@ export interface CommunityDetail {
   longitude: number;
   radius_km: number;
   owner_id: string;
+  visibility: string;
   status: string;
   created_at: string;
   posts?: PostRead[];

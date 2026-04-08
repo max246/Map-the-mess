@@ -18,6 +18,7 @@ class CommunityCreate(BaseModel):
     longitude: float
     radius_km: float
     facebook_url: Optional[str] = None
+    visibility: str = "private"
 
 
 class CommunityRead(BaseModel):
@@ -30,6 +31,7 @@ class CommunityRead(BaseModel):
     longitude: float
     radius_km: float
     owner_id: uuid.UUID
+    visibility: str
     status: str
     created_at: datetime
 
@@ -38,6 +40,10 @@ class CommunityRead(BaseModel):
 
 class CommunityStatusUpdate(BaseModel):
     status: str
+
+
+class CommunityVisibilityUpdate(BaseModel):
+    visibility: str
 
 
 class CommunityOwnerUpdate(BaseModel):

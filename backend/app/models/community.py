@@ -10,6 +10,11 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 
 
+class CommunityVisibility(str, enum.Enum):
+    public = "public"
+    private = "private"
+
+
 class CommunityStatus(str, enum.Enum):
     active = "active"
     under_review = "under_review"
@@ -27,6 +32,7 @@ class Community(Base):
     longitude = Column(Float, nullable=False)
     radius_km = Column(Float, nullable=False)
     owner_id = Column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    visibility: Column[CommunityVisibility] = Column(Enum(CommunityVisibility), default=CommunityVisibility.private, nullable=False)  # type: ignore[assignment]
     status: Column[CommunityStatus] = Column(Enum(CommunityStatus), default=CommunityStatus.active, nullable=False)  # type: ignore[assignment]
     created_at = Column(DateTime, default=datetime.utcnow)
 
