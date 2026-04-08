@@ -9,6 +9,11 @@ import enum
 from app.database import Base
 
 
+class ReportType(str, enum.Enum):
+    litter = "litter"
+    gas_canister = "gas_canister"
+
+
 class ReportStatus(str, enum.Enum):
     pending = "pending"
     cleaned = "cleaned"
@@ -20,6 +25,7 @@ class Report(Base):
     id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
+    report_type = Column(Enum(ReportType), nullable=False, default=ReportType.litter)
     description = Column(String, default="")
     what3words = Column(String, nullable=True)
     address = Column(String, nullable=True)

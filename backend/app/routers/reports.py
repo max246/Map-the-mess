@@ -19,7 +19,7 @@ from app.config import SECRET_KEY, IMAGES_DIR
 
 logger = logging.getLogger(__name__)
 from app.database import get_db
-from app.models.report import Report, ReportStatus
+from app.models.report import Report, ReportStatus, ReportType
 from app.models.report_image import ReportImage, ImageType
 from app.models.user import User
 from app.routers.auth import ALGORITHM, get_current_user, require_moderator_or_admin
@@ -60,6 +60,16 @@ def _reverse_geocode(lat: float, lon: float) -> str | None:
     except Exception:
         logger.warning("Reverse geocode failed for %s, %s", lat, lon)
         return None
+
+
+def _validate_report_type(raw: str) -> ReportType:
+    try:
+        return ReportType(raw)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid report_type. Must be one of: {', '.join(t.value for t in ReportType)}",
+        )
 
 
 def _validate_image_type(raw: str) -> ImageType:
@@ -142,6 +152,9 @@ def export_reports(
             "id": str(r.id),
             "latitude": r.latitude,
             "longitude": r.longitude,
+            "report_type": (
+                r.report_type.value if hasattr(r.report_type, "value") else r.report_type
+            ),
             "description": r.description,
             "what3words": r.what3words,
             "address": r.address,
@@ -161,13 +174,17 @@ def export_reports(
 def list_reports(
     request: Request,
     status: str | None = None,
+    report_type: str | None = None,
     radius_km: float = 30.0,
     db: Session = Depends(get_db),
 ):
-    """List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports."""
+    """List all reports, optionally filtered by status and/or report type. Authenticated users with city coordinates get nearby reports."""
     q = db.query(Report)
     if status:
         q = q.filter(Report.status == status)
+    if report_type:
+        validated_type = _validate_report_type(report_type)
+        q = q.filter(Report.report_type == validated_type)
 
     user = _get_optional_user(request, db)
     if (
@@ -205,6 +222,7 @@ def get_report(report_id: uuid.UUID, db: Session = Depends(get_db)):
 def create_report(
     latitude: float = Form(...),
     longitude: float = Form(...),
+    report_type: str = Form(...),
     description: str = Form(""),
     what3words: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
@@ -212,6 +230,8 @@ def create_report(
     current_user: User | None = Depends(_get_optional_user),
 ):
     """Create a new litter report with an optional image. Use POST /{report_id}/images for additional images."""
+    validated_report_type = _validate_report_type(report_type)
+
     if not (UK_LAT_MIN <= latitude <= UK_LAT_MAX and UK_LON_MIN <= longitude <= UK_LON_MAX):
         raise HTTPException(status_code=400, detail="Coordinates must be within the UK")
 
@@ -219,6 +239,7 @@ def create_report(
     report = Report(
         latitude=latitude,
         longitude=longitude,
+        report_type=validated_report_type,
         description=description,
         what3words=what3words,
         address=address,

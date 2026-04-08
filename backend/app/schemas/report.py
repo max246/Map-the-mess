@@ -20,6 +20,7 @@ class ReportImageRead(BaseModel):
 class ReportCreate(BaseModel):
     latitude: float
     longitude: float
+    report_type: str = "litter"
     description: str = ""
     what3words: Optional[str] = None
 
@@ -28,6 +29,7 @@ class ReportRead(BaseModel):
     id: uuid.UUID
     latitude: float
     longitude: float
+    report_type: str
     description: str
     what3words: Optional[str] = None
     address: Optional[str] = None

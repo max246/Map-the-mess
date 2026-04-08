@@ -94,8 +94,24 @@ export default function ReportPopup({ report }: ReportPopupProps) {
           </div>
         )}
 
+        {/* Type badge */}
+        <span
+          style={{
+            display: 'inline-block',
+            fontSize: '11px',
+            fontWeight: 600,
+            padding: '2px 6px',
+            borderRadius: '4px',
+            backgroundColor: report.report_type === 'gas_canister' ? '#fef3c7' : '#e0e7ff',
+            color: report.report_type === 'gas_canister' ? '#92400e' : '#3730a3',
+            marginBottom: '4px',
+          }}
+        >
+          {report.report_type === 'gas_canister' ? 'Gas Canister' : 'Litter'}
+        </span>
+
         {/* Status + description */}
-        <strong style={{ fontSize: '14px' }}>
+        <strong style={{ fontSize: '14px', display: 'block' }}>
           {report.status === 'cleaned' ? '✅' : '🔴'} {report.description || 'No description'}
         </strong>
 

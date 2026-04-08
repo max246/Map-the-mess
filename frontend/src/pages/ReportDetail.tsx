@@ -464,6 +464,13 @@ export default function ReportDetail() {
           </div>
 
           <div>
+            <span className="text-gray-500">Type</span>
+            <p className="font-medium">
+              {report.report_type === 'gas_canister' ? 'Gas Canister' : 'Litter'}
+            </p>
+          </div>
+
+          <div>
             <span className="text-gray-500">Description</span>
             <p>{report.description || 'No description provided'}</p>
           </div>

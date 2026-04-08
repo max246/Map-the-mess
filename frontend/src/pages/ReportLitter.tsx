@@ -7,6 +7,7 @@ import type { W3WSuggestion } from '../api/w3w'
 import api from '../api/client'
 
 export default function ReportLitter() {
+  const [reportType, setReportType] = useState('litter')
   const [description, setDescription] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
@@ -99,6 +100,10 @@ export default function ReportLitter() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (!reportType) {
+      alert('Please select a report type.')
+      return
+    }
     if (!location) {
       alert('Please share your location before submitting.')
       return
@@ -116,6 +121,7 @@ export default function ReportLitter() {
       const formData = new FormData()
       formData.append('latitude', location.lat.toString())
       formData.append('longitude', location.lng.toString())
+      formData.append('report_type', reportType)
       formData.append('description', description)
       if (words) formData.append('what3words', words)
       if (photos[0]) formData.append('image', photos[0])
@@ -167,6 +173,7 @@ export default function ReportLitter() {
           <button
             onClick={() => {
               setSubmittedReportId(null)
+              setReportType('litter')
               setDescription('')
               setPhotos([])
               setPhotoPreviews([])
@@ -240,6 +247,48 @@ export default function ReportLitter() {
             </div>
           )}
         </div>
+
+        <fieldset className="flex flex-col gap-1">
+          <legend className="font-medium">
+            Type <span className="text-red-500">*</span>
+          </legend>
+          <div className="flex gap-3">
+            <label
+              className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-lg py-3 px-4 cursor-pointer transition ${
+                reportType === 'litter'
+                  ? 'border-brand bg-brand/5 text-brand font-semibold'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                name="report_type"
+                value="litter"
+                checked={reportType === 'litter'}
+                onChange={(e) => setReportType(e.target.value)}
+                className="sr-only"
+              />
+              Litter
+            </label>
+            <label
+              className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-lg py-3 px-4 cursor-pointer transition ${
+                reportType === 'gas_canister'
+                  ? 'border-brand bg-brand/5 text-brand font-semibold'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                name="report_type"
+                value="gas_canister"
+                checked={reportType === 'gas_canister'}
+                onChange={(e) => setReportType(e.target.value)}
+                className="sr-only"
+              />
+              Gas Canister
+            </label>
+          </div>
+        </fieldset>
 
         <label className="flex flex-col gap-1">
           <span className="font-medium">Description</span>

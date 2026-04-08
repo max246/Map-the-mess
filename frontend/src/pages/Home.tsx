@@ -17,7 +17,10 @@ export default function Home() {
   const [topVolunteers, setTopVolunteers] = useState<LeaderboardEntry[]>([])
 
   useEffect(() => {
-    Promise.all([listReportsApiReportsGet(), volunteerCountApiVolunteersCountGet()])
+    Promise.all([
+      listReportsApiReportsGet({ report_type: 'litter' }),
+      volunteerCountApiVolunteersCountGet(),
+    ])
       .then(([reportsData, countData]) => {
         setReports(reportsData)
         setStats({
