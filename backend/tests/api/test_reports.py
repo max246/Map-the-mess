@@ -2,7 +2,7 @@
 
 import io
 
-from app.models.report import Report, ReportStatus
+from app.models.report import Report, ReportStatus, ReportType
 from app.models.report_image import ReportImage, ImageType
 
 from tests.api.conftest import auth_header, _make_user
@@ -14,7 +14,9 @@ UK_LON = -0.1
 
 def _create_report(db, **overrides) -> Report:
     """Insert a report directly into the DB."""
-    defaults = dict(latitude=UK_LAT, longitude=UK_LON, description="litter")
+    defaults = dict(
+        latitude=UK_LAT, longitude=UK_LON, report_type=ReportType.litter, description="litter"
+    )
     defaults.update(overrides)
     report = Report(**defaults)
     db.add(report)
@@ -92,6 +94,7 @@ class TestExportReports:
             "id",
             "latitude",
             "longitude",
+            "report_type",
             "description",
             "what3words",
             "address",
@@ -118,7 +121,12 @@ class TestCreateReport:
     def test_create_without_auth(self, client, db):
         res = client.post(
             "/api/reports/",
-            data={"latitude": UK_LAT, "longitude": UK_LON, "description": "mess"},
+            data={
+                "latitude": UK_LAT,
+                "longitude": UK_LON,
+                "report_type": "litter",
+                "description": "mess",
+            },
         )
         assert res.status_code == 201
         data = res.json()
@@ -129,7 +137,12 @@ class TestCreateReport:
     def test_create_with_auth(self, client, db, volunteer):
         res = client.post(
             "/api/reports/",
-            data={"latitude": UK_LAT, "longitude": UK_LON, "description": "mess"},
+            data={
+                "latitude": UK_LAT,
+                "longitude": UK_LON,
+                "report_type": "litter",
+                "description": "mess",
+            },
             headers=auth_header(volunteer),
         )
         assert res.status_code == 201
@@ -138,7 +151,12 @@ class TestCreateReport:
     def test_create_with_image(self, client, db):
         res = client.post(
             "/api/reports/",
-            data={"latitude": UK_LAT, "longitude": UK_LON, "description": "with img"},
+            data={
+                "latitude": UK_LAT,
+                "longitude": UK_LON,
+                "report_type": "litter",
+                "description": "with img",
+            },
             files={"image": ("test.jpg", _make_image_buf(), "image/jpeg")},
         )
         assert res.status_code == 201
@@ -147,7 +165,12 @@ class TestCreateReport:
     def test_create_outside_uk(self, client, db):
         res = client.post(
             "/api/reports/",
-            data={"latitude": 40.0, "longitude": -74.0, "description": "NYC"},
+            data={
+                "latitude": 40.0,
+                "longitude": -74.0,
+                "report_type": "litter",
+                "description": "NYC",
+            },
         )
         assert res.status_code == 400
         assert "UK" in res.json()["detail"]
@@ -158,6 +181,7 @@ class TestCreateReport:
             data={
                 "latitude": UK_LAT,
                 "longitude": UK_LON,
+                "report_type": "litter",
                 "description": "w3w",
                 "what3words": "filled.count.soap",
             },

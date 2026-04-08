@@ -9,6 +9,7 @@
 export interface BodyCreateReportApiReportsPost {
   latitude: number;
   longitude: number;
+  report_type: string;
   description?: string;
   what3words?: string | null;
   image?: Blob | null;

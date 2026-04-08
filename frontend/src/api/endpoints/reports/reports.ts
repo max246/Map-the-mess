@@ -43,7 +43,7 @@ const exportReportsApiReportsExportGet = (
       );
     }
   /**
- * List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports.
+ * List all reports, optionally filtered by status and/or report type. Authenticated users with city coordinates get nearby reports.
  * @summary List Reports
  */
 const listReportsApiReportsGet = (
@@ -64,6 +64,7 @@ const createReportApiReportsPost = (
  ) => {const formData = new FormData();
 formData.append(`latitude`, bodyCreateReportApiReportsPost.latitude.toString())
 formData.append(`longitude`, bodyCreateReportApiReportsPost.longitude.toString())
+formData.append(`report_type`, bodyCreateReportApiReportsPost.report_type);
 if(bodyCreateReportApiReportsPost.description !== undefined) {
  formData.append(`description`, bodyCreateReportApiReportsPost.description);
  }

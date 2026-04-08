@@ -78,7 +78,7 @@
           "Reports"
         ],
         "summary": "List Reports",
-        "description": "List all reports, optionally filtered by status. Authenticated users with city coordinates get nearby reports.",
+        "description": "List all reports, optionally filtered by status and/or report type. Authenticated users with city coordinates get nearby reports.",
         "operationId": "list_reports_api_reports__get",
         "parameters": [
           {
@@ -95,6 +95,22 @@
                 }
               ],
               "title": "Status"
+            }
+          },
+          {
+            "name": "report_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Report Type"
             }
           },
           {
@@ -2493,6 +2509,10 @@
             "type": "number",
             "title": "Longitude"
           },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type"
+          },
           "description": {
             "type": "string",
             "title": "Description",
@@ -2525,7 +2545,8 @@
         "type": "object",
         "required": [
           "latitude",
-          "longitude"
+          "longitude",
+          "report_type"
         ],
         "title": "Body_create_report_api_reports__post"
       },
@@ -3411,6 +3432,10 @@
             "type": "number",
             "title": "Longitude"
           },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type"
+          },
           "description": {
             "type": "string",
             "title": "Description"
@@ -3496,6 +3521,7 @@
           "id",
           "latitude",
           "longitude",
+          "report_type",
           "description",
           "status",
           "created_at"

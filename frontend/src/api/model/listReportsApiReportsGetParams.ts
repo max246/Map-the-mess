@@ -8,5 +8,6 @@
 
 export type ListReportsApiReportsGetParams = {
 status?: string | null;
+report_type?: string | null;
 radius_km?: number;
 };

@@ -11,6 +11,7 @@ export interface ReportRead {
   id: string;
   latitude: number;
   longitude: number;
+  report_type: string;
   description: string;
   what3words?: string | null;
   address?: string | null;
