@@ -153,15 +153,19 @@ describe('MapView', () => {
     expect(screen.getByTestId('map-container')).toBeInTheDocument()
   })
 
-  it('shows filter buttons', () => {
+  it('shows filter buttons after expanding status panel', async () => {
+    const user = userEvent.setup()
     renderMapView()
+    await user.click(screen.getByTitle('Status filter'))
     expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Unresolved' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Resolved' })).toBeInTheDocument()
   })
 
-  it('does not show Favourites filter when logged out', () => {
+  it('does not show Favourites filter when logged out', async () => {
+    const user = userEvent.setup()
     renderMapView()
+    await user.click(screen.getByTitle('Status filter'))
     expect(screen.queryByRole('button', { name: 'Favourites' })).not.toBeInTheDocument()
   })
 
@@ -185,6 +189,7 @@ describe('MapView', () => {
       expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
+    await user.click(screen.getByTitle('Status filter'))
     await user.click(screen.getByRole('button', { name: 'All' }))
 
     await waitFor(() => {
@@ -200,6 +205,7 @@ describe('MapView', () => {
       expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
+    await user.click(screen.getByTitle('Status filter'))
     await user.click(screen.getByRole('button', { name: 'Resolved' }))
 
     await waitFor(() => {
@@ -216,6 +222,7 @@ describe('MapView', () => {
       expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
+    await user.click(screen.getByTitle('Status filter'))
     await user.click(screen.getByRole('button', { name: 'All' }))
     await waitFor(() => {
       expect(screen.getAllByTestId('marker')).toHaveLength(3)
@@ -290,8 +297,10 @@ describe('MapView', () => {
 
   /* ── Layer toggle ───────────────────────────────── */
 
-  it('shows Pins and Heatmap layer buttons', () => {
+  it('shows Pins and Heatmap layer buttons after expanding layer panel', async () => {
+    const user = userEvent.setup()
     renderMapView()
+    await user.click(screen.getByTitle('Layer toggle'))
     expect(screen.getByRole('button', { name: 'Pins' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Heatmap' })).toBeInTheDocument()
   })
@@ -311,6 +320,7 @@ describe('MapView', () => {
       expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
+    await user.click(screen.getByTitle('Layer toggle'))
     await user.click(screen.getByRole('button', { name: 'Heatmap' }))
 
     await waitFor(() => {
@@ -327,6 +337,7 @@ describe('MapView', () => {
       expect(screen.getAllByTestId('marker')).toHaveLength(2)
     })
 
+    await user.click(screen.getByTitle('Layer toggle'))
     await user.click(screen.getByRole('button', { name: 'Heatmap' }))
     await waitFor(() => {
       expect(screen.queryByTestId('cluster-group')).not.toBeInTheDocument()
