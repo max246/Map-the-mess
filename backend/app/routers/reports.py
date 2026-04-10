@@ -15,7 +15,7 @@ from typing import List, Optional
 import httpx
 import logging
 
-from app.config import SECRET_KEY, IMAGES_DIR
+from app.config import SECRET_KEY, IMAGES_DIR, IMAGES_DIR_REPORTS
 
 logger = logging.getLogger(__name__)
 from app.database import get_db
@@ -35,7 +35,7 @@ THUMBNAIL_SIZE = (400, 400)
 UK_LAT_MIN, UK_LAT_MAX = 49.9, 60.9
 UK_LON_MIN, UK_LON_MAX = -8.2, 1.8
 
-os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR_REPORTS, exist_ok=True)
 
 
 def _reverse_geocode(lat: float, lon: float) -> str | None:
@@ -104,13 +104,15 @@ def _save_upload(file: UploadFile) -> tuple[str, str]:
     full.thumbnail(MAX_IMAGE_SIZE, Image.Resampling.LANCZOS)
     base = uuid.uuid4().hex
     filename = f"{base}.jpg"
-    full.save(os.path.join(IMAGES_DIR, filename), format="JPEG", quality=85, optimize=True)
+    full.save(os.path.join(IMAGES_DIR_REPORTS, filename), format="JPEG", quality=85, optimize=True)
 
     # Thumbnail
     thumb = img.copy()
     thumb.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
     thumb_filename = f"{base}_thumb.jpg"
-    thumb.save(os.path.join(IMAGES_DIR, thumb_filename), format="JPEG", quality=80, optimize=True)
+    thumb.save(
+        os.path.join(IMAGES_DIR_REPORTS, thumb_filename), format="JPEG", quality=80, optimize=True
+    )
 
     return filename, thumb_filename
 
@@ -131,10 +133,19 @@ def _get_optional_user(request: Request, db: Session = Depends(get_db)) -> User 
     return db.query(User).filter(User.email == email).first()
 
 
+def _resolve_image_path(filename: str) -> str:
+    """Resolve the full filesystem path for an image based on its filename prefix."""
+    if filename.startswith("avatar_"):
+        return os.path.join(IMAGES_DIR, "avatars", filename)
+    if filename.startswith("community_"):
+        return os.path.join(IMAGES_DIR, "communities", filename)
+    return os.path.join(IMAGES_DIR_REPORTS, filename)
+
+
 @router.get("/images/{filename}")
 def serve_image(filename: str):
     """Serve an uploaded image by filename."""
-    path = os.path.join(IMAGES_DIR, filename)
+    path = _resolve_image_path(filename)
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(path)
@@ -342,7 +353,7 @@ def delete_image(
     # Remove files from disk
     for fname in (image.url, image.thumbnail_url):
         if fname:
-            path = os.path.join(IMAGES_DIR, fname)
+            path = _resolve_image_path(fname)
             if os.path.isfile(path):
                 os.remove(path)
 
