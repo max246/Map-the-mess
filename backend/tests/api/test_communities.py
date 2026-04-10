@@ -572,6 +572,189 @@ class TestEvents:
 
 
 # ---------------------------------------------------------------------------
+# Event attendance
+# ---------------------------------------------------------------------------
+
+
+class TestEventAttendance:
+    """Tests for POST/DELETE /{community_id}/events/{event_id}/attend"""
+
+    def _create_event_via_api(self, client, community, owner):
+        res = client.post(
+            f"/api/communities/{community.id}/events",
+            json={
+                "title": "Cleanup day",
+                "date": "2026-04-15T10:00:00",
+                "meeting_latitude": UK_LAT,
+                "meeting_longitude": UK_LON,
+            },
+            headers=auth_header(owner),
+        )
+        assert res.status_code == 201
+        return res.json()["id"]
+
+    def test_owner_can_attend(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        res = client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["is_attending"] is True
+        assert res.json()["attendee_count"] == 1
+
+    def test_approved_member_can_attend(self, client, db, volunteer):
+        member = _make_user(db, email="attendee@example.com")
+        c = _create_community(db, volunteer)
+        db.add(
+            CommunityMembership(
+                community_id=c.id, user_id=member.id, status=MembershipStatus.approved
+            )
+        )
+        db.commit()
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        res = client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(member),
+        )
+        assert res.status_code == 200
+        assert res.json()["is_attending"] is True
+        assert res.json()["attendee_count"] == 1
+
+    def test_non_member_cannot_attend(self, client, db, volunteer):
+        outsider = _make_user(db, email="outsider@example.com")
+        c = _create_community(db, volunteer)
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        res = client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(outsider),
+        )
+        assert res.status_code == 403
+
+    def test_pending_member_cannot_attend(self, client, db, volunteer):
+        pending = _make_user(db, email="pending@example.com")
+        c = _create_community(db, volunteer)
+        db.add(
+            CommunityMembership(
+                community_id=c.id, user_id=pending.id, status=MembershipStatus.pending
+            )
+        )
+        db.commit()
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        res = client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(pending),
+        )
+        assert res.status_code == 403
+
+    def test_unauthenticated_cannot_attend(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        res = client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+        )
+        assert res.status_code == 401
+
+    def test_cannot_attend_twice(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        res = client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 409
+
+    def test_unattend(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        res = client.delete(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["is_attending"] is False
+        assert res.json()["attendee_count"] == 0
+
+    def test_unattend_without_attending(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        res = client.delete(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 404
+
+    def test_attend_nonexistent_event(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        fake_id = "00000000-0000-0000-0000-000000000000"
+
+        res = client.post(
+            f"/api/communities/{c.id}/events/{fake_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 404
+
+    def test_attendee_count_multiple_users(self, client, db, volunteer):
+        member = _make_user(db, email="member2@example.com")
+        c = _create_community(db, volunteer)
+        db.add(
+            CommunityMembership(
+                community_id=c.id, user_id=member.id, status=MembershipStatus.approved
+            )
+        )
+        db.commit()
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(volunteer),
+        )
+        client.post(
+            f"/api/communities/{c.id}/events/{event_id}/attend",
+            headers=auth_header(member),
+        )
+
+        res = client.get(
+            f"/api/communities/{c.id}/events/{event_id}",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["attendee_count"] == 2
+        assert res.json()["is_attending"] is True
+
+    def test_event_read_includes_attendance_fields(self, client, db, volunteer):
+        c = _create_community(db, volunteer)
+        event_id = self._create_event_via_api(client, c, volunteer)
+
+        res = client.get(
+            f"/api/communities/{c.id}/events/{event_id}",
+            headers=auth_header(volunteer),
+        )
+        data = res.json()
+        assert "attendee_count" in data
+        assert "is_attending" in data
+        assert data["attendee_count"] == 0
+        assert data["is_attending"] is False
+
+
+# ---------------------------------------------------------------------------
 # Profile image
 # ---------------------------------------------------------------------------
 

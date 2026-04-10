@@ -261,6 +261,32 @@ const deleteEventApiCommunitiesCommunityIdEventsEventIdDelete = (
       );
     }
   /**
+ * Mark current user as attending an event. Must be a community member or owner.
+ * @summary Attend Event
+ */
+const attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost = (
+    communityId: string,
+    eventId: string,
+ ) => {
+      return customInstance<EventRead>(
+      {url: `/api/communities/${communityId}/events/${eventId}/attend`, method: 'POST'
+    },
+      );
+    }
+  /**
+ * Remove current user's attendance from an event.
+ * @summary Unattend Event
+ */
+const unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete = (
+    communityId: string,
+    eventId: string,
+ ) => {
+      return customInstance<EventRead>(
+      {url: `/api/communities/${communityId}/events/${eventId}/attend`, method: 'DELETE'
+    },
+      );
+    }
+  /**
  * Request to join a community. Status starts as pending until owner approves.
  * @summary Join Community
  */
@@ -338,7 +364,7 @@ const communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet = (
     },
       );
     }
-  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete,listPublicMembersApiCommunitiesCommunityIdMembersGet,communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet}};
+  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost,unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete,listPublicMembersApiCommunitiesCommunityIdMembersGet,communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet}};
 export type CreateCommunityApiCommunitiesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createCommunityApiCommunitiesPost']>>>
 export type ListCommunitiesApiCommunitiesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listCommunitiesApiCommunitiesGet']>>>
 export type MyCommunitiesApiCommunitiesMineGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['myCommunitiesApiCommunitiesMineGet']>>>
@@ -355,6 +381,8 @@ export type CreateEventApiCommunitiesCommunityIdEventsPostResult = NonNullable<A
 export type GetEventApiCommunitiesCommunityIdEventsEventIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['getEventApiCommunitiesCommunityIdEventsEventIdGet']>>>
 export type UpdateEventApiCommunitiesCommunityIdEventsEventIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateEventApiCommunitiesCommunityIdEventsEventIdPatch']>>>
 export type DeleteEventApiCommunitiesCommunityIdEventsEventIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['deleteEventApiCommunitiesCommunityIdEventsEventIdDelete']>>>
+export type AttendEventApiCommunitiesCommunityIdEventsEventIdAttendPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost']>>>
+export type UnattendEventApiCommunitiesCommunityIdEventsEventIdAttendDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete']>>>
 export type JoinCommunityApiCommunitiesCommunityIdJoinPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['joinCommunityApiCommunitiesCommunityIdJoinPost']>>>
 export type ListMembershipsApiCommunitiesCommunityIdMembershipsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listMembershipsApiCommunitiesCommunityIdMembershipsGet']>>>
 export type UpdateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch']>>>

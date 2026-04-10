@@ -2284,6 +2284,122 @@
         }
       }
     },
+    "/api/communities/{community_id}/events/{event_id}/attend": {
+      "post": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Attend Event",
+        "description": "Mark current user as attending an event. Must be a community member or owner.",
+        "operationId": "attend_event_api_communities__community_id__events__event_id__attend_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Unattend Event",
+        "description": "Remove current user's attendance from an event.",
+        "operationId": "unattend_event_api_communities__community_id__events__event_id__attend_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/communities/{community_id}/join": {
       "post": {
         "tags": [
@@ -3157,6 +3273,16 @@
             "type": "array",
             "title": "Report Ids",
             "default": []
+          },
+          "attendee_count": {
+            "type": "integer",
+            "title": "Attendee Count",
+            "default": 0
+          },
+          "is_attending": {
+            "type": "boolean",
+            "title": "Is Attending",
+            "default": false
           },
           "created_at": {
             "type": "string",

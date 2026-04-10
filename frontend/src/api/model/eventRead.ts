@@ -15,5 +15,7 @@ export interface EventRead {
   meeting_latitude: number;
   meeting_longitude: number;
   report_ids?: string[];
+  attendee_count?: number;
+  is_attending?: boolean;
   created_at: string;
 }

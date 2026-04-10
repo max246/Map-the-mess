@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import EventDetail from '../EventDetail'
 
@@ -7,6 +8,9 @@ const mockGetEvent = jest.fn()
 const mockGetCommunity = jest.fn()
 const mockDeleteEvent = jest.fn()
 const mockListReports = jest.fn()
+const mockAttendEvent = jest.fn()
+const mockUnattendEvent = jest.fn()
+const mockMyCommunities = jest.fn()
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -24,6 +28,11 @@ jest.mock('../../api/endpoints/communities/communities', () => ({
     getCommunityApiCommunitiesCommunityIdGet: (...args: unknown[]) => mockGetCommunity(...args),
     deleteEventApiCommunitiesCommunityIdEventsEventIdDelete: (...args: unknown[]) =>
       mockDeleteEvent(...args),
+    attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost: (...args: unknown[]) =>
+      mockAttendEvent(...args),
+    unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete: (...args: unknown[]) =>
+      mockUnattendEvent(...args),
+    myCommunitiesApiCommunitiesMineGet: (...args: unknown[]) => mockMyCommunities(...args),
   }),
 }))
 
@@ -70,6 +79,8 @@ const FUTURE_EVENT = {
   meeting_latitude: 53.5,
   meeting_longitude: -1.5,
   report_ids: [],
+  attendee_count: 0,
+  is_attending: false,
   created_at: '2026-03-01T12:00:00Z',
 }
 
@@ -77,6 +88,20 @@ const PAST_EVENT = {
   ...FUTURE_EVENT,
   title: 'Old Cleanup',
   date: '2020-01-01T09:00:00Z',
+}
+
+const MY_COMMUNITIES_MEMBER = {
+  owned: [],
+  joined: [{ id: 1, name: 'Test Community' }],
+  pending: [],
+  rejected: [],
+}
+
+const MY_COMMUNITIES_NOT_MEMBER = {
+  owned: [],
+  joined: [],
+  pending: [],
+  rejected: [],
 }
 
 const COMMUNITY = {
@@ -104,6 +129,7 @@ describe('EventDetail', () => {
     mockGetEvent.mockResolvedValue(FUTURE_EVENT)
     mockGetCommunity.mockResolvedValue(COMMUNITY)
     mockListReports.mockResolvedValue([])
+    mockMyCommunities.mockResolvedValue(MY_COMMUNITIES_MEMBER)
   })
 
   it('displays the event title as heading', async () => {
@@ -192,5 +218,79 @@ describe('EventDetail', () => {
     renderEventDetail()
     await screen.findByRole('heading', { name: 'Beach Cleanup' })
     expect(screen.getByText('Reports linked')).toBeInTheDocument()
+  })
+
+  describe('attendance', () => {
+    it('shows attendee count', async () => {
+      mockGetEvent.mockResolvedValue({ ...FUTURE_EVENT, attendee_count: 3 })
+      renderEventDetail()
+      expect(await screen.findByText(/people attending/)).toBeInTheDocument()
+    })
+
+    it('shows Attend button for community members on future events', async () => {
+      renderEventDetail()
+      expect(await screen.findByRole('button', { name: 'Attend' })).toBeInTheDocument()
+    })
+
+    it('shows Leave event button when already attending', async () => {
+      mockGetEvent.mockResolvedValue({ ...FUTURE_EVENT, is_attending: true, attendee_count: 1 })
+      renderEventDetail()
+      expect(await screen.findByRole('button', { name: 'Leave event' })).toBeInTheDocument()
+    })
+
+    it('hides attend button for non-members', async () => {
+      mockGetCommunity.mockResolvedValue({ ...COMMUNITY, owner_id: 999 })
+      mockMyCommunities.mockResolvedValue(MY_COMMUNITIES_NOT_MEMBER)
+      renderEventDetail()
+      await screen.findByRole('heading', { name: 'Beach Cleanup' })
+      expect(screen.queryByRole('button', { name: 'Attend' })).not.toBeInTheDocument()
+    })
+
+    it('hides attend button for past events', async () => {
+      mockGetEvent.mockResolvedValue(PAST_EVENT)
+      renderEventDetail()
+      await screen.findByText('Past')
+      expect(screen.queryByRole('button', { name: 'Attend' })).not.toBeInTheDocument()
+    })
+
+    it('calls attend API when clicking Attend', async () => {
+      mockAttendEvent.mockResolvedValue({ ...FUTURE_EVENT, is_attending: true, attendee_count: 1 })
+      renderEventDetail()
+
+      const btn = await screen.findByRole('button', { name: 'Attend' })
+      await userEvent.click(btn)
+
+      expect(mockAttendEvent).toHaveBeenCalledWith('1', '5')
+    })
+
+    it('calls unattend API when clicking Leave event', async () => {
+      mockGetEvent.mockResolvedValue({ ...FUTURE_EVENT, is_attending: true, attendee_count: 1 })
+      mockUnattendEvent.mockResolvedValue({
+        ...FUTURE_EVENT,
+        is_attending: false,
+        attendee_count: 0,
+      })
+      renderEventDetail()
+
+      const btn = await screen.findByRole('button', { name: 'Leave event' })
+      await userEvent.click(btn)
+
+      expect(mockUnattendEvent).toHaveBeenCalledWith('1', '5')
+    })
+
+    it('shows error alert when attend fails', async () => {
+      mockAttendEvent.mockRejectedValue({
+        response: { data: { detail: 'You must be a member of this community to attend events' } },
+      })
+      jest.spyOn(window, 'alert').mockImplementation(() => {})
+      renderEventDetail()
+
+      const btn = await screen.findByRole('button', { name: 'Attend' })
+      await userEvent.click(btn)
+
+      expect(window.alert).toHaveBeenCalledWith(
+        'You must be a member of this community to attend events'
+      )
+    })
   })
 })
