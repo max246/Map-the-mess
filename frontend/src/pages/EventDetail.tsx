@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
 import LocateButton from '../components/LocateButton'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import SaveToCalendarButton from '../components/SaveToCalendarButton'
 import ShareButton from '../components/ShareButton'
 import type { EventRead, ReportRead } from '../api/model'
 
@@ -73,6 +74,7 @@ export default function EventDetail() {
 
   const [event, setEvent] = useState<EventRead | null>(null)
   const [reports, setReports] = useState<ReportRead[]>([])
+  const [communityName, setCommunityName] = useState('')
   const [isOwner, setIsOwner] = useState(false)
   const [isMember, setIsMember] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -88,6 +90,7 @@ export default function EventDetail() {
           user ? getCommunities().myCommunitiesApiCommunitiesMineGet() : Promise.resolve(null),
         ])
         setEvent(e)
+        setCommunityName(community.name)
         setIsOwner(!!(user && community.owner_id === user.id))
         if (myCommunities) {
           const joinedIds = new Set((myCommunities.joined || []).map((c) => c.id))
@@ -164,6 +167,7 @@ export default function EventDetail() {
             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Past</span>
           )}
           <ShareButton title={event.title} />
+          {!isPast && <SaveToCalendarButton event={event} communityName={communityName} />}
         </div>
         {isOwner && (
           <div className="flex gap-2">
