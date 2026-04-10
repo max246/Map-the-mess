@@ -14,7 +14,7 @@ from PIL import Image
 from sqlalchemy.orm import Session
 
 from app.badges import evaluate_badges
-from app.config import IMAGES_DIR, SECRET_KEY, FRONTEND_URL
+from app.config import IMAGES_DIR, IMAGES_DIR_AVATARS, SECRET_KEY, FRONTEND_URL
 from app.email import send_email
 from app.database import get_db
 from app.models.user import User, UserType
@@ -163,12 +163,13 @@ def upload_avatar(
         img = img.convert("RGB")
 
     img.thumbnail(AVATAR_MAX_SIZE, Image.Resampling.LANCZOS)
+    os.makedirs(IMAGES_DIR_AVATARS, exist_ok=True)
     filename = f"avatar_{uuid.uuid4().hex}.jpg"
-    img.save(os.path.join(IMAGES_DIR, filename), format="JPEG", quality=85, optimize=True)
+    img.save(os.path.join(IMAGES_DIR_AVATARS, filename), format="JPEG", quality=85, optimize=True)
 
     # Remove old custom avatar file if it exists
     if current_user.avatar_url and str(current_user.avatar_url).startswith("avatar_"):
-        old_path = os.path.join(IMAGES_DIR, str(current_user.avatar_url))
+        old_path = os.path.join(IMAGES_DIR_AVATARS, str(current_user.avatar_url))
         if os.path.isfile(old_path):
             os.remove(old_path)
 

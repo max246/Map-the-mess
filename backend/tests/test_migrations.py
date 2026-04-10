@@ -398,6 +398,17 @@ def _check_event_attendances(conn):
     assert {"event_id", "user_id"} in unique_col_sets
 
 
+# 16. a7b8c9d0e1f2 — organise images into subdirectories (filesystem only, no schema changes)
+@_check("a7b8c9d0e1f2")
+def _check_organise_images(conn):
+    # This migration only moves files on disk — no schema changes to verify.
+    # We just confirm the migration runs without error and the DB state is unchanged.
+    tables = _table_names(conn)
+    assert "report_images" in tables
+    assert "users" in tables
+    assert "communities" in tables
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -419,6 +430,7 @@ MIGRATION_CHAIN = [
     "d4e5f6a7b8c9",
     "e5f6a7b8c9d0",
     "f6a7b8c9d0e1",
+    "a7b8c9d0e1f2",
 ]
 
 # ---------------------------------------------------------------------------
