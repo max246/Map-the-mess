@@ -70,6 +70,10 @@ jest.mock('../../components/MarkdownRenderer', () => ({ content }: { content: st
   <div data-testid="markdown-renderer">{content}</div>
 ))
 
+jest.mock('../../components/SaveToCalendarButton', () => () => (
+  <button data-testid="save-calendar">Save to Calendar</button>
+))
+
 const FUTURE_EVENT = {
   id: 5,
   community_id: 1,
@@ -218,6 +222,18 @@ describe('EventDetail', () => {
     renderEventDetail()
     await screen.findByRole('heading', { name: 'Beach Cleanup' })
     expect(screen.getByText('Reports linked')).toBeInTheDocument()
+  })
+
+  it('shows Save to Calendar button for future events', async () => {
+    renderEventDetail()
+    expect(await screen.findByTestId('save-calendar')).toBeInTheDocument()
+  })
+
+  it('hides Save to Calendar button for past events', async () => {
+    mockGetEvent.mockResolvedValue(PAST_EVENT)
+    renderEventDetail()
+    await screen.findByText('Past')
+    expect(screen.queryByTestId('save-calendar')).not.toBeInTheDocument()
   })
 
   describe('attendance', () => {
