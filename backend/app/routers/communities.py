@@ -11,7 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.config import IMAGES_DIR, SECRET_KEY
+from app.config import IMAGES_DIR, IMAGES_DIR_COMMUNITIES, SECRET_KEY
 from app.database import get_db
 from app.models.community import Community, CommunityStatus, CommunityVisibility
 from app.models.community_membership import CommunityMembership, MembershipStatus
@@ -140,8 +140,11 @@ def _save_profile_image(file: UploadFile) -> str:
         img = img.convert("RGB")
 
     img.thumbnail(PROFILE_IMAGE_SIZE, Image.Resampling.LANCZOS)
+    os.makedirs(IMAGES_DIR_COMMUNITIES, exist_ok=True)
     filename = f"community_{uuid_mod.uuid4().hex}.jpg"
-    img.save(os.path.join(IMAGES_DIR, filename), format="JPEG", quality=85, optimize=True)
+    img.save(
+        os.path.join(IMAGES_DIR_COMMUNITIES, filename), format="JPEG", quality=85, optimize=True
+    )
     return filename
 
 
@@ -420,7 +423,7 @@ def upload_profile_image(
 
     # Delete old image if it exists
     if community.profile_image:
-        old_path = os.path.join(IMAGES_DIR, community.profile_image)
+        old_path = os.path.join(IMAGES_DIR_COMMUNITIES, community.profile_image)
         if os.path.isfile(old_path):
             os.remove(old_path)
 
