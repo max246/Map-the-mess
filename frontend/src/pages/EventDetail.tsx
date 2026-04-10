@@ -16,6 +16,8 @@ const {
   getEventApiCommunitiesCommunityIdEventsEventIdGet,
   getCommunityApiCommunitiesCommunityIdGet,
   deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,
+  attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost,
+  unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete,
 } = getCommunities()
 const { listReportsApiReportsGet } = getReports()
 
@@ -72,18 +74,25 @@ export default function EventDetail() {
   const [event, setEvent] = useState<EventRead | null>(null)
   const [reports, setReports] = useState<ReportRead[]>([])
   const [isOwner, setIsOwner] = useState(false)
+  const [isMember, setIsMember] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [attending, setAttending] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [e, community] = await Promise.all([
+        const [e, community, myCommunities] = await Promise.all([
           getEventApiCommunitiesCommunityIdEventsEventIdGet(communityId, eventId!),
           getCommunityApiCommunitiesCommunityIdGet(communityId),
+          user ? getCommunities().myCommunitiesApiCommunitiesMineGet() : Promise.resolve(null),
         ])
         setEvent(e)
         setIsOwner(!!(user && community.owner_id === user.id))
+        if (myCommunities) {
+          const joinedIds = new Set((myCommunities.joined || []).map((c) => c.id))
+          setIsMember(joinedIds.has(communityId) || community.owner_id === user?.id)
+        }
 
         if (e.report_ids && e.report_ids.length > 0) {
           const all = await listReportsApiReportsGet()
@@ -105,6 +114,30 @@ export default function EventDetail() {
     } catch {
       alert('Failed to delete event')
     }
+  }
+
+  const handleToggleAttend = async () => {
+    if (!event) return
+    setAttending(true)
+    try {
+      let updated: EventRead
+      if (event.is_attending) {
+        updated = await unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete(
+          communityId,
+          eventId!
+        )
+      } else {
+        updated = await attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost(
+          communityId,
+          eventId!
+        )
+      }
+      setEvent(updated)
+    } catch (err) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      alert(detail || 'Failed to update attendance')
+    }
+    setAttending(false)
   }
 
   if (loading) return <div className="text-center text-gray-400 py-16">Loading...</div>
@@ -191,6 +224,27 @@ export default function EventDetail() {
             <span className="text-gray-500">Reports linked</span>
             <p className="font-medium">{reports.length}</p>
           </div>
+        </div>
+
+        {/* Attendance */}
+        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            <span className="font-medium text-gray-700">{event.attendee_count ?? 0}</span>{' '}
+            {event.attendee_count === 1 ? 'person' : 'people'} attending
+          </p>
+          {user && isMember && !isPast && (
+            <button
+              onClick={handleToggleAttend}
+              disabled={attending}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+                event.is_attending
+                  ? 'border border-gray-300 text-gray-600 hover:bg-gray-50'
+                  : 'bg-brand text-white hover:opacity-90'
+              }`}
+            >
+              {attending ? 'Updating...' : event.is_attending ? 'Leave event' : 'Attend'}
+            </button>
+          )}
         </div>
       </div>
 

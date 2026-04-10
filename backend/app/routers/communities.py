@@ -17,6 +17,7 @@ from app.models.community import Community, CommunityStatus, CommunityVisibility
 from app.models.community_membership import CommunityMembership, MembershipStatus
 from app.models.community_post import CommunityPost
 from app.models.community_event import CommunityEvent, event_reports
+from app.models.event_attendance import EventAttendance
 from app.models.report import Report, ReportStatus
 from app.models.user import User, UserType
 from app.routers.auth import (
@@ -144,8 +145,28 @@ def _save_profile_image(file: UploadFile) -> str:
     return filename
 
 
-def _event_to_read(event: CommunityEvent) -> EventRead:
+def _event_to_read(
+    event: CommunityEvent, db: Session, current_user: User | None = None
+) -> EventRead:
     """Convert a CommunityEvent ORM object to an EventRead schema."""
+    attendee_count = (
+        db.query(func.count(EventAttendance.id))
+        .filter(EventAttendance.event_id == event.id)
+        .scalar()
+    ) or 0
+
+    is_attending = False
+    if current_user is not None:
+        is_attending = (
+            db.query(EventAttendance)
+            .filter(
+                EventAttendance.event_id == event.id,
+                EventAttendance.user_id == current_user.id,
+            )
+            .first()
+            is not None
+        )
+
     return EventRead(
         id=event.id,  # type: ignore[arg-type]
         community_id=event.community_id,  # type: ignore[arg-type]
@@ -155,11 +176,18 @@ def _event_to_read(event: CommunityEvent) -> EventRead:
         meeting_latitude=event.meeting_latitude,  # type: ignore[arg-type]
         meeting_longitude=event.meeting_longitude,  # type: ignore[arg-type]
         report_ids=[r.id for r in event.reports],
+        attendee_count=attendee_count,
+        is_attending=is_attending,
         created_at=event.created_at,  # type: ignore[arg-type]
     )
 
 
-def _community_to_detail(community: Community, show_content: bool = True) -> CommunityDetail:
+def _community_to_detail(
+    community: Community,
+    db: Session,
+    current_user: User | None = None,
+    show_content: bool = True,
+) -> CommunityDetail:
     """Convert a Community ORM object to a CommunityDetail schema.
 
     If show_content is False, posts and events are hidden (empty lists).
@@ -178,7 +206,9 @@ def _community_to_detail(community: Community, show_content: bool = True) -> Com
         status=community.status.value if isinstance(community.status, CommunityStatus) else community.status,  # type: ignore[arg-type]
         created_at=community.created_at,  # type: ignore[arg-type]
         posts=[PostRead.model_validate(p) for p in community.posts] if show_content else [],
-        events=[_event_to_read(e) for e in community.events] if show_content else [],
+        events=(
+            [_event_to_read(e, db, current_user) for e in community.events] if show_content else []
+        ),
     )
 
 
@@ -353,7 +383,7 @@ def get_community(
         or _is_member_or_owner(community, current_user, db)
     )
 
-    return _community_to_detail(community, show_content=show_content)
+    return _community_to_detail(community, db, current_user, show_content=show_content)
 
 
 @router.delete("/{community_id}", status_code=204)
@@ -637,7 +667,7 @@ def create_event(
     _attach_reports(event, payload.report_ids, db)
     db.commit()
     db.refresh(event)
-    return _event_to_read(event)
+    return _event_to_read(event, db, current_user)
 
 
 @router.get("/{community_id}/events/{event_id}", response_model=EventRead)
@@ -659,7 +689,7 @@ def get_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    return _event_to_read(event)
+    return _event_to_read(event, db, current_user)
 
 
 @router.patch("/{community_id}/events/{event_id}", response_model=EventRead)
@@ -697,7 +727,7 @@ def update_event(
 
     db.commit()
     db.refresh(event)
-    return _event_to_read(event)
+    return _event_to_read(event, db, current_user)
 
 
 @router.delete("/{community_id}/events/{event_id}", status_code=204)
@@ -725,6 +755,88 @@ def delete_event(
 
     db.delete(event)
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Event attendance
+# ---------------------------------------------------------------------------
+
+
+@router.post("/{community_id}/events/{event_id}/attend", response_model=EventRead)
+def attend_event(
+    community_id: uuid_mod.UUID,
+    event_id: uuid_mod.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Mark current user as attending an event. Must be a community member or owner."""
+    community = _get_community_or_404(community_id, db)
+
+    if not _is_member_or_owner(community, current_user, db):
+        raise HTTPException(
+            status_code=403, detail="You must be a member of this community to attend events"
+        )
+
+    event = (
+        db.query(CommunityEvent)
+        .filter(CommunityEvent.id == event_id, CommunityEvent.community_id == community.id)
+        .first()
+    )
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    existing = (
+        db.query(EventAttendance)
+        .filter(
+            EventAttendance.event_id == event.id,
+            EventAttendance.user_id == current_user.id,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="You are already attending this event")
+
+    attendance = EventAttendance(event_id=event.id, user_id=current_user.id)
+    db.add(attendance)
+    db.commit()
+    db.refresh(event)
+    return _event_to_read(event, db, current_user)
+
+
+@router.delete(
+    "/{community_id}/events/{event_id}/attend", status_code=200, response_model=EventRead
+)
+def unattend_event(
+    community_id: uuid_mod.UUID,
+    event_id: uuid_mod.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Remove current user's attendance from an event."""
+    community = _get_community_or_404(community_id, db)
+
+    event = (
+        db.query(CommunityEvent)
+        .filter(CommunityEvent.id == event_id, CommunityEvent.community_id == community.id)
+        .first()
+    )
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    attendance = (
+        db.query(EventAttendance)
+        .filter(
+            EventAttendance.event_id == event.id,
+            EventAttendance.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not attendance:
+        raise HTTPException(status_code=404, detail="You are not attending this event")
+
+    db.delete(attendance)
+    db.commit()
+    return _event_to_read(event, db, current_user)
 
 
 # ---------------------------------------------------------------------------

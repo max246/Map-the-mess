@@ -373,6 +373,31 @@ def _check_visibility(conn):
     assert "visibility" in _column_names(conn, "communities")
 
 
+# 15. f6a7b8c9d0e1 — add event attendances table
+@_check("f6a7b8c9d0e1")
+def _check_event_attendances(conn):
+    assert "event_attendances" in _table_names(conn)
+    cols = _column_names(conn, "event_attendances")
+    assert {"id", "event_id", "user_id", "created_at"} <= cols
+
+    # Verify indexes
+    indexes = {idx["name"] for idx in inspect(conn).get_indexes("event_attendances")}
+    assert "ix_event_attendances_id" in indexes
+    assert "ix_event_attendances_event_id" in indexes
+    assert "ix_event_attendances_user_id" in indexes
+
+    # Verify foreign keys
+    fks = inspect(conn).get_foreign_keys("event_attendances")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "event_id" in fk_cols
+    assert "user_id" in fk_cols
+
+    # Verify unique constraint
+    uniques = inspect(conn).get_unique_constraints("event_attendances")
+    unique_col_sets = [set(u["column_names"]) for u in uniques]
+    assert {"event_id", "user_id"} in unique_col_sets
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -393,6 +418,7 @@ MIGRATION_CHAIN = [
     "c3d4e5f6a7b8",
     "d4e5f6a7b8c9",
     "e5f6a7b8c9d0",
+    "f6a7b8c9d0e1",
 ]
 
 # ---------------------------------------------------------------------------
@@ -459,6 +485,7 @@ class TestFullUpgrade:
             "community_events",
             "event_reports",
             "community_memberships",
+            "event_attendances",
         } <= tables
 
 

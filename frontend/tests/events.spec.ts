@@ -34,6 +34,8 @@ const EVENT = {
   meeting_latitude: 53.5,
   meeting_longitude: -1.5,
   report_ids: [],
+  attendee_count: 0,
+  is_attending: false,
   created_at: '2026-03-01T12:00:00Z',
 }
 
@@ -43,6 +45,38 @@ async function mockApi(page: Page) {
     const url = new URL(route.request().url())
     const path = url.pathname
     const method = route.request().method()
+
+    // My communities: /api/communities/mine
+    if (/^\/api\/communities\/mine$/.test(path) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          owned: [COMMUNITY],
+          joined: [COMMUNITY],
+          pending: [],
+          rejected: [],
+        }),
+      })
+    }
+
+    // Event attendance: /api/communities/:id/events/:eventId/attend
+    if (/^\/api\/communities\/\d+\/events\/\d+\/attend$/.test(path)) {
+      if (method === 'POST') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...EVENT, is_attending: true, attendee_count: 1 }),
+        })
+      }
+      if (method === 'DELETE') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...EVENT, is_attending: false, attendee_count: 0 }),
+        })
+      }
+    }
 
     // Single event: /api/communities/:id/events/:eventId
     if (/^\/api\/communities\/\d+\/events\/\d+$/.test(path)) {
@@ -281,5 +315,71 @@ test.describe('Event Detail page', () => {
     const link = page.getByRole('link', { name: /back to community/i })
     await expect(link).toBeVisible()
     await expect(link).toHaveAttribute('href', '/communities/1')
+  })
+
+  test('shows attendee count', async ({ page }) => {
+    await loginAsOwner(page)
+    await page.goto('/communities/1/events/5')
+
+    await expect(page.getByText(/people attending/)).toBeVisible()
+  })
+
+  test('shows Attend button for community member', async ({ page }) => {
+    await loginAsOwner(page)
+    await page.goto('/communities/1/events/5')
+
+    await expect(page.getByRole('button', { name: 'Attend' })).toBeVisible()
+  })
+
+  test('clicking Attend toggles to Leave event', async ({ page }) => {
+    await loginAsOwner(page)
+    await page.goto('/communities/1/events/5')
+
+    await page.getByRole('button', { name: 'Attend' }).click()
+    await expect(page.getByRole('button', { name: 'Leave event' })).toBeVisible()
+  })
+
+  test('clicking Leave event toggles back to Attend', async ({ page }) => {
+    await loginAsOwner(page)
+
+    // Start with the user already attending
+    await page.route(/\/api\/communities\/\d+\/events\/\d+$/, async (route: Route) => {
+      if (route.request().method() === 'GET') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...EVENT, is_attending: true, attendee_count: 1 }),
+        })
+      }
+      await route.continue()
+    })
+
+    await page.goto('/communities/1/events/5')
+
+    await page.getByRole('button', { name: 'Leave event' }).click()
+    await expect(page.getByRole('button', { name: 'Attend' })).toBeVisible()
+  })
+
+  test('hides Attend button for past events', async ({ page }) => {
+    await loginAsOwner(page)
+
+    const PAST_EVENT = {
+      ...EVENT,
+      date: '2020-01-01T09:00:00Z',
+    }
+    await page.route(/\/api\/communities\/\d+\/events\/\d+$/, async (route: Route) => {
+      if (route.request().method() === 'GET') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(PAST_EVENT),
+        })
+      }
+      await route.continue()
+    })
+
+    await page.goto('/communities/1/events/5')
+    await expect(page.getByText('Past')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Attend' })).not.toBeVisible()
   })
 })

@@ -104,6 +104,8 @@ class EventRead(BaseModel):
     meeting_latitude: float
     meeting_longitude: float
     report_ids: list[uuid.UUID] = []
+    attendee_count: int = 0
+    is_attending: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -889,11 +889,16 @@ function EventCard({
               minute: '2-digit',
             })}
           </p>
-          {event.report_ids && event.report_ids.length > 0 && (
-            <p className="text-xs text-gray-400 mt-1">
-              {event.report_ids.length} report{event.report_ids.length !== 1 && 's'} linked
-            </p>
-          )}
+          <div className="flex items-center gap-3 mt-1">
+            {event.report_ids && event.report_ids.length > 0 && (
+              <p className="text-xs text-gray-400">
+                {event.report_ids.length} report{event.report_ids.length !== 1 && 's'} linked
+              </p>
+            )}
+            {(event.attendee_count ?? 0) > 0 && (
+              <p className="text-xs text-gray-400">{event.attendee_count} attending</p>
+            )}
+          </div>
         </Link>
         {(isOwner || canManage) && (
           <div className="flex gap-2 flex-shrink-0">
