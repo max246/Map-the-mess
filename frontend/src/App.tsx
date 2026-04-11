@@ -1,42 +1,51 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
-import ReportLitter from './pages/ReportLitter'
-import MapView from './pages/MapView'
-import VolunteerDashboard from './pages/VolunteerDashboard'
-import ReportDetail from './pages/ReportDetail'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Admin from './pages/Admin'
-import UserManagement from './pages/UserManagement'
-import VerifyEmail from './pages/VerifyEmail'
-import Contact from './pages/Contact'
-import Disclaimer from './pages/Disclaimer'
-import PrivacyPolicy from './pages/PrivacyPolicy'
-import LitterFacts from './pages/LitterFacts'
-import Leaderboard from './pages/Leaderboard'
-import CommunitySearch from './pages/CommunitySearch'
-import CreateCommunity from './pages/CreateCommunity'
-import CommunityDetail from './pages/CommunityDetail'
-import CreateEvent from './pages/CreateEvent'
-import EditEvent from './pages/EditEvent'
-import AdminCommunities from './pages/AdminCommunities'
-import EventDetail from './pages/EventDetail'
-import PostDetail from './pages/PostDetail'
-import Tools from './pages/Tools'
-import VolunteerProfile from './pages/VolunteerProfile'
-import NotFound from './pages/NotFound'
 import SessionExpiredOverlay from './components/SessionExpiredOverlay'
 import LocationBanner from './components/LocationBanner'
+import PendingReportsBanner from './components/PendingReportsBanner'
+import QueueManager from './offline/QueueManager'
+import { usePwaUpdate } from './pwa/usePwaUpdate'
 import api from './api/client'
+
+const ReportLitter = lazy(() => import('./pages/ReportLitter'))
+const MapView = lazy(() => import('./pages/MapView'))
+const VolunteerDashboard = lazy(() => import('./pages/VolunteerDashboard'))
+const ReportDetail = lazy(() => import('./pages/ReportDetail'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Admin = lazy(() => import('./pages/Admin'))
+const UserManagement = lazy(() => import('./pages/UserManagement'))
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Disclaimer = lazy(() => import('./pages/Disclaimer'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const LitterFacts = lazy(() => import('./pages/LitterFacts'))
+const Leaderboard = lazy(() => import('./pages/Leaderboard'))
+const CommunitySearch = lazy(() => import('./pages/CommunitySearch'))
+const CreateCommunity = lazy(() => import('./pages/CreateCommunity'))
+const CommunityDetail = lazy(() => import('./pages/CommunityDetail'))
+const CreateEvent = lazy(() => import('./pages/CreateEvent'))
+const EditEvent = lazy(() => import('./pages/EditEvent'))
+const AdminCommunities = lazy(() => import('./pages/AdminCommunities'))
+const EventDetail = lazy(() => import('./pages/EventDetail'))
+const PostDetail = lazy(() => import('./pages/PostDetail'))
+const Tools = lazy(() => import('./pages/Tools'))
+const VolunteerProfile = lazy(() => import('./pages/VolunteerProfile'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+
+const RouteFallback = () => (
+  <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Loading…</div>
+)
 
 function App() {
   const [version, setVersion] = useState<string | null>(null)
+  const { needRefresh, updateServiceWorker } = usePwaUpdate()
 
   useEffect(() => {
     api
@@ -48,41 +57,62 @@ function App() {
   return (
     <HelmetProvider>
       <AuthProvider>
+        <QueueManager />
         <div className="h-dvh flex flex-col overflow-hidden">
+          <PendingReportsBanner />
+          {needRefresh && (
+            <div
+              role="status"
+              className="bg-green-50 border-b border-green-200 text-green-900 text-sm"
+            >
+              <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
+                <span>A new version of Map the Mess is available.</span>
+                <button
+                  type="button"
+                  onClick={() => updateServiceWorker(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1 rounded"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+          )}
           <Navbar />
           <LocationBanner />
           <SessionExpiredOverlay />
           <main className="flex-1 overflow-auto">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/report" element={<ReportLitter />} />
-              <Route path="/map" element={<MapView />} />
-              <Route path="/report/:id" element={<ReportDetail />} />
-              <Route path="/volunteers" element={<VolunteerDashboard />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/users" element={<UserManagement />} />
-              <Route path="/admin/communities" element={<AdminCommunities />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/disclaimer" element={<Disclaimer />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/litter-facts" element={<LitterFacts />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/volunteers/:id" element={<VolunteerProfile />} />
-              <Route path="/communities" element={<CommunitySearch />} />
-              <Route path="/communities/new" element={<CreateCommunity />} />
-              <Route path="/communities/:id" element={<CommunityDetail />} />
-              <Route path="/communities/:id/events/new" element={<CreateEvent />} />
-              <Route path="/communities/:id/posts/:postId" element={<PostDetail />} />
-              <Route path="/communities/:id/events/:eventId" element={<EventDetail />} />
-              <Route path="/communities/:id/events/:eventId/edit" element={<EditEvent />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/report" element={<ReportLitter />} />
+                <Route path="/map" element={<MapView />} />
+                <Route path="/report/:id" element={<ReportDetail />} />
+                <Route path="/volunteers" element={<VolunteerDashboard />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/users" element={<UserManagement />} />
+                <Route path="/admin/communities" element={<AdminCommunities />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/disclaimer" element={<Disclaimer />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/litter-facts" element={<LitterFacts />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/tools" element={<Tools />} />
+                <Route path="/volunteers/:id" element={<VolunteerProfile />} />
+                <Route path="/communities" element={<CommunitySearch />} />
+                <Route path="/communities/new" element={<CreateCommunity />} />
+                <Route path="/communities/:id" element={<CommunityDetail />} />
+                <Route path="/communities/:id/events/new" element={<CreateEvent />} />
+                <Route path="/communities/:id/posts/:postId" element={<PostDetail />} />
+                <Route path="/communities/:id/events/:eventId" element={<EventDetail />} />
+                <Route path="/communities/:id/events/:eventId/edit" element={<EditEvent />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </main>
           <footer className="text-xs text-gray-400 py-2 px-4 flex items-center justify-center gap-3 flex-wrap">
             <Link to="/disclaimer" className="hover:underline">
