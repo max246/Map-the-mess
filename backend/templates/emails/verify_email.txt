@@ -1,0 +1,15 @@
+Welcome to Map the Mess, {{ user_name }}!
+
+Thanks for joining Map the Mess — the community platform for reporting and
+cleaning up litter in your neighborhood.
+
+To get started, please verify your email address by opening this link:
+
+{{ verify_url }}
+
+This link expires in {{ expire_hours }} hours. If you didn't create an account,
+you can safely ignore this email.
+
+—
+Map the Mess
+Community litter reporting, one pin at a time.

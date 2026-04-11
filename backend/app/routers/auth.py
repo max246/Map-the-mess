@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.badges import evaluate_badges
 from app.config import IMAGES_DIR, IMAGES_DIR_AVATARS, SECRET_KEY, FRONTEND_URL
-from app.email import send_email
+from app.email import render_email, send_email
 from app.database import get_db
 from app.models.user import User, UserType
 from app.models.community import Community
@@ -222,15 +222,13 @@ def _send_verification_email(user: User) -> None:
         algorithm=ALGORITHM,
     )
     verify_url = f"{FRONTEND_URL}/verify-email?token={token}"
-    html = f"""
-    <h2>Welcome to Map the Mess!</h2>
-    <p>Hi {user.full_name},</p>
-    <p>Please verify your email address by clicking the link below:</p>
-    <p><a href="{verify_url}">Verify my email</a></p>
-    <p>This link expires in 48 hours.</p>
-    <p>If you didn't create this account, you can ignore this email.</p>
-    """
-    send_email(str(user.email), "Verify your email — Map the Mess", html)
+    html, text = render_email(
+        "verify_email",
+        user_name=user.full_name,
+        verify_url=verify_url,
+        expire_hours=VERIFY_TOKEN_EXPIRE_HOURS,
+    )
+    send_email(str(user.email), "Verify your email — Map the Mess", html, text)
 
 
 @router.get("/users", response_model=list[UserRead])
@@ -455,15 +453,13 @@ def forgot_password(payload: ForgotPassword, db: Session = Depends(get_db)):
         algorithm=ALGORITHM,
     )
     reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
-    html = f"""
-    <h2>Password Reset — Map the Mess</h2>
-    <p>Hi {user.full_name},</p>
-    <p>You requested a password reset. Click the link below to set a new password:</p>
-    <p><a href="{reset_url}">Reset my password</a></p>
-    <p>This link expires in {RESET_TOKEN_EXPIRE_MINUTES} minutes.</p>
-    <p>If you didn't request this, you can ignore this email.</p>
-    """
-    send_email(str(user.email), "Password reset — Map the Mess", html)
+    html, text = render_email(
+        "password_reset",
+        user_name=user.full_name,
+        reset_url=reset_url,
+        expire_minutes=RESET_TOKEN_EXPIRE_MINUTES,
+    )
+    send_email(str(user.email), "Password reset — Map the Mess", html, text)
     return {"message": "If the email exists, a reset link has been sent"}
 
 
