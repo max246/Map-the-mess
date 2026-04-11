@@ -5,6 +5,7 @@ import LocationPicker from '../components/LocationPicker'
 import { autosuggest } from '../api/w3w'
 import type { W3WSuggestion } from '../api/w3w'
 import api from '../api/client'
+import { enqueue as enqueueReport } from '../offline/reportQueue'
 
 export default function ReportLitter() {
   const [reportType, setReportType] = useState('litter')
@@ -18,6 +19,7 @@ export default function ReportLitter() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadLabel, setUploadLabel] = useState('')
   const [submittedReportId, setSubmittedReportId] = useState<number | null>(null)
+  const [queuedOffline, setQueuedOffline] = useState(false)
   const [words, setWords] = useState('')
   const [wordsInput, setWordsInput] = useState('')
   const [acceptedConditions, setAcceptedConditions] = useState(false)
@@ -98,6 +100,21 @@ export default function ReportLitter() {
     })
   }
 
+  const queueOffline = async () => {
+    await enqueueReport({
+      body: {
+        latitude: location!.lat,
+        longitude: location!.lng,
+        report_type: reportType,
+        description: description || undefined,
+        what3words: words || undefined,
+      },
+      photos: photos.slice(),
+    })
+    setQueuedOffline(true)
+    setSubmittedReportId(-1)
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!reportType) {
@@ -108,6 +125,17 @@ export default function ReportLitter() {
       alert('Please share your location before submitting.')
       return
     }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setSubmitting(true)
+      try {
+        await queueOffline()
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
     setSubmitting(true)
     setUploadProgress(0)
 
@@ -142,8 +170,17 @@ export default function ReportLitter() {
       setSubmittedReportId(report.id)
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status
+      const hasResponse = !!(err as { response?: unknown })?.response
       if (status === 400) {
         alert('Location must be within the United Kingdom.')
+      } else if (!hasResponse) {
+        // Network-layer failure — queue it so the user doesn't lose their report.
+        try {
+          await queueOffline()
+        } catch (queueErr) {
+          console.error(queueErr)
+          alert('Failed to submit report. Please try again.')
+        }
       } else {
         alert('Failed to submit report. Please try again.')
       }
@@ -156,34 +193,39 @@ export default function ReportLitter() {
   }
 
   if (submittedReportId) {
+    const resetForm = () => {
+      setSubmittedReportId(null)
+      setQueuedOffline(false)
+      setReportType('litter')
+      setDescription('')
+      setPhotos([])
+      setPhotoPreviews([])
+      setLocation(null)
+      setWords('')
+      setWordsInput('')
+      setAcceptedConditions(false)
+    }
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <div className="text-6xl mb-6">🎉</div>
-        <h1 className="text-2xl font-bold mb-3">Thanks for helping!</h1>
+        <div className="text-6xl mb-6">{queuedOffline ? '📡' : '🎉'}</div>
+        <h1 className="text-2xl font-bold mb-3">
+          {queuedOffline ? 'Saved on your device' : 'Thanks for helping!'}
+        </h1>
         <p className="text-gray-600 mb-8">
-          Your report has been submitted successfully. Together we can make our community cleaner.
+          {queuedOffline
+            ? "You're offline right now, so we've saved your report on this device. It will upload automatically as soon as you're back on the internet — you can safely close the app."
+            : 'Your report has been submitted successfully. Together we can make our community cleaner.'}
         </p>
         <div className="flex flex-col gap-3 items-center">
-          <Link
-            to={`/report/${submittedReportId}`}
-            className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 px-6 rounded-lg transition inline-block"
-          >
-            View your report
-          </Link>
-          <button
-            onClick={() => {
-              setSubmittedReportId(null)
-              setReportType('litter')
-              setDescription('')
-              setPhotos([])
-              setPhotoPreviews([])
-              setLocation(null)
-              setWords('')
-              setWordsInput('')
-              setAcceptedConditions(false)
-            }}
-            className="text-brand underline text-sm"
-          >
+          {!queuedOffline && submittedReportId > 0 && (
+            <Link
+              to={`/report/${submittedReportId}`}
+              className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 px-6 rounded-lg transition inline-block"
+            >
+              View your report
+            </Link>
+          )}
+          <button onClick={resetForm} className="text-brand underline text-sm">
             Submit another report
           </button>
         </div>
