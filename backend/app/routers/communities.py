@@ -34,6 +34,7 @@ from app.schemas.community import (
     CommunityVisibilityUpdate,
     CommunityOwnerUpdate,
     EventCreate,
+    EventOccurrenceRead,
     EventRead,
     EventUpdate,
     MembershipAction,
@@ -43,6 +44,15 @@ from app.schemas.community import (
     PostCreate,
     PostRead,
     PostUpdate,
+)
+from app.services.recurrence import (
+    DEFAULT_HORIZON_WEEKS,
+    build_occurrence_id,
+    expand_occurrences,
+    is_composite_id,
+    materialize_occurrence,
+    merge_with_exceptions,
+    parse_occurrence_id,
 )
 from app.schemas.user import LeaderboardEntry
 from jose import JWTError, jwt
@@ -185,6 +195,125 @@ def _event_to_read(
     )
 
 
+def _event_to_occurrence_read(
+    event: CommunityEvent, db: Session, current_user: User | None = None
+) -> EventOccurrenceRead:
+    """Convert a one-off CommunityEvent to an EventOccurrenceRead schema."""
+    attendee_count = (
+        db.query(func.count(EventAttendance.id))
+        .filter(EventAttendance.event_id == event.id)
+        .scalar()
+    ) or 0
+
+    is_attending = False
+    if current_user is not None:
+        is_attending = (
+            db.query(EventAttendance)
+            .filter(
+                EventAttendance.event_id == event.id,
+                EventAttendance.user_id == current_user.id,
+            )
+            .first()
+            is not None
+        )
+
+    return EventOccurrenceRead(
+        occurrence_id=str(event.id),
+        event_id=event.id,  # type: ignore[arg-type]
+        community_id=event.community_id,  # type: ignore[arg-type]
+        title=event.title,  # type: ignore[arg-type]
+        description=event.description,  # type: ignore[arg-type]
+        date=event.date,  # type: ignore[arg-type]
+        meeting_latitude=event.meeting_latitude,  # type: ignore[arg-type]
+        meeting_longitude=event.meeting_longitude,  # type: ignore[arg-type]
+        report_ids=[r.id for r in event.reports],
+        attendee_count=attendee_count,
+        is_attending=is_attending,
+        is_recurring=bool(event.recurrence_rule),
+        is_cancelled=bool(event.is_cancelled),
+        recurrence_rule=event.recurrence_rule,  # type: ignore[arg-type]
+        recurrence_end=event.recurrence_end,  # type: ignore[arg-type]
+        is_exception=bool(event.parent_event_id),
+        created_at=event.created_at,  # type: ignore[arg-type]
+    )
+
+
+def _expand_events_for_community(
+    community: Community,
+    db: Session,
+    current_user: User | None = None,
+    range_start: datetime | None = None,
+    range_end: datetime | None = None,
+) -> list[EventOccurrenceRead]:
+    """Expand all events (one-off + recurring) for a community into occurrences."""
+    now = datetime.utcnow()
+    start = range_start or now
+    end = range_end or (start + timedelta(weeks=DEFAULT_HORIZON_WEEKS))
+
+    results: list[EventOccurrenceRead] = []
+
+    # Only get top-level events (parents and one-offs), not exception rows.
+    top_events = [e for e in community.events if e.parent_event_id is None]
+
+    for event in top_events:
+        if not event.recurrence_rule:
+            # One-off event: include if in range.
+            if start <= event.date <= end:
+                results.append(_event_to_occurrence_read(event, db, current_user))
+            continue
+
+        # Recurring event: expand and merge with exceptions.
+        dates = expand_occurrences(event, start, end)
+        exceptions = (
+            db.query(CommunityEvent)
+            .filter(
+                CommunityEvent.parent_event_id == event.id,
+                CommunityEvent.date >= start,
+                CommunityEvent.date <= end,
+            )
+            .all()
+        )
+
+        # Pre-fetch attendee counts and user attendance for exceptions.
+        exc_ids = [e.id for e in exceptions]
+        attendee_counts: dict[uuid_mod.UUID, int] = {}
+        user_attending_ids: set[uuid_mod.UUID] = set()
+
+        if exc_ids:
+            counts = (
+                db.query(EventAttendance.event_id, func.count(EventAttendance.id))
+                .filter(EventAttendance.event_id.in_(exc_ids))
+                .group_by(EventAttendance.event_id)
+                .all()
+            )
+            attendee_counts = {eid: cnt for eid, cnt in counts}
+
+            if current_user:
+                attending = (
+                    db.query(EventAttendance.event_id)
+                    .filter(
+                        EventAttendance.event_id.in_(exc_ids),
+                        EventAttendance.user_id == current_user.id,
+                    )
+                    .all()
+                )
+                user_attending_ids = {a[0] for a in attending}
+
+        merged = merge_with_exceptions(
+            event,
+            dates,
+            exceptions,
+            current_user_id=current_user.id if current_user else None,
+            attendee_counts=attendee_counts,
+            user_attending_ids=user_attending_ids,
+        )
+        for occ in merged:
+            results.append(EventOccurrenceRead(**occ))
+
+    results.sort(key=lambda o: o.date)
+    return results
+
+
 def _community_to_detail(
     community: Community,
     db: Session,
@@ -209,9 +338,7 @@ def _community_to_detail(
         status=community.status.value if isinstance(community.status, CommunityStatus) else community.status,  # type: ignore[arg-type]
         created_at=community.created_at,  # type: ignore[arg-type]
         posts=[PostRead.model_validate(p) for p in community.posts] if show_content else [],
-        events=(
-            [_event_to_read(e, db, current_user) for e in community.events] if show_content else []
-        ),
+        events=(_expand_events_for_community(community, db, current_user) if show_content else []),
     )
 
 
@@ -645,7 +772,7 @@ def _attach_reports(event: CommunityEvent, report_ids: list[uuid_mod.UUID], db: 
     event.reports = reports
 
 
-@router.post("/{community_id}/events", response_model=EventRead, status_code=201)
+@router.post("/{community_id}/events", response_model=EventOccurrenceRead, status_code=201)
 def create_event(
     community_id: uuid_mod.UUID,
     payload: EventCreate,
@@ -656,6 +783,12 @@ def create_event(
     community = _get_community_or_404(community_id, db)
     _require_owner(community, current_user)
 
+    if payload.recurrence_rule and payload.recurrence_rule not in ("weekly", "biweekly", "monthly"):
+        raise HTTPException(
+            status_code=400,
+            detail="recurrence_rule must be one of: weekly, biweekly, monthly",
+        )
+
     event = CommunityEvent(
         community_id=community.id,
         title=payload.title,
@@ -663,6 +796,8 @@ def create_event(
         date=payload.date,
         meeting_latitude=payload.meeting_latitude,
         meeting_longitude=payload.meeting_longitude,
+        recurrence_rule=payload.recurrence_rule,
+        recurrence_end=payload.recurrence_end,
     )
     db.add(event)
     db.flush()  # get event.id before attaching reports
@@ -670,77 +805,260 @@ def create_event(
     _attach_reports(event, payload.report_ids, db)
     db.commit()
     db.refresh(event)
-    return _event_to_read(event, db, current_user)
+    return _event_to_occurrence_read(event, db, current_user)
 
 
-@router.get("/{community_id}/events/{event_id}", response_model=EventRead)
-def get_event(
+@router.get("/{community_id}/events", response_model=list[EventOccurrenceRead])
+def list_events(
     community_id: uuid_mod.UUID,
-    event_id: uuid_mod.UUID,
+    range_start: Optional[datetime] = Query(None),
+    range_end: Optional[datetime] = Query(None),
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
 ):
-    """Get a single event. Only members, owner, or moderator+ can view."""
+    """List expanded event occurrences for a community within a date range."""
+    community = _get_community_or_404(community_id, db)
+    _require_content_access(community, current_user, db)
+    return _expand_events_for_community(community, db, current_user, range_start, range_end)
+
+
+def _resolve_occurrence(
+    community: Community,
+    occurrence_id: str,
+    db: Session,
+) -> tuple[CommunityEvent, datetime | None]:
+    """Resolve an occurrence_id to a CommunityEvent and optional virtual date.
+
+    Returns (event, None) for real events or (parent, occurrence_date) for virtual.
+    Raises HTTPException(404) if not found.
+    """
+    if is_composite_id(occurrence_id):
+        parent_id, occ_date = parse_occurrence_id(occurrence_id)
+        parent = (
+            db.query(CommunityEvent)
+            .filter(
+                CommunityEvent.id == parent_id,
+                CommunityEvent.community_id == community.id,
+            )
+            .first()
+        )
+        if not parent or not parent.recurrence_rule:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        # Check if a materialized exception already exists for this date.
+        exception = (
+            db.query(CommunityEvent)
+            .filter(
+                CommunityEvent.parent_event_id == parent.id,
+                CommunityEvent.date == occ_date,
+            )
+            .first()
+        )
+        if exception:
+            return exception, None
+
+        # Verify this date is a valid occurrence of the series.
+        far_end = occ_date + timedelta(seconds=1)
+        valid_dates = expand_occurrences(parent, occ_date, far_end)
+        if occ_date not in valid_dates:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        return parent, occ_date
+    else:
+        event = (
+            db.query(CommunityEvent)
+            .filter(
+                CommunityEvent.id == uuid_mod.UUID(occurrence_id),
+                CommunityEvent.community_id == community.id,
+            )
+            .first()
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return event, None
+
+
+def _get_or_materialize(parent: CommunityEvent, occ_date: datetime, db: Session) -> CommunityEvent:
+    """Get an existing exception or materialize a virtual occurrence."""
+    from sqlalchemy.exc import IntegrityError
+
+    exception = (
+        db.query(CommunityEvent)
+        .filter(
+            CommunityEvent.parent_event_id == parent.id,
+            CommunityEvent.date == occ_date,
+        )
+        .first()
+    )
+    if exception:
+        return exception
+
+    new_exc = materialize_occurrence(parent, occ_date)
+    db.add(new_exc)
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        exception = (
+            db.query(CommunityEvent)
+            .filter(
+                CommunityEvent.parent_event_id == parent.id,
+                CommunityEvent.date == occ_date,
+            )
+            .first()
+        )
+        if not exception:
+            raise HTTPException(status_code=500, detail="Failed to create event occurrence")
+        return exception
+    return new_exc
+
+
+@router.get("/{community_id}/events/{occurrence_id}", response_model=EventOccurrenceRead)
+def get_event(
+    community_id: uuid_mod.UUID,
+    occurrence_id: str,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(_get_optional_user),
+):
+    """Get a single event or occurrence."""
     community = _get_community_or_404(community_id, db)
     _require_content_access(community, current_user, db)
 
-    event = (
-        db.query(CommunityEvent)
-        .filter(CommunityEvent.id == event_id, CommunityEvent.community_id == community.id)
-        .first()
-    )
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event, occ_date = _resolve_occurrence(community, occurrence_id, db)
 
-    return _event_to_read(event, db, current_user)
+    if occ_date is not None:
+        # Virtual occurrence — build a synthetic response from the parent.
+        parent = event
+        return EventOccurrenceRead(
+            occurrence_id=build_occurrence_id(parent.id, occ_date),
+            event_id=parent.id,  # type: ignore[arg-type]
+            community_id=parent.community_id,  # type: ignore[arg-type]
+            title=parent.title,  # type: ignore[arg-type]
+            description=parent.description,  # type: ignore[arg-type]
+            date=occ_date,
+            meeting_latitude=parent.meeting_latitude,  # type: ignore[arg-type]
+            meeting_longitude=parent.meeting_longitude,  # type: ignore[arg-type]
+            report_ids=[r.id for r in parent.reports],
+            attendee_count=0,
+            is_attending=False,
+            is_recurring=True,
+            is_cancelled=False,
+            recurrence_rule=parent.recurrence_rule,  # type: ignore[arg-type]
+            recurrence_end=parent.recurrence_end,  # type: ignore[arg-type]
+            is_exception=False,
+            created_at=parent.created_at,  # type: ignore[arg-type]
+        )
+
+    return _event_to_occurrence_read(event, db, current_user)
 
 
-@router.patch("/{community_id}/events/{event_id}", response_model=EventRead)
+@router.patch("/{community_id}/events/{occurrence_id}", response_model=EventOccurrenceRead)
 def update_event(
     community_id: uuid_mod.UUID,
-    event_id: uuid_mod.UUID,
+    occurrence_id: str,
     payload: EventUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Edit an event. Owner only. All fields optional for partial update."""
+    """Edit an event. Owner only. Supports scoped updates for recurring events."""
     community = _get_community_or_404(community_id, db)
     _require_owner(community, current_user)
 
-    event = (
-        db.query(CommunityEvent)
-        .filter(CommunityEvent.id == event_id, CommunityEvent.community_id == community.id)
-        .first()
+    event, occ_date = _resolve_occurrence(community, occurrence_id, db)
+    scope = payload.update_scope or "all"
+
+    # Determine if this is a recurring series.
+    is_recurring = bool(event.recurrence_rule) or bool(event.parent_event_id)
+    parent = (
+        event.parent_event if event.parent_event_id else event if event.recurrence_rule else None
     )
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
 
-    if payload.title is not None:
-        event.title = payload.title  # type: ignore[assignment]
-    if payload.description is not None:
-        event.description = payload.description  # type: ignore[assignment]
-    if payload.date is not None:
-        event.date = payload.date  # type: ignore[assignment]
-    if payload.meeting_latitude is not None:
-        event.meeting_latitude = payload.meeting_latitude  # type: ignore[assignment]
-    if payload.meeting_longitude is not None:
-        event.meeting_longitude = payload.meeting_longitude  # type: ignore[assignment]
-    if payload.report_ids is not None:
-        _attach_reports(event, payload.report_ids, db)
+    if is_recurring and parent and scope == "this":
+        # Materialize this occurrence if virtual, then edit only it.
+        if occ_date is not None:
+            event = _get_or_materialize(parent, occ_date, db)
+        # event is now a real exception row — update it.
+    elif is_recurring and parent and scope == "this_and_future":
+        # Split the series: end the current parent before this date, create a new parent.
+        split_date = occ_date or event.date
+        parent.recurrence_end = split_date - timedelta(seconds=1)  # type: ignore[assignment]
+        # Create a new parent starting at the split date.
+        new_parent = CommunityEvent(
+            community_id=community.id,
+            title=payload.title or parent.title,
+            description=(
+                payload.description if payload.description is not None else parent.description
+            ),
+            date=split_date,
+            meeting_latitude=(
+                payload.meeting_latitude
+                if payload.meeting_latitude is not None
+                else parent.meeting_latitude
+            ),
+            meeting_longitude=(
+                payload.meeting_longitude
+                if payload.meeting_longitude is not None
+                else parent.meeting_longitude
+            ),
+            recurrence_rule=(
+                payload.recurrence_rule
+                if payload.recurrence_rule is not None
+                else parent.recurrence_rule
+            ),
+            recurrence_end=(
+                payload.recurrence_end
+                if payload.recurrence_end is not None
+                else parent.recurrence_end
+            ),
+        )
+        db.add(new_parent)
+        db.flush()
+        if payload.report_ids is not None:
+            _attach_reports(new_parent, payload.report_ids, db)
+        db.commit()
+        db.refresh(new_parent)
+        return _event_to_occurrence_read(new_parent, db, current_user)
+    # scope == "all" or non-recurring: edit the event/parent directly.
 
+    def _apply_updates(target: CommunityEvent) -> None:
+        if payload.title is not None:
+            target.title = payload.title  # type: ignore[assignment]
+        if payload.description is not None:
+            target.description = payload.description  # type: ignore[assignment]
+        if payload.date is not None:
+            target.date = payload.date  # type: ignore[assignment]
+        if payload.meeting_latitude is not None:
+            target.meeting_latitude = payload.meeting_latitude  # type: ignore[assignment]
+        if payload.meeting_longitude is not None:
+            target.meeting_longitude = payload.meeting_longitude  # type: ignore[assignment]
+        if payload.report_ids is not None:
+            _attach_reports(target, payload.report_ids, db)
+        if payload.recurrence_rule is not None:
+            target.recurrence_rule = payload.recurrence_rule  # type: ignore[assignment]
+        if payload.recurrence_end is not None:
+            target.recurrence_end = payload.recurrence_end  # type: ignore[assignment]
+
+    _apply_updates(event)
     db.commit()
     db.refresh(event)
-    return _event_to_read(event, db, current_user)
+    return _event_to_occurrence_read(event, db, current_user)
 
 
-@router.delete("/{community_id}/events/{event_id}", status_code=204)
+@router.delete("/{community_id}/events/{occurrence_id}", status_code=204)
 def delete_event(
     community_id: uuid_mod.UUID,
-    event_id: uuid_mod.UUID,
+    occurrence_id: str,
+    scope: str = Query("this"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Delete an event. Owner or moderator+ only."""
+    """Delete an event or occurrence. Owner or moderator+ only.
+
+    For recurring events, ``scope`` controls what is deleted:
+    - ``this``: cancel this single occurrence.
+    - ``this_and_future``: end the series before this date.
+    - ``all``: delete the entire series (parent + exceptions).
+    """
     community = _get_community_or_404(community_id, db)
 
     if community.owner_id != current_user.id and not _is_moderator_or_above(current_user):
@@ -748,16 +1066,32 @@ def delete_event(
             status_code=403, detail="Only the community owner or a moderator can do this"
         )
 
-    event = (
-        db.query(CommunityEvent)
-        .filter(CommunityEvent.id == event_id, CommunityEvent.community_id == community.id)
-        .first()
+    event, occ_date = _resolve_occurrence(community, occurrence_id, db)
+    parent = (
+        event.parent_event if event.parent_event_id else event if event.recurrence_rule else None
     )
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
 
-    db.delete(event)
-    db.commit()
+    if parent and scope == "this":
+        if occ_date is not None:
+            event = _get_or_materialize(parent, occ_date, db)
+        event.is_cancelled = True  # type: ignore[assignment]
+        db.commit()
+        return
+    elif parent and scope == "this_and_future":
+        cut_date = occ_date or event.date
+        parent.recurrence_end = cut_date - timedelta(seconds=1)  # type: ignore[assignment]
+        # Delete any exceptions on or after the cut date.
+        db.query(CommunityEvent).filter(
+            CommunityEvent.parent_event_id == parent.id,
+            CommunityEvent.date >= cut_date,
+        ).delete(synchronize_session="fetch")
+        db.commit()
+        return
+    else:
+        # scope == "all" or non-recurring: delete the event (cascade removes exceptions).
+        target = parent if parent else event
+        db.delete(target)
+        db.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -765,10 +1099,10 @@ def delete_event(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/{community_id}/events/{event_id}/attend", response_model=EventRead)
+@router.post("/{community_id}/events/{occurrence_id}/attend", response_model=EventOccurrenceRead)
 def attend_event(
     community_id: uuid_mod.UUID,
-    event_id: uuid_mod.UUID,
+    occurrence_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -780,13 +1114,12 @@ def attend_event(
             status_code=403, detail="You must be a member of this community to attend events"
         )
 
-    event = (
-        db.query(CommunityEvent)
-        .filter(CommunityEvent.id == event_id, CommunityEvent.community_id == community.id)
-        .first()
-    )
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event, occ_date = _resolve_occurrence(community, occurrence_id, db)
+
+    # Materialize virtual occurrence so we have a real row for attendance.
+    if occ_date is not None:
+        parent = event
+        event = _get_or_materialize(parent, occ_date, db)
 
     existing = (
         db.query(EventAttendance)
@@ -803,28 +1136,28 @@ def attend_event(
     db.add(attendance)
     db.commit()
     db.refresh(event)
-    return _event_to_read(event, db, current_user)
+    return _event_to_occurrence_read(event, db, current_user)
 
 
 @router.delete(
-    "/{community_id}/events/{event_id}/attend", status_code=200, response_model=EventRead
+    "/{community_id}/events/{occurrence_id}/attend",
+    status_code=200,
+    response_model=EventOccurrenceRead,
 )
 def unattend_event(
     community_id: uuid_mod.UUID,
-    event_id: uuid_mod.UUID,
+    occurrence_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Remove current user's attendance from an event."""
     community = _get_community_or_404(community_id, db)
 
-    event = (
-        db.query(CommunityEvent)
-        .filter(CommunityEvent.id == event_id, CommunityEvent.community_id == community.id)
-        .first()
-    )
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event, occ_date = _resolve_occurrence(community, occurrence_id, db)
+
+    if occ_date is not None:
+        # Virtual occurrence with no exception — user can't be attending.
+        raise HTTPException(status_code=404, detail="You are not attending this event")
 
     attendance = (
         db.query(EventAttendance)
@@ -839,7 +1172,7 @@ def unattend_event(
 
     db.delete(attendance)
     db.commit()
-    return _event_to_read(event, db, current_user)
+    return _event_to_occurrence_read(event, db, current_user)
 
 
 # ---------------------------------------------------------------------------

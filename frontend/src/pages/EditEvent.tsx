@@ -11,8 +11,8 @@ import type { CommunityRead, ReportRead } from '../api/model'
 
 const {
   listCommunitiesApiCommunitiesGet,
-  getEventApiCommunitiesCommunityIdEventsEventIdGet,
-  updateEventApiCommunitiesCommunityIdEventsEventIdPatch,
+  getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet,
+  updateEventApiCommunitiesCommunityIdEventsOccurrenceIdPatch,
 } = getCommunities()
 const { listReportsApiReportsGet } = getReports()
 
@@ -42,6 +42,10 @@ export default function EditEvent() {
   const [date, setDate] = useState('')
   const [meetingPoint, setMeetingPoint] = useState({ lat: 53.5, lng: -1.5 })
   const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set())
+  const [recurrenceRule, setRecurrenceRule] = useState('')
+  const [recurrenceEnd, setRecurrenceEnd] = useState('')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [updateScope, setUpdateScope] = useState('all')
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -56,7 +60,7 @@ export default function EditEvent() {
         const [communities, reports, event] = await Promise.all([
           listCommunitiesApiCommunitiesGet({ search: '' }),
           listReportsApiReportsGet({ status: 'pending' }),
-          getEventApiCommunitiesCommunityIdEventsEventIdGet(communityId, eventId!),
+          getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet(communityId, eventId!),
         ])
 
         const c = communities.find((x) => x.id === communityId)
@@ -68,6 +72,11 @@ export default function EditEvent() {
         setDate(new Date(event.date).toISOString().slice(0, 16))
         setMeetingPoint({ lat: event.meeting_latitude, lng: event.meeting_longitude })
         setSelectedReportIds(new Set(event.report_ids || []))
+        setIsRecurring(!!event.is_recurring)
+        setRecurrenceRule(event.recurrence_rule || '')
+        setRecurrenceEnd(
+          event.recurrence_end ? new Date(event.recurrence_end).toISOString().slice(0, 10) : ''
+        )
       } catch {
         setError('Failed to load event')
       }
@@ -99,13 +108,16 @@ export default function EditEvent() {
     setError('')
     setSubmitting(true)
     try {
-      await updateEventApiCommunitiesCommunityIdEventsEventIdPatch(communityId, eventId!, {
+      await updateEventApiCommunitiesCommunityIdEventsOccurrenceIdPatch(communityId, eventId!, {
         title: title.trim(),
         description: description.trim() || undefined,
         date: new Date(date).toISOString(),
         meeting_latitude: meetingPoint.lat,
         meeting_longitude: meetingPoint.lng,
         report_ids: Array.from(selectedReportIds),
+        recurrence_rule: recurrenceRule || undefined,
+        recurrence_end: recurrenceEnd ? new Date(recurrenceEnd).toISOString() : undefined,
+        update_scope: isRecurring ? updateScope : undefined,
       })
       navigate(`/communities/${communityId}`)
     } catch (err: unknown) {
@@ -205,6 +217,62 @@ export default function EditEvent() {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
           />
         </div>
+
+        {/* Recurrence */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Repeats</label>
+          <select
+            value={recurrenceRule}
+            onChange={(e) => setRecurrenceRule(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="">Does not repeat</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="monthly">Monthly (same weekday)</option>
+          </select>
+          {recurrenceRule && (
+            <div className="mt-2">
+              <label className="block text-xs text-gray-500 mb-1">
+                End date (optional — leave empty for ongoing)
+              </label>
+              <input
+                type="date"
+                value={recurrenceEnd}
+                onChange={(e) => setRecurrenceEnd(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Update scope for recurring events */}
+        {isRecurring && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-blue-800 mb-2">
+              This is a recurring event. Apply changes to:
+            </p>
+            <div className="flex flex-col gap-2">
+              {(['this', 'this_and_future', 'all'] as const).map((scope) => (
+                <label key={scope} className="flex items-center gap-2 text-sm text-blue-700">
+                  <input
+                    type="radio"
+                    name="update_scope"
+                    value={scope}
+                    checked={updateScope === scope}
+                    onChange={() => setUpdateScope(scope)}
+                    className="accent-brand"
+                  />
+                  {scope === 'this'
+                    ? 'This occurrence only'
+                    : scope === 'this_and_future'
+                      ? 'This and future occurrences'
+                      : 'All occurrences'}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Map + Nearby reports side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

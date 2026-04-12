@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import type { EventRead } from '../api/model'
+import type { EventOccurrenceRead } from '../api/model'
 import { downloadIcsFile, buildGoogleCalendarUrl } from '../utils/calendar'
 
 interface SaveToCalendarButtonProps {
-  event: EventRead
+  event: EventOccurrenceRead
   communityName: string
 }
 

@@ -23,14 +23,14 @@ jest.mock('../../context/AuthContext', () => ({
 
 jest.mock('../../api/endpoints/communities/communities', () => ({
   getCommunities: () => ({
-    getEventApiCommunitiesCommunityIdEventsEventIdGet: (...args: unknown[]) =>
+    getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet: (...args: unknown[]) =>
       mockGetEvent(...args),
     getCommunityApiCommunitiesCommunityIdGet: (...args: unknown[]) => mockGetCommunity(...args),
-    deleteEventApiCommunitiesCommunityIdEventsEventIdDelete: (...args: unknown[]) =>
+    deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete: (...args: unknown[]) =>
       mockDeleteEvent(...args),
-    attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost: (...args: unknown[]) =>
+    attendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendPost: (...args: unknown[]) =>
       mockAttendEvent(...args),
-    unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete: (...args: unknown[]) =>
+    unattendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendDelete: (...args: unknown[]) =>
       mockUnattendEvent(...args),
     myCommunitiesApiCommunitiesMineGet: (...args: unknown[]) => mockMyCommunities(...args),
   }),
