@@ -29,6 +29,7 @@ jest.mock('react-leaflet', () => ({
       mockMapClickHandler = handlers.click
     }
   },
+  useMap: () => ({ flyTo: jest.fn() }),
 }))
 
 jest.mock('leaflet', () => ({
@@ -97,5 +98,24 @@ describe('LocationPicker', () => {
     const wrapper = container.firstChild as HTMLElement
     expect(wrapper.className).toContain('h-64')
     expect(wrapper.className).toContain('rounded-lg')
+  })
+
+  it('renders map with default UK centre when position is null', () => {
+    render(<LocationPicker position={null} onMove={onMove} />)
+    expect(screen.getByTestId('map-container')).toHaveAttribute('data-center', '53.5,-1.5')
+  })
+
+  it('does not render a marker when position is null', () => {
+    render(<LocationPicker position={null} onMove={onMove} />)
+    expect(screen.queryByTestId('marker')).not.toBeInTheDocument()
+  })
+
+  it('calls onMove when map is clicked with no initial position', async () => {
+    const user = userEvent.setup()
+    render(<LocationPicker position={null} onMove={onMove} />)
+
+    await user.click(screen.getByTestId('map-click-trigger'))
+
+    expect(onMove).toHaveBeenCalledWith({ lat: 52.0, lng: -1.5 })
   })
 })
