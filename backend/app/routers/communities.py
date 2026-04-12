@@ -303,7 +303,7 @@ def _expand_events_for_community(
             event,
             dates,
             exceptions,
-            current_user_id=current_user.id if current_user else None,
+            current_user_id=current_user.id if current_user else None,  # type: ignore[arg-type]
             attendee_counts=attendee_counts,
             user_attending_ids=user_attending_ids,
         )
@@ -930,7 +930,7 @@ def get_event(
         # Virtual occurrence — build a synthetic response from the parent.
         parent = event
         return EventOccurrenceRead(
-            occurrence_id=build_occurrence_id(parent.id, occ_date),
+            occurrence_id=build_occurrence_id(parent.id, occ_date),  # type: ignore[arg-type]
             event_id=parent.id,  # type: ignore[arg-type]
             community_id=parent.community_id,  # type: ignore[arg-type]
             title=parent.title,  # type: ignore[arg-type]

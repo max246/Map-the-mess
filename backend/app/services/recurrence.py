@@ -48,18 +48,18 @@ def expand_occurrences(
     rule = parent.recurrence_rule
     if not rule:
         # One-off event — return the single date if it falls in range.
-        if range_start <= parent.date <= range_end:
-            return [parent.date]
+        if range_start <= parent.date <= range_end:  # type: ignore[operator]
+            return [parent.date]  # type: ignore[list-item]
         return []
 
-    end = min(range_end, parent.recurrence_end) if parent.recurrence_end else range_end
-    anchor: datetime = parent.date
+    end = min(range_end, parent.recurrence_end) if parent.recurrence_end else range_end  # type: ignore[type-var]
+    anchor: datetime = parent.date  # type: ignore[assignment]
     dates: list[datetime] = []
 
     if rule == "weekly":
         step = timedelta(weeks=1)
         current = anchor
-        while current <= end:
+        while current <= end:  # type: ignore[operator]
             if current >= range_start:
                 dates.append(current)
             current += step
@@ -67,7 +67,7 @@ def expand_occurrences(
     elif rule == "biweekly":
         step = timedelta(weeks=2)
         current = anchor
-        while current <= end:
+        while current <= end:  # type: ignore[operator]
             if current >= range_start:
                 dates.append(current)
             current += step
@@ -76,7 +76,7 @@ def expand_occurrences(
         wd_index, nth = _nth_weekday(anchor)
         wd = _WEEKDAY_MAP[wd_index]
         current = anchor
-        while current <= end:
+        while current <= end:  # type: ignore[operator]
             if current >= range_start:
                 dates.append(current)
             # Jump one month and find the Nth weekday.
@@ -93,8 +93,8 @@ def expand_occurrences(
             )
     else:
         # Unknown rule — treat as one-off.
-        if range_start <= parent.date <= range_end:
-            return [parent.date]
+        if range_start <= parent.date <= range_end:  # type: ignore[operator]
+            return [parent.date]  # type: ignore[list-item]
         return []
 
     return dates
@@ -164,7 +164,7 @@ def merge_with_exceptions(
     user_attending_ids : set[uuid.UUID] | None
         Set of exception event IDs the current user is attending.
     """
-    exc_by_date: dict[datetime, CommunityEvent] = {e.date: e for e in exceptions}
+    exc_by_date: dict[datetime, CommunityEvent] = {e.date: e for e in exceptions}  # type: ignore[misc]
     attendee_counts = attendee_counts or {}
     user_attending_ids = user_attending_ids or set()
     results: list[dict] = []
@@ -183,7 +183,7 @@ def merge_with_exceptions(
                     "meeting_latitude": exc.meeting_latitude,
                     "meeting_longitude": exc.meeting_longitude,
                     "report_ids": [r.id for r in exc.reports],
-                    "attendee_count": attendee_counts.get(exc.id, 0),
+                    "attendee_count": attendee_counts.get(exc.id, 0),  # type: ignore[call-overload]
                     "is_attending": exc.id in user_attending_ids,
                     "is_recurring": True,
                     "is_cancelled": exc.is_cancelled,
@@ -196,7 +196,7 @@ def merge_with_exceptions(
         else:
             results.append(
                 {
-                    "occurrence_id": build_occurrence_id(parent.id, dt),
+                    "occurrence_id": build_occurrence_id(parent.id, dt),  # type: ignore[arg-type]
                     "event_id": parent.id,
                     "community_id": parent.community_id,
                     "title": parent.title,
