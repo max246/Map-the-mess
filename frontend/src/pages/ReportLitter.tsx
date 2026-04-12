@@ -1,4 +1,4 @@
-import { useState, useRef, type ChangeEvent, type FormEvent } from 'react'
+import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import PageMeta from '../components/PageMeta'
 import LocationPicker from '../components/LocationPicker'
@@ -14,7 +14,6 @@ export default function ReportLitter() {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [locating, setLocating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadLabel, setUploadLabel] = useState('')
@@ -28,19 +27,18 @@ export default function ReportLitter() {
   const suggestTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const getLocation = () => {
-    setLocating(true)
+  // Try to get location in the background on mount
+  useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setLocating(false)
+        setLocation((prev) => prev ?? { lat: pos.coords.latitude, lng: pos.coords.longitude })
       },
       () => {
-        alert('Could not get your location. Please allow location access.')
-        setLocating(false)
-      }
+        // Silently fail — user can place pin manually
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     )
-  }
+  }, [])
 
   const handleWordsInput = (value: string) => {
     setWordsInput(value)
@@ -344,7 +342,9 @@ export default function ReportLitter() {
         </label>
 
         <div>
-          <span className="font-medium block mb-1">Location</span>
+          <span className="font-medium block mb-1">
+            Location <span className="text-red-500">*</span>
+          </span>
           {location ? (
             <>
               <p className="text-sm text-gray-600 mb-2">
@@ -399,29 +399,25 @@ export default function ReportLitter() {
                   Type a what3words address to search — suggestions will appear
                 </p>
               </div>
-
-              <p className="text-xs text-gray-400 mb-2">Drag the pin or tap the map to adjust</p>
-              <LocationPicker position={location} onMove={setLocation} />
-              <button
-                type="button"
-                onClick={() => {
-                  setLocation(null)
-                  setWords('')
-                  setWordsInput('')
-                }}
-                className="mt-2 text-sm text-gray-500 underline"
-              >
-                Reset location
-              </button>
             </>
           ) : (
+            <p className="text-sm text-gray-500 mb-2">
+              Tap the map to place a pin, or use the 📍 button to find your location
+            </p>
+          )}
+          <p className="text-xs text-gray-400 mb-2">Drag the pin or tap the map to adjust</p>
+          <LocationPicker position={location} onMove={setLocation} />
+          {location && (
             <button
               type="button"
-              onClick={getLocation}
-              disabled={locating}
-              className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm"
+              onClick={() => {
+                setLocation(null)
+                setWords('')
+                setWordsInput('')
+              }}
+              className="mt-2 text-sm text-gray-500 underline"
             >
-              {locating ? 'Getting location...' : '📍 Use My Location'}
+              Reset location
             </button>
           )}
         </div>

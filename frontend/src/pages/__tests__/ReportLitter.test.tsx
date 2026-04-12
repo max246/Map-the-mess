@@ -15,6 +15,14 @@ jest.mock('../../api/client', () => ({
 
 const mockPost = api.post as jest.Mock
 
+// Geolocation is called on mount — provide a default mock that silently fails
+const mockGeolocation = {
+  getCurrentPosition: jest.fn((_success: unknown, error?: (err: unknown) => void) => {
+    error?.({ code: 1, message: 'User denied' })
+  }),
+}
+Object.defineProperty(navigator, 'geolocation', { value: mockGeolocation, writable: true })
+
 function renderReportLitter() {
   return render(
     <MemoryRouter>
@@ -90,20 +98,19 @@ describe('ReportLitter', () => {
 
     const user = userEvent.setup()
 
-    // Mock geolocation so we can set a location
-    const mockGeolocation = {
-      getCurrentPosition: jest.fn(
-        (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
-          success({ coords: { latitude: 51.5, longitude: -0.1 } })
-        }
-      ),
-    }
-    Object.defineProperty(navigator, 'geolocation', { value: mockGeolocation, writable: true })
+    // Mock geolocation so location is set automatically on mount
+    mockGeolocation.getCurrentPosition.mockImplementation(
+      (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 51.5, longitude: -0.1 } })
+      }
+    )
 
     renderReportLitter()
 
-    // Set location
-    await user.click(screen.getByRole('button', { name: /use my location/i }))
+    // Location is fetched automatically in the background — wait for coordinates to appear
+    await waitFor(() => {
+      expect(screen.getByText(/51\.50000/)).toBeInTheDocument()
+    })
 
     // Accept conditions
     await user.click(screen.getByRole('checkbox'))
