@@ -13,7 +13,8 @@ const {
 } = getVolunteers()
 
 function getPopupImage(report: ReportRead): ReportImageRead | null {
-  const images = report.images || []
+  const currentCycle = report.current_cycle ?? 0
+  const images = (report.images || []).filter((img) => img.cycle === currentCycle)
   if (images.length === 0) return null
 
   if (report.status === 'cleaned') {

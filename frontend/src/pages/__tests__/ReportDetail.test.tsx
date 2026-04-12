@@ -14,9 +14,33 @@ const REPORT_WITH_IMAGES = {
   what3words: 'filled.count.soap',
   address: '123 Test Street, London',
   resolved_at: null,
+  current_cycle: 0,
+  status_log: [
+    {
+      id: 'log-1',
+      action: 'created',
+      cycle: 0,
+      performed_by_user_id: null,
+      created_at: '2026-01-15T10:30:00Z',
+    },
+  ],
   images: [
-    { id: '00000000-0000-0000-0000-000000000101', image_type: 'report', path: 'images/101.jpg' },
-    { id: '00000000-0000-0000-0000-000000000102', image_type: 'report', path: 'images/102.jpg' },
+    {
+      id: '00000000-0000-0000-0000-000000000101',
+      image_type: 'report',
+      path: 'images/101.jpg',
+      url: '101.jpg',
+      cycle: 0,
+      created_at: '2026-01-15T10:30:00Z',
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000102',
+      image_type: 'report',
+      path: 'images/102.jpg',
+      url: '102.jpg',
+      cycle: 0,
+      created_at: '2026-01-15T10:31:00Z',
+    },
   ],
 }
 
@@ -29,9 +53,99 @@ const RESOLVED_REPORT = {
   created_at: '2026-01-10T08:00:00Z',
   what3words: '',
   resolved_at: '2026-01-12T14:00:00Z',
+  current_cycle: 0,
+  status_log: [
+    {
+      id: 'log-2',
+      action: 'created',
+      cycle: 0,
+      performed_by_user_id: null,
+      created_at: '2026-01-10T08:00:00Z',
+    },
+    {
+      id: 'log-3',
+      action: 'cleaned',
+      cycle: 0,
+      performed_by_user_id: 'user-1',
+      created_at: '2026-01-12T14:00:00Z',
+    },
+  ],
   images: [
-    { id: '00000000-0000-0000-0000-000000000201', image_type: 'report', path: 'images/201.jpg' },
-    { id: '00000000-0000-0000-0000-000000000202', image_type: 'resolved', path: 'images/202.jpg' },
+    {
+      id: '00000000-0000-0000-0000-000000000201',
+      image_type: 'report',
+      path: 'images/201.jpg',
+      url: '201.jpg',
+      cycle: 0,
+      created_at: '2026-01-10T08:00:00Z',
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000202',
+      image_type: 'resolved',
+      path: 'images/202.jpg',
+      url: '202.jpg',
+      cycle: 0,
+      created_at: '2026-01-12T14:00:00Z',
+    },
+  ],
+}
+
+const REOPENED_REPORT = {
+  id: '00000000-0000-0000-0000-00000000ef44',
+  description: 'Reopened mess',
+  status: 'reported',
+  latitude: 51.5,
+  longitude: -0.1,
+  created_at: '2026-01-01T08:00:00Z',
+  what3words: '',
+  address: '456 Test Road',
+  resolved_at: null,
+  current_cycle: 1,
+  status_log: [
+    {
+      id: 'log-4',
+      action: 'created',
+      cycle: 0,
+      performed_by_user_id: null,
+      created_at: '2026-01-01T08:00:00Z',
+    },
+    {
+      id: 'log-5',
+      action: 'cleaned',
+      cycle: 0,
+      performed_by_user_id: 'user-1',
+      created_at: '2026-01-05T12:00:00Z',
+    },
+    {
+      id: 'log-6',
+      action: 'reopened',
+      cycle: 1,
+      performed_by_user_id: null,
+      created_at: '2026-01-10T09:00:00Z',
+    },
+  ],
+  images: [
+    {
+      id: '00000000-0000-0000-0000-000000000301',
+      image_type: 'report',
+      url: '301.jpg',
+      cycle: 0,
+      created_at: '2026-01-01T08:00:00Z',
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000302',
+      image_type: 'resolved',
+      url: '302.jpg',
+      cycle: 0,
+      created_at: '2026-01-05T12:00:00Z',
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000303',
+      image_type: 'report',
+      url: '303.jpg',
+      cycle: 1,
+      created_at: '2026-01-10T09:00:00Z',
+    },
   ],
 }
 
@@ -326,6 +440,123 @@ describe('ReportDetail', () => {
     renderReportDetail('00000000-0000-0000-0000-00000000cd43')
     await waitFor(() => {
       expect(screen.getAllByText('Resolved').length).toBeGreaterThan(0)
+    })
+  })
+
+  /* ── Status timeline ────────────────────────────── */
+
+  it('shows History section with timeline entries', async () => {
+    renderReportDetail()
+    expect(await screen.findByText('History')).toBeInTheDocument()
+    expect(screen.getByText('Reported')).toBeInTheDocument()
+  })
+
+  it('shows timeline with multiple entries for resolved report', async () => {
+    mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
+    expect(await screen.findByText('History')).toBeInTheDocument()
+    expect(screen.getByText('Reported')).toBeInTheDocument()
+    // "Resolved" appears in the timeline and also in the resolved banner/badge
+    expect(screen.getAllByText('Resolved').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('shows timeline with Reopened entry for reopened report', async () => {
+    mockGet.mockResolvedValue({ data: REOPENED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000ef44')
+    expect(await screen.findByText('History')).toBeInTheDocument()
+    expect(screen.getByText('Reported')).toBeInTheDocument()
+    expect(screen.getByText('Reopened')).toBeInTheDocument()
+  })
+
+  /* ── Cycle-based image filtering ────────────────── */
+
+  it('only shows current cycle images in main gallery for reopened report', async () => {
+    mockGet.mockResolvedValue({ data: REOPENED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000ef44')
+    await waitFor(() => {
+      // Only cycle 1 image (303.jpg) should be in the main gallery
+      const thumbnails = screen
+        .getAllByRole('img')
+        .filter((img) => img.getAttribute('alt')?.startsWith('Thumbnail'))
+      expect(thumbnails).toHaveLength(1)
+    })
+  })
+
+  it('shows "View photos from this period" link for old cycle images', async () => {
+    mockGet.mockResolvedValue({ data: REOPENED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000ef44')
+    const links = await screen.findAllByText(/View 2 photos from this period/)
+    expect(links.length).toBeGreaterThan(0)
+  })
+
+  it('expands old cycle photos when clicking view link', async () => {
+    const user = userEvent.setup()
+    mockGet.mockResolvedValue({ data: REOPENED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000ef44')
+
+    const viewLinks = await screen.findAllByText(/View 2 photos from this period/)
+    await user.click(viewLinks[0])
+
+    // Should now show old cycle thumbnails and a "Hide photos" link
+    const hideLinks = screen.getAllByText('Hide photos')
+    expect(hideLinks.length).toBeGreaterThan(0)
+    const prevCycleImages = screen.getAllByAltText('Previous cycle')
+    expect(prevCycleImages.length).toBeGreaterThanOrEqual(2)
+  })
+
+  /* ── Reopen form ────────────────────────────────── */
+
+  it('shows reopen button for resolved reports', async () => {
+    mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
+    expect(
+      await screen.findByRole('button', { name: /report still dirty\? reopen/i })
+    ).toBeInTheDocument()
+  })
+
+  it('opens reopen form with optional photo upload', async () => {
+    const user = userEvent.setup()
+    mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
+
+    await user.click(await screen.findByRole('button', { name: /report still dirty\? reopen/i }))
+
+    expect(screen.getByText(/if this area is still dirty/i)).toBeInTheDocument()
+    expect(screen.getByText(/add a photo \(optional\)/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /reopen report/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+  })
+
+  it('can cancel the reopen form', async () => {
+    const user = userEvent.setup()
+    mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
+
+    await user.click(await screen.findByRole('button', { name: /report still dirty\? reopen/i }))
+    expect(screen.getByRole('button', { name: /reopen report/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByRole('button', { name: /reopen report/i })).not.toBeInTheDocument()
+  })
+
+  it('calls unresolve API when submitting reopen without photo', async () => {
+    mockAuth = { token: null, canManageUsers: false, isLoggedIn: false }
+    mockPatch.mockResolvedValue({
+      data: { ...RESOLVED_REPORT, status: 'pending', current_cycle: 1 },
+    })
+    const user = userEvent.setup()
+    mockGet.mockResolvedValue({ data: RESOLVED_REPORT })
+    renderReportDetail('00000000-0000-0000-0000-00000000cd43')
+
+    await user.click(await screen.findByRole('button', { name: /report still dirty\? reopen/i }))
+    await user.click(screen.getByRole('button', { name: /reopen report/i }))
+
+    await waitFor(() => {
+      expect(mockPatch).toHaveBeenCalledWith(
+        '/api/reports/00000000-0000-0000-0000-00000000cd43/unresolve',
+        undefined,
+        expect.objectContaining({ headers: expect.any(Object) })
+      )
     })
   })
 })

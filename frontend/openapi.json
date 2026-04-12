@@ -379,13 +379,8 @@
           "Reports"
         ],
         "summary": "Mark Unresolved",
-        "description": "Set a report back to pending. Requires moderator or admin role.",
+        "description": "Reopen a report. Anyone can reopen with an optional photo.",
         "operationId": "mark_unresolved_api_reports__report_id__unresolve_patch",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "report_id",
@@ -398,6 +393,20 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Body_mark_unresolved_api_reports__report_id__unresolve_patch"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2944,6 +2953,24 @@
         ],
         "title": "Body_create_report_api_reports__post"
       },
+      "Body_mark_unresolved_api_reports__report_id__unresolve_patch": {
+        "properties": {
+          "image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image"
+          }
+        },
+        "type": "object",
+        "title": "Body_mark_unresolved_api_reports__report_id__unresolve_patch"
+      },
       "Body_upload_avatar_api_auth_me_avatar_put": {
         "properties": {
           "file": {
@@ -3934,6 +3961,11 @@
             "type": "string",
             "title": "Image Type"
           },
+          "cycle": {
+            "type": "integer",
+            "title": "Cycle",
+            "default": 0
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -4034,6 +4066,11 @@
             "type": "string",
             "title": "Status"
           },
+          "current_cycle": {
+            "type": "integer",
+            "title": "Current Cycle",
+            "default": 0
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -4045,6 +4082,14 @@
             },
             "type": "array",
             "title": "Images",
+            "default": []
+          },
+          "status_log": {
+            "items": {
+              "$ref": "#/components/schemas/ReportStatusLogRead"
+            },
+            "type": "array",
+            "title": "Status Log",
             "default": []
           }
         },
@@ -4059,6 +4104,48 @@
           "created_at"
         ],
         "title": "ReportRead"
+      },
+      "ReportStatusLogRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "cycle": {
+            "type": "integer",
+            "title": "Cycle"
+          },
+          "performed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Performed By User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "action",
+          "cycle",
+          "created_at"
+        ],
+        "title": "ReportStatusLogRead"
       },
       "ResetPassword": {
         "properties": {

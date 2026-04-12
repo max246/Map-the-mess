@@ -7,7 +7,7 @@ import api, { imageUrl, thumbnailUrl } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
-import type { ReportRead, ReportImageRead } from '../api/model'
+import type { ReportRead, ReportImageRead, ReportStatusLogRead } from '../api/model'
 
 const { deleteImageApiReportsImagesImageIdDelete, addImageApiReportsReportIdImagesPost } =
   getReports()
@@ -36,10 +36,16 @@ export default function ReportDetail() {
   const [resolveLabel, setResolveLabel] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [lightboxPhotos, setLightboxPhotos] = useState<ReportImageRead[]>([])
   const [isFavourite, setIsFavourite] = useState(false)
   const [addingPhoto, setAddingPhoto] = useState(false)
+  const [showReopenForm, setShowReopenForm] = useState(false)
+  const [reopenPhoto, setReopenPhoto] = useState<File | null>(null)
+  const [reopenPhotoPreview, setReopenPhotoPreview] = useState<string | null>(null)
+  const [reopening, setReopening] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const addPhotoInputRef = useRef<HTMLInputElement>(null)
+  const reopenFileInputRef = useRef<HTMLInputElement>(null)
 
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
 
@@ -79,22 +85,32 @@ export default function ReportDetail() {
     }
   }
 
-  // Build image URLs from report.images array
-  const reportImages = report?.images?.filter((img) => img.image_type === 'report') || []
-  const resolvedImages = report?.images?.filter((img) => img.image_type === 'resolved') || []
-  const allPhotos: ReportImageRead[] = [...reportImages, ...resolvedImages]
+  // Build image URLs — only show current cycle in the main gallery
+  const currentCycle = report?.current_cycle ?? 0
+  const currentImages = report?.images?.filter((img) => img.cycle === currentCycle) || []
+  const currentReportImages = currentImages.filter((img) => img.image_type === 'report')
+  const currentResolvedImages = currentImages.filter((img) => img.image_type === 'resolved')
+  const allPhotos: ReportImageRead[] = [...currentReportImages, ...currentResolvedImages]
+
+  // For timeline: track which cycle's images are expanded
+  const [expandedCycle, setExpandedCycle] = useState<number | null>(null)
+
+  const openLightbox = (photos: ReportImageRead[], index: number) => {
+    setLightboxPhotos(photos)
+    setLightboxIndex(index)
+  }
 
   useEffect(() => {
     if (lightboxIndex === null) return
+    const len = lightboxPhotos.length
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setLightboxIndex(null)
-      if (e.key === 'ArrowLeft')
-        setLightboxIndex((prev) => ((prev ?? 0) - 1 + allPhotos.length) % allPhotos.length)
-      if (e.key === 'ArrowRight') setLightboxIndex((prev) => ((prev ?? 0) + 1) % allPhotos.length)
+      if (e.key === 'ArrowLeft') setLightboxIndex((prev) => ((prev ?? 0) - 1 + len) % len)
+      if (e.key === 'ArrowRight') setLightboxIndex((prev) => ((prev ?? 0) + 1) % len)
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [lightboxIndex, allPhotos.length])
+  }, [lightboxIndex, lightboxPhotos.length])
 
   const handleResolvePhotos = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -173,14 +189,31 @@ export default function ReportDetail() {
     }
   }
 
-  const handleUnresolve = async () => {
+  const handleUnresolve = async (e?: FormEvent) => {
+    if (e) e.preventDefault()
+    setReopening(true)
     try {
-      const res = await api.patch(`/api/reports/${id}/unresolve`, undefined, {
-        headers: authHeaders,
-      })
+      let res
+      if (reopenPhoto) {
+        const formData = new FormData()
+        formData.append('image', reopenPhoto)
+        res = await api.patch(`/api/reports/${id}/unresolve`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data', ...authHeaders },
+        })
+      } else {
+        res = await api.patch(`/api/reports/${id}/unresolve`, undefined, {
+          headers: authHeaders,
+        })
+      }
       setReport(res.data)
+      setShowReopenForm(false)
+      setReopenPhoto(null)
+      setReopenPhotoPreview(null)
+      fetchReport()
     } catch {
-      alert('Failed to unresolve report.')
+      alert('Failed to reopen report.')
+    } finally {
+      setReopening(false)
     }
   }
 
@@ -323,7 +356,7 @@ export default function ReportDetail() {
                 src={imageUrl(allPhotos[activePhoto])}
                 alt={`Report photo ${activePhoto + 1}`}
                 className="w-full rounded-lg object-cover max-h-96 cursor-pointer"
-                onClick={() => setLightboxIndex(activePhoto)}
+                onClick={() => openLightbox(allPhotos, activePhoto)}
               />
               {allPhotos[activePhoto].image_type === 'resolved' && (
                 <span className="absolute top-2 left-2 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
@@ -400,7 +433,7 @@ export default function ReportDetail() {
       </div>
 
       {/* Lightbox */}
-      {lightboxIndex !== null && (
+      {lightboxIndex !== null && lightboxPhotos.length > 0 && (
         <div
           className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center"
           onClick={() => setLightboxIndex(null)}
@@ -412,12 +445,14 @@ export default function ReportDetail() {
             X
           </button>
 
-          {allPhotos.length > 1 && (
+          {lightboxPhotos.length > 1 && (
             <>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setLightboxIndex((lightboxIndex - 1 + allPhotos.length) % allPhotos.length)
+                  setLightboxIndex(
+                    (lightboxIndex - 1 + lightboxPhotos.length) % lightboxPhotos.length
+                  )
                 }}
                 className="absolute left-4 text-white text-4xl font-bold hover:text-gray-300 z-10"
               >
@@ -426,7 +461,7 @@ export default function ReportDetail() {
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setLightboxIndex((lightboxIndex + 1) % allPhotos.length)
+                  setLightboxIndex((lightboxIndex + 1) % lightboxPhotos.length)
                 }}
                 className="absolute right-4 text-white text-4xl font-bold hover:text-gray-300 z-10"
               >
@@ -436,15 +471,15 @@ export default function ReportDetail() {
           )}
 
           <img
-            src={imageUrl(allPhotos[lightboxIndex])}
+            src={imageUrl(lightboxPhotos[lightboxIndex])}
             alt={`Full size photo ${lightboxIndex + 1}`}
             className="max-w-full max-h-full object-contain p-4"
             onClick={(e) => e.stopPropagation()}
           />
 
           <div className="absolute bottom-4 text-white text-sm">
-            {lightboxIndex + 1} / {allPhotos.length}
-            {allPhotos[lightboxIndex].image_type === 'resolved' && (
+            {lightboxIndex + 1} / {lightboxPhotos.length}
+            {lightboxPhotos[lightboxIndex].image_type === 'resolved' && (
               <span className="ml-2 bg-green-600 text-xs px-2 py-0.5 rounded">Resolved</span>
             )}
           </div>
@@ -530,6 +565,91 @@ export default function ReportDetail() {
           )}
         </div>
       </div>
+
+      {/* Status Timeline */}
+      {report.status_log && report.status_log.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-5 mb-6">
+          <h2 className="font-semibold mb-4">History</h2>
+          <div className="relative">
+            {report.status_log.map((entry: ReportStatusLogRead, i: number) => {
+              const isLast = i === report.status_log!.length - 1
+              const cycleImages = (report.images || []).filter((img) => img.cycle === entry.cycle)
+              const hasPastImages = cycleImages.length > 0 && entry.cycle !== currentCycle
+              const isExpanded = expandedCycle === entry.cycle
+
+              let dotColor = 'bg-gray-400'
+              let label = 'Reported'
+              if (entry.action === 'cleaned') {
+                dotColor = 'bg-green-500'
+                label = 'Resolved'
+              } else if (entry.action === 'reopened') {
+                dotColor = 'bg-orange-500'
+                label = 'Reopened'
+              }
+
+              return (
+                <div key={entry.id} className="flex gap-3">
+                  {/* Vertical line + dot */}
+                  <div className="flex flex-col items-center">
+                    <div className={`w-3 h-3 rounded-full ${dotColor} flex-shrink-0 mt-1`} />
+                    {!isLast && <div className="w-0.5 bg-gray-200 flex-1 min-h-[24px]" />}
+                  </div>
+
+                  {/* Content */}
+                  <div className={`pb-4 ${isLast ? '' : ''}`}>
+                    <p className="text-sm font-medium text-gray-800">{label}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(entry.created_at).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+
+                    {/* Show photos from older cycles */}
+                    {hasPastImages && (
+                      <div className="mt-1">
+                        <button
+                          onClick={() => setExpandedCycle(isExpanded ? null : entry.cycle)}
+                          className="text-xs text-brand hover:underline"
+                        >
+                          {isExpanded
+                            ? 'Hide photos'
+                            : `View ${cycleImages.length} photo${cycleImages.length > 1 ? 's' : ''} from this period`}
+                        </button>
+                        {isExpanded && (
+                          <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                            {cycleImages.map((img, imgIdx) => (
+                              <div
+                                key={img.id}
+                                className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden"
+                              >
+                                <img
+                                  src={thumbnailUrl(img)}
+                                  alt="Previous cycle"
+                                  className="w-full h-full object-cover cursor-pointer"
+                                  onClick={() => openLightbox(cycleImages, imgIdx)}
+                                />
+                                {img.image_type === 'resolved' && (
+                                  <span className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-center text-[8px] leading-tight py-0.5">
+                                    Resolved
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Resolve section */}
       {report.status !== 'cleaned' && (
@@ -659,23 +779,102 @@ export default function ReportDetail() {
         </div>
       )}
 
-      {/* Resolved info */}
+      {/* Resolved info + Reopen */}
       {report.status === 'cleaned' && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-5 mb-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="font-semibold text-green-800 mb-1">Resolved</h2>
               <p className="text-sm text-green-700">This report has been marked as cleaned.</p>
             </div>
-            {canManageUsers && (
-              <button
-                onClick={handleUnresolve}
-                className="text-sm text-orange-600 hover:text-orange-700 font-medium hover:underline"
-              >
-                Mark as Unresolved
-              </button>
-            )}
           </div>
+
+          {!showReopenForm ? (
+            <button
+              onClick={() => setShowReopenForm(true)}
+              className="w-full bg-orange-500 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-600 transition text-sm"
+            >
+              Report still dirty? Reopen
+            </button>
+          ) : (
+            <form onSubmit={handleUnresolve} className="mt-3 border-t border-green-200 pt-4">
+              <p className="text-sm text-gray-600 mb-3">
+                If this area is still dirty, you can reopen this report. Adding a photo is optional
+                but helpful.
+              </p>
+
+              {/* Optional photo upload */}
+              <div className="mb-4">
+                <input
+                  ref={reopenFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setReopenPhoto(file)
+                    const reader = new FileReader()
+                    reader.onloadend = () => setReopenPhotoPreview(reader.result as string)
+                    reader.readAsDataURL(file)
+                    if (reopenFileInputRef.current) reopenFileInputRef.current.value = ''
+                  }}
+                  className="hidden"
+                />
+                {reopenPhotoPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={reopenPhotoPreview}
+                      alt="Reopen proof"
+                      className="w-32 h-24 rounded-lg object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReopenPhoto(null)
+                        setReopenPhotoPreview(null)
+                      }}
+                      className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-opacity-70"
+                    >
+                      X
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => reopenFileInputRef.current?.click()}
+                    className="w-full h-16 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 hover:text-orange-500 transition text-sm"
+                  >
+                    <span className="text-lg mb-0.5">+</span>
+                    Add a photo (optional)
+                  </button>
+                )}
+              </div>
+
+              {reopening ? (
+                <div className="text-center text-sm text-gray-500 py-2">Reopening...</div>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-orange-500 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-600 transition text-sm"
+                  >
+                    Reopen Report
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReopenForm(false)
+                      setReopenPhoto(null)
+                      setReopenPhotoPreview(null)
+                    }}
+                    className="px-4 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
         </div>
       )}
 
