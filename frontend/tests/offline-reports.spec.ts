@@ -66,8 +66,8 @@ async function installOnlineToggle(page: Page) {
 
 const fillAndSubmitReport = async (page: Page) => {
   await page.goto('/report')
-  await page.getByRole('button', { name: /use my location/i }).click()
-  await expect(page.getByText(/drag the pin/i)).toBeVisible()
+  // Location is detected automatically in the background — wait for coordinates to appear
+  await expect(page.getByText(/51\.50740/)).toBeVisible({ timeout: 10000 })
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: /submit report/i }).click()
 }
