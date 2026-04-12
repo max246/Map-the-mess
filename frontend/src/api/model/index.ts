@@ -9,6 +9,7 @@
 export * from './badgeRead';
 export * from './bodyAddImageApiReportsReportIdImagesPost';
 export * from './bodyCreateReportApiReportsPost';
+export * from './bodyMarkUnresolvedApiReportsReportIdUnresolvePatch';
 export * from './bodyUploadAvatarApiAuthMeAvatarPut';
 export * from './bodyUploadProfileImageApiCommunitiesCommunityIdImagePut';
 export * from './changePassword';
@@ -43,6 +44,7 @@ export * from './refreshRequest';
 export * from './rejectedCommunity';
 export * from './reportImageRead';
 export * from './reportRead';
+export * from './reportStatusLogRead';
 export * from './resetPassword';
 export * from './token';
 export * from './userCreate';

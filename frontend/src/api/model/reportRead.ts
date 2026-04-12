@@ -6,6 +6,7 @@
  * OpenAPI spec version: dev
  */
 import type { ReportImageRead } from './reportImageRead';
+import type { ReportStatusLogRead } from './reportStatusLogRead';
 
 export interface ReportRead {
   id: string;
@@ -19,6 +20,8 @@ export interface ReportRead {
   resolved_by_user_id?: string | null;
   resolved_at?: string | null;
   status: string;
+  current_cycle?: number;
   created_at: string;
   images?: ReportImageRead[];
+  status_log?: ReportStatusLogRead[];
 }

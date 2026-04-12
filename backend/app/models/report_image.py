@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Uuid
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Uuid
 
 from app.database import Base
 
@@ -24,4 +24,5 @@ class ReportImage(Base):
     url = Column(String, nullable=False)
     thumbnail_url = Column(String, nullable=True)
     image_type: Column[ImageType] = Column(Enum(ImageType), nullable=False)
+    cycle = Column(Integer, default=0, nullable=False, server_default="0")
     created_at = Column(DateTime, default=datetime.utcnow)
