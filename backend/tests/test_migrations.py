@@ -409,6 +409,16 @@ def _check_organise_images(conn):
     assert "communities" in tables
 
 
+# 17. a1b2c3d4e5f7 — add recurrence columns to community_events
+@_check("a1b2c3d4e5f7")
+def _check_add_recurrence(conn):
+    cols = _column_names(conn, "community_events")
+    assert "recurrence_rule" in cols
+    assert "recurrence_end" in cols
+    assert "parent_event_id" in cols
+    assert "is_cancelled" in cols
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -431,6 +441,7 @@ MIGRATION_CHAIN = [
     "e5f6a7b8c9d0",
     "f6a7b8c9d0e1",
     "a7b8c9d0e1f2",
+    "a1b2c3d4e5f7",
 ]
 
 # ---------------------------------------------------------------------------

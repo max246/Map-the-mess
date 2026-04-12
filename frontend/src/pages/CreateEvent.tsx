@@ -36,6 +36,8 @@ export default function CreateEvent() {
   const [date, setDate] = useState('')
   const [meetingPoint, setMeetingPoint] = useState({ lat: 53.5, lng: -1.5 })
   const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set())
+  const [recurrenceRule, setRecurrenceRule] = useState('')
+  const [recurrenceEnd, setRecurrenceEnd] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -89,6 +91,8 @@ export default function CreateEvent() {
         meeting_latitude: meetingPoint.lat,
         meeting_longitude: meetingPoint.lng,
         report_ids: Array.from(selectedReportIds),
+        recurrence_rule: recurrenceRule || undefined,
+        recurrence_end: recurrenceEnd ? new Date(recurrenceEnd).toISOString() : undefined,
       })
       navigate(`/communities/${communityId}`)
     } catch (err: unknown) {
@@ -185,6 +189,34 @@ export default function CreateEvent() {
             onChange={(e) => setDate(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
           />
+        </div>
+
+        {/* Recurrence */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Repeats</label>
+          <select
+            value={recurrenceRule}
+            onChange={(e) => setRecurrenceRule(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="">Does not repeat</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="monthly">Monthly (same weekday)</option>
+          </select>
+          {recurrenceRule && (
+            <div className="mt-2">
+              <label className="block text-xs text-gray-500 mb-1">
+                End date (optional — leave empty for ongoing)
+              </label>
+              <input
+                type="date"
+                value={recurrenceEnd}
+                onChange={(e) => setRecurrenceEnd(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+          )}
         </div>
 
         {/* Map + Nearby reports side by side */}

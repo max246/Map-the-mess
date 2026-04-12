@@ -9,7 +9,7 @@ import ShareButton from '../components/ShareButton'
 import type {
   CommunityDetail as CommunityDetailType,
   PostRead,
-  EventRead,
+  EventOccurrenceRead,
   MembershipRead,
   LeaderboardEntry,
 } from '../api/model'
@@ -20,7 +20,7 @@ const {
   updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,
   deleteCommunityApiCommunitiesCommunityIdDelete,
   deletePostApiCommunitiesCommunityIdPostsPostIdDelete,
-  deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,
+  deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete,
   joinCommunityApiCommunitiesCommunityIdJoinPost,
   leaveCommunityApiCommunitiesCommunityIdLeaveDelete,
   listMembershipsApiCommunitiesCommunityIdMembershipsGet,
@@ -48,6 +48,11 @@ export default function CommunityDetail() {
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'main' | 'members' | 'leaderboard'>('main')
+
+  // Pagination
+  const PAGE_SIZE = 5
+  const [eventsPage, setEventsPage] = useState(1)
+  const [postsPage, setPostsPage] = useState(1)
 
   // Public members (visible to all)
   const [publicMembers, setPublicMembers] = useState<MembershipRead[]>([])
@@ -265,9 +270,11 @@ export default function CommunityDetail() {
   const handleDeleteEvent = async (eventId: string) => {
     if (!confirm('Delete this event?')) return
     try {
-      await deleteEventApiCommunitiesCommunityIdEventsEventIdDelete(communityId, eventId)
+      await deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete(communityId, eventId)
       setCommunity((prev) =>
-        prev ? { ...prev, events: (prev.events || []).filter((e) => e.id !== eventId) } : prev
+        prev
+          ? { ...prev, events: (prev.events || []).filter((e) => e.occurrence_id !== eventId) }
+          : prev
       )
     } catch {
       alert('Failed to delete event')
@@ -285,6 +292,20 @@ export default function CommunityDetail() {
   )
   const events = [...(community.events || [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+
+  const eventsTotalPages = Math.max(1, Math.ceil(events.length / PAGE_SIZE))
+  const eventsCurrentPage = Math.min(eventsPage, eventsTotalPages)
+  const paginatedEvents = events.slice(
+    (eventsCurrentPage - 1) * PAGE_SIZE,
+    eventsCurrentPage * PAGE_SIZE
+  )
+
+  const postsTotalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE))
+  const postsCurrentPage = Math.min(postsPage, postsTotalPages)
+  const paginatedPosts = posts.slice(
+    (postsCurrentPage - 1) * PAGE_SIZE,
+    postsCurrentPage * PAGE_SIZE
   )
 
   return (
@@ -630,18 +651,51 @@ export default function CommunityDetail() {
                 {events.length === 0 ? (
                   <p className="text-gray-400 text-sm">No events yet.</p>
                 ) : (
-                  <div className="space-y-3">
-                    {events.map((event) => (
-                      <EventCard
-                        key={event.id}
-                        event={event}
-                        communityId={communityId}
-                        isOwner={isOwner}
-                        canManage={canManageUsers}
-                        onDelete={handleDeleteEvent}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div className="space-y-3">
+                      {paginatedEvents.map((event) => (
+                        <EventCard
+                          key={event.occurrence_id}
+                          event={event}
+                          communityId={communityId}
+                          isOwner={isOwner}
+                          canManage={canManageUsers}
+                          onDelete={handleDeleteEvent}
+                        />
+                      ))}
+                    </div>
+                    {eventsTotalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-4">
+                        <button
+                          onClick={() => setEventsPage((p) => Math.max(1, p - 1))}
+                          disabled={eventsCurrentPage === 1}
+                          className="px-3 py-1.5 rounded border border-gray-300 text-sm disabled:opacity-30 hover:bg-gray-50 transition"
+                        >
+                          Previous
+                        </button>
+                        {Array.from({ length: eventsTotalPages }, (_, i) => i + 1).map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setEventsPage(p)}
+                            className={`px-3 py-1.5 rounded text-sm transition ${
+                              p === eventsCurrentPage
+                                ? 'bg-brand text-white'
+                                : 'border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setEventsPage((p) => Math.min(eventsTotalPages, p + 1))}
+                          disabled={eventsCurrentPage === eventsTotalPages}
+                          className="px-3 py-1.5 rounded border border-gray-300 text-sm disabled:opacity-30 hover:bg-gray-50 transition"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -660,18 +714,51 @@ export default function CommunityDetail() {
                 {posts.length === 0 ? (
                   <p className="text-gray-400 text-sm">No posts yet.</p>
                 ) : (
-                  <div className="space-y-4">
-                    {posts.map((post) => (
-                      <PostCard
-                        key={post.id}
-                        post={post}
-                        communityId={communityId}
-                        isOwner={isOwner}
-                        canManage={canManageUsers}
-                        onDelete={handleDeletePost}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div className="space-y-4">
+                      {paginatedPosts.map((post) => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          communityId={communityId}
+                          isOwner={isOwner}
+                          canManage={canManageUsers}
+                          onDelete={handleDeletePost}
+                        />
+                      ))}
+                    </div>
+                    {postsTotalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-4">
+                        <button
+                          onClick={() => setPostsPage((p) => Math.max(1, p - 1))}
+                          disabled={postsCurrentPage === 1}
+                          className="px-3 py-1.5 rounded border border-gray-300 text-sm disabled:opacity-30 hover:bg-gray-50 transition"
+                        >
+                          Previous
+                        </button>
+                        {Array.from({ length: postsTotalPages }, (_, i) => i + 1).map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setPostsPage(p)}
+                            className={`px-3 py-1.5 rounded text-sm transition ${
+                              p === postsCurrentPage
+                                ? 'bg-brand text-white'
+                                : 'border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setPostsPage((p) => Math.min(postsTotalPages, p + 1))}
+                          disabled={postsCurrentPage === postsTotalPages}
+                          className="px-3 py-1.5 rounded border border-gray-300 text-sm disabled:opacity-30 hover:bg-gray-50 transition"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </>
@@ -859,7 +946,7 @@ function EventCard({
   canManage,
   onDelete,
 }: {
-  event: EventRead
+  event: EventOccurrenceRead
   communityId: string
   isOwner: boolean
   canManage: boolean
@@ -867,12 +954,39 @@ function EventCard({
 }) {
   const date = new Date(event.date)
   const isPast = date < new Date()
+  const isCancelled = event.is_cancelled
+
+  const recurrenceLabel =
+    event.recurrence_rule === 'weekly'
+      ? 'Weekly'
+      : event.recurrence_rule === 'biweekly'
+        ? 'Every 2 weeks'
+        : event.recurrence_rule === 'monthly'
+          ? 'Monthly'
+          : null
 
   return (
-    <div className={`bg-white rounded-lg shadow p-4 ${isPast ? 'opacity-60' : ''}`}>
+    <div
+      className={`bg-white rounded-lg shadow p-4 ${isPast ? 'opacity-60' : ''} ${isCancelled ? 'opacity-40 line-through' : ''}`}
+    >
       <div className="flex items-start justify-between gap-2">
-        <Link to={`/communities/${communityId}/events/${event.id}`} className="flex-1 min-w-0">
-          <p className="font-medium hover:text-brand transition">{event.title}</p>
+        <Link
+          to={`/communities/${communityId}/events/${event.occurrence_id}`}
+          className="flex-1 min-w-0"
+        >
+          <div className="flex items-center gap-2">
+            <p className="font-medium hover:text-brand transition">{event.title}</p>
+            {event.is_recurring && recurrenceLabel && (
+              <span className="text-[10px] bg-brand/10 text-brand px-1.5 py-0.5 rounded font-medium">
+                {recurrenceLabel}
+              </span>
+            )}
+            {isCancelled && (
+              <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
+                Cancelled
+              </span>
+            )}
+          </div>
           {event.description && (
             <p className="text-sm text-gray-500 mt-0.5 truncate">{event.description}</p>
           )}
@@ -900,18 +1014,18 @@ function EventCard({
             )}
           </div>
         </Link>
-        {(isOwner || canManage) && (
+        {(isOwner || canManage) && !isCancelled && (
           <div className="flex gap-2 flex-shrink-0">
             {isOwner && (
               <Link
-                to={`/communities/${communityId}/events/${event.id}/edit`}
+                to={`/communities/${communityId}/events/${event.occurrence_id}/edit`}
                 className="text-xs text-brand hover:underline"
               >
                 Edit
               </Link>
             )}
             <button
-              onClick={() => onDelete(event.id)}
+              onClick={() => onDelete(event.occurrence_id)}
               className="text-xs text-red-500 hover:underline"
             >
               Delete

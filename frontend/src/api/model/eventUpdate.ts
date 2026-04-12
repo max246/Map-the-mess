@@ -13,4 +13,7 @@ export interface EventUpdate {
   meeting_latitude?: number | null;
   meeting_longitude?: number | null;
   report_ids?: string[] | null;
+  recurrence_rule?: string | null;
+  recurrence_end?: string | null;
+  update_scope?: string | null;
 }

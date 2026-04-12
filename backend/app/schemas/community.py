@@ -84,6 +84,8 @@ class EventCreate(BaseModel):
     meeting_latitude: float
     meeting_longitude: float
     report_ids: list[uuid.UUID] = []
+    recurrence_rule: Optional[str] = None  # "weekly" | "biweekly" | "monthly"
+    recurrence_end: Optional[datetime] = None
 
 
 class EventUpdate(BaseModel):
@@ -93,6 +95,9 @@ class EventUpdate(BaseModel):
     meeting_latitude: Optional[float] = None
     meeting_longitude: Optional[float] = None
     report_ids: Optional[list[uuid.UUID]] = None
+    recurrence_rule: Optional[str] = None
+    recurrence_end: Optional[datetime] = None
+    update_scope: Optional[str] = None  # "this" | "this_and_future" | "all"
 
 
 class EventRead(BaseModel):
@@ -111,6 +116,26 @@ class EventRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EventOccurrenceRead(BaseModel):
+    occurrence_id: str  # composite "{parent_uuid}:{iso_date}" or real UUID string
+    event_id: uuid.UUID  # always the real parent/event UUID
+    community_id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    date: datetime
+    meeting_latitude: float
+    meeting_longitude: float
+    report_ids: list[uuid.UUID] = []
+    attendee_count: int = 0
+    is_attending: bool = False
+    is_recurring: bool = False
+    is_cancelled: bool = False
+    recurrence_rule: Optional[str] = None
+    recurrence_end: Optional[datetime] = None
+    is_exception: bool = False
+    created_at: datetime
+
+
 # ---------------------------------------------------------------------------
 # Community detail (includes posts + events)
 # ---------------------------------------------------------------------------
@@ -118,7 +143,7 @@ class EventRead(BaseModel):
 
 class CommunityDetail(CommunityRead):
     posts: list[PostRead] = []
-    events: list[EventRead] = []
+    events: list[EventOccurrenceRead] = []
 
 
 # ---------------------------------------------------------------------------

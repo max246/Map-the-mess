@@ -5,7 +5,7 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: dev
  */
-import type { EventRead } from './eventRead';
+import type { EventOccurrenceRead } from './eventOccurrenceRead';
 import type { PostRead } from './postRead';
 
 export interface CommunityDetail {
@@ -22,5 +22,5 @@ export interface CommunityDetail {
   status: string;
   created_at: string;
   posts?: PostRead[];
-  events?: EventRead[];
+  events?: EventOccurrenceRead[];
 }

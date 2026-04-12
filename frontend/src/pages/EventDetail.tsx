@@ -11,14 +11,14 @@ import LocateButton from '../components/LocateButton'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import SaveToCalendarButton from '../components/SaveToCalendarButton'
 import ShareButton from '../components/ShareButton'
-import type { EventRead, ReportRead } from '../api/model'
+import type { EventOccurrenceRead, ReportRead } from '../api/model'
 
 const {
-  getEventApiCommunitiesCommunityIdEventsEventIdGet,
+  getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet,
   getCommunityApiCommunitiesCommunityIdGet,
-  deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,
-  attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost,
-  unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete,
+  deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete,
+  attendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendPost,
+  unattendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendDelete,
 } = getCommunities()
 const { listReportsApiReportsGet } = getReports()
 
@@ -72,7 +72,7 @@ export default function EventDetail() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [event, setEvent] = useState<EventRead | null>(null)
+  const [event, setEvent] = useState<EventOccurrenceRead | null>(null)
   const [reports, setReports] = useState<ReportRead[]>([])
   const [communityName, setCommunityName] = useState('')
   const [isOwner, setIsOwner] = useState(false)
@@ -85,7 +85,7 @@ export default function EventDetail() {
     const fetchData = async () => {
       try {
         const [e, community, myCommunities] = await Promise.all([
-          getEventApiCommunitiesCommunityIdEventsEventIdGet(communityId, eventId!),
+          getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet(communityId, eventId!),
           getCommunityApiCommunitiesCommunityIdGet(communityId),
           user ? getCommunities().myCommunitiesApiCommunitiesMineGet() : Promise.resolve(null),
         ])
@@ -112,7 +112,7 @@ export default function EventDetail() {
   const handleDelete = async () => {
     if (!confirm('Delete this event? This cannot be undone.')) return
     try {
-      await deleteEventApiCommunitiesCommunityIdEventsEventIdDelete(communityId, eventId!)
+      await deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete(communityId, eventId!)
       navigate(`/communities/${communityId}`)
     } catch {
       alert('Failed to delete event')
@@ -123,14 +123,14 @@ export default function EventDetail() {
     if (!event) return
     setAttending(true)
     try {
-      let updated: EventRead
+      let updated: EventOccurrenceRead
       if (event.is_attending) {
-        updated = await unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete(
+        updated = await unattendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendDelete(
           communityId,
           eventId!
         )
       } else {
-        updated = await attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost(
+        updated = await attendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendPost(
           communityId,
           eventId!
         )
@@ -160,16 +160,33 @@ export default function EventDetail() {
         ← Back to community
       </Link>
 
+      {event.is_cancelled && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <p className="text-red-700 font-medium text-sm">This event has been cancelled.</p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">{event.title}</h1>
-          {isPast && (
+          <h1
+            className={`text-2xl font-bold ${event.is_cancelled ? 'line-through text-gray-400' : ''}`}
+          >
+            {event.title}
+          </h1>
+          {event.is_cancelled && (
+            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded font-medium">
+              Cancelled
+            </span>
+          )}
+          {isPast && !event.is_cancelled && (
             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Past</span>
           )}
           <ShareButton title={event.title} />
-          {!isPast && <SaveToCalendarButton event={event} communityName={communityName} />}
+          {!isPast && !event.is_cancelled && (
+            <SaveToCalendarButton event={event} communityName={communityName} />
+          )}
         </div>
-        {isOwner && (
+        {isOwner && !event.is_cancelled && (
           <div className="flex gap-2">
             <Link
               to={`/communities/${communityId}/events/${eventId!}/edit`}
@@ -236,7 +253,7 @@ export default function EventDetail() {
             <span className="font-medium text-gray-700">{event.attendee_count ?? 0}</span>{' '}
             {event.attendee_count === 1 ? 'person' : 'people'} attending
           </p>
-          {user && isMember && !isPast && (
+          {user && isMember && !isPast && !event.is_cancelled && (
             <button
               onClick={handleToggleAttend}
               disabled={attending}
