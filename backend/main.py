@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 from app.config import APP_VERSION, DEBUG, SUPERUSER_EMAIL, SUPERUSER_PASSWORD, SUPERUSER_FULL_NAME
 from app.database import SessionLocal
 from app.models.user import User, UserType
-from app.routers import reports, auth, volunteers, communities
+from app.routers import reports, auth, volunteers, communities, planner
 
 logger = logging.getLogger("uvicorn.error")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -88,6 +88,7 @@ app.include_router(reports.router, prefix="/api/reports", tags=["Reports"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(volunteers.router, prefix="/api/volunteers", tags=["Volunteers"])
 app.include_router(communities.router, prefix="/api/communities", tags=["Communities"])
+app.include_router(planner.router, prefix="/api/planner", tags=["Planner"])
 
 
 @app.get("/")
