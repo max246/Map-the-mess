@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// eslint-disable-next-line no-var -- var required: jest.mock() is hoisted above let/const
 var mockOnResponseError: any
 
 jest.mock('axios', () => {
