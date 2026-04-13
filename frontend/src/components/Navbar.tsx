@@ -23,7 +23,9 @@ const discoverLinks = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [discoverOpen, setDiscoverOpen] = useState(false)
+  const [volunteerOpen, setVolunteerOpen] = useState(false)
   const discoverRef = useRef<HTMLDivElement>(null)
+  const volunteerRef = useRef<HTMLDivElement>(null)
   const { pathname } = useLocation()
   const { isLoggedIn, user, canManageUsers, logout } = useAuth()
   const navigate = useNavigate()
@@ -31,9 +33,15 @@ export default function Navbar() {
 
   const isVolunteer = isLoggedIn && !canManageUsers
 
+  const volunteerLinks = [
+    { to: '/volunteers', label: 'Dashboard' },
+    { to: '/planner', label: 'Planner' },
+  ]
+
   // Close dropdown on route change
   useEffect(() => {
     setDiscoverOpen(false)
+    setVolunteerOpen(false)
     setMobileOpen(false)
   }, [pathname])
 
@@ -42,6 +50,9 @@ export default function Navbar() {
     const handleClick = (e: MouseEvent) => {
       if (discoverRef.current && !discoverRef.current.contains(e.target as Node)) {
         setDiscoverOpen(false)
+      }
+      if (volunteerRef.current && !volunteerRef.current.contains(e.target as Node)) {
+        setVolunteerOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -118,7 +129,7 @@ export default function Navbar() {
               </svg>
             </button>
             {discoverOpen && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50">
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-[10000]">
                 {discoverLinks.map((l) => (
                   <Link
                     key={l.to}
@@ -142,12 +153,40 @@ export default function Navbar() {
           </div>
 
           {isLoggedIn && isVolunteer && (
-            <Link
-              to="/volunteers"
-              className={`hover:underline ${isActive('/volunteers') ? 'font-semibold underline' : ''}`}
-            >
-              Dashboard
-            </Link>
+            <div ref={volunteerRef} className="relative">
+              <button
+                onClick={() => setVolunteerOpen(!volunteerOpen)}
+                className={`flex items-center gap-1 hover:underline ${volunteerLinks.some((l) => pathname === l.to) ? 'font-semibold underline' : ''}`}
+              >
+                Volunteer
+                <svg
+                  className={`w-3.5 h-3.5 transition-transform ${volunteerOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {volunteerOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-[10000]">
+                  {volunteerLinks.map((l) => (
+                    <Link
+                      key={l.to}
+                      to={l.to}
+                      className={`block px-4 py-2 text-sm transition ${
+                        isActive(l.to)
+                          ? 'bg-gray-100 text-brand font-semibold'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
           {isLoggedIn && canManageUsers && (
             <>
@@ -156,6 +195,12 @@ export default function Navbar() {
                 className={`hover:underline ${isActive('/volunteers') ? 'font-semibold underline' : ''}`}
               >
                 Volunteers
+              </Link>
+              <Link
+                to="/planner"
+                className={`hover:underline ${isActive('/planner') ? 'font-semibold underline' : ''}`}
+              >
+                Planner
               </Link>
               <Link
                 to="/admin"
@@ -226,12 +271,20 @@ export default function Navbar() {
           ))}
 
           {isLoggedIn && isVolunteer && (
-            <Link
-              to="/volunteers"
-              className={`block py-2 px-3 rounded ${isActive('/volunteers') ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
-            >
-              Dashboard
-            </Link>
+            <>
+              <div className="py-1 px-3 text-xs uppercase tracking-wide text-white text-opacity-50">
+                Volunteer
+              </div>
+              {volunteerLinks.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className={`block py-2 px-3 pl-5 rounded ${isActive(l.to) ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </>
           )}
           {isLoggedIn && canManageUsers && (
             <>
@@ -240,6 +293,12 @@ export default function Navbar() {
                 className={`block py-2 px-3 rounded ${isActive('/volunteers') ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
               >
                 Volunteers
+              </Link>
+              <Link
+                to="/planner"
+                className={`block py-2 px-3 rounded ${isActive('/planner') ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
+              >
+                Planner
               </Link>
               <Link
                 to="/admin"
