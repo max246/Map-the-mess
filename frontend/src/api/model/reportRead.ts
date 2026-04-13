@@ -5,6 +5,7 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: dev
  */
+import type { ReportCommentRead } from './reportCommentRead';
 import type { ReportImageRead } from './reportImageRead';
 import type { ReportStatusLogRead } from './reportStatusLogRead';
 
@@ -24,4 +25,5 @@ export interface ReportRead {
   created_at: string;
   images?: ReportImageRead[];
   status_log?: ReportStatusLogRead[];
+  comments?: ReportCommentRead[];
 }

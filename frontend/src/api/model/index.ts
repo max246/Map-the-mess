@@ -42,6 +42,8 @@ export * from './profileUpdate';
 export * from './publicProfile';
 export * from './refreshRequest';
 export * from './rejectedCommunity';
+export * from './reportCommentCreate';
+export * from './reportCommentRead';
 export * from './reportImageRead';
 export * from './reportRead';
 export * from './reportStatusLogRead';

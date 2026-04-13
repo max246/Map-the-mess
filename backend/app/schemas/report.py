@@ -28,6 +28,20 @@ class ReportStatusLogRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ReportCommentRead(BaseModel):
+    id: uuid.UUID
+    report_id: uuid.UUID
+    user_id: uuid.UUID
+    body: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ReportCommentCreate(BaseModel):
+    body: str
+
+
 class ReportCreate(BaseModel):
     latitude: float
     longitude: float
@@ -59,5 +73,6 @@ class ReportRead(BaseModel):
     created_at: datetime
     images: list[ReportImageRead] = []
     status_log: list[ReportStatusLogRead] = []
+    comments: list[ReportCommentRead] = []
 
     model_config = {"from_attributes": True}
