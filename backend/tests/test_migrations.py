@@ -452,15 +452,27 @@ def _check_plans_and_plan_reports(conn):
 
     plan_cols = _column_names(conn, "plans")
     assert {
-        "id", "user_id", "name", "start_latitude", "start_longitude",
-        "status", "total_distance_meters", "total_duration_seconds",
-        "route_geometry", "created_at", "updated_at",
+        "id",
+        "user_id",
+        "name",
+        "start_latitude",
+        "start_longitude",
+        "status",
+        "total_distance_meters",
+        "total_duration_seconds",
+        "route_geometry",
+        "created_at",
+        "updated_at",
     } <= plan_cols
 
     plan_report_cols = _column_names(conn, "plan_reports")
     assert {
-        "id", "plan_id", "report_id", "visit_order",
-        "leg_distance_meters", "leg_duration_seconds",
+        "id",
+        "plan_id",
+        "report_id",
+        "visit_order",
+        "leg_distance_meters",
+        "leg_duration_seconds",
     } <= plan_report_cols
 
     fks = inspect(conn).get_foreign_keys("plans")
