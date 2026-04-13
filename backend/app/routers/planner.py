@@ -132,12 +132,14 @@ def create_plan(
         raise HTTPException(status_code=404, detail=f"Reports not found: {', '.join(missing)}")
 
     # Build a lookup keyed by report id (preserving input order)
-    report_by_id = {r.id: r for r in reports}
+    report_by_id: dict[uuid.UUID, Report] = {r.id: r for r in reports}  # type: ignore[misc]
     # Ordered list matching body.report_ids so OSRM input index maps correctly
     ordered_reports = [report_by_id[rid] for rid in body.report_ids]
 
     # Call OSRM
-    waypoints_lonlat = [(r.longitude, r.latitude) for r in ordered_reports]
+    waypoints_lonlat: list[tuple[float, float]] = [
+        (float(r.longitude), float(r.latitude)) for r in ordered_reports
+    ]
     osrm_data = _call_osrm_trip(body.start_longitude, body.start_latitude, waypoints_lonlat)
 
     trip = osrm_data["trips"][0]
@@ -308,7 +310,7 @@ def export_gpx(
 
     # Metadata
     metadata = ET.SubElement(gpx, "metadata")
-    ET.SubElement(metadata, "name").text = plan.name or "Map the Mess Plan"
+    ET.SubElement(metadata, "name").text = str(plan.name) if plan.name else "Map the Mess Plan"
     ET.SubElement(metadata, "time").text = plan.created_at.isoformat() + "Z"
 
     # Start waypoint
@@ -347,7 +349,7 @@ def export_gpx(
         coords = geometry.get("coordinates", [])
         if coords:
             trk = ET.SubElement(gpx, "trk")
-            ET.SubElement(trk, "name").text = plan.name or "Walking Route"
+            ET.SubElement(trk, "name").text = str(plan.name) if plan.name else "Walking Route"
             trkseg = ET.SubElement(trk, "trkseg")
             for coord in coords:
                 # GeoJSON is [lon, lat], GPX uses lat/lon attributes

@@ -34,7 +34,7 @@ class Plan(Base):
     name = Column(String, nullable=True)
     start_latitude = Column(Float, nullable=False)
     start_longitude = Column(Float, nullable=False)
-    status = Column(Enum(PlanStatus), default=PlanStatus.planned, nullable=False)
+    status: Column[PlanStatus] = Column(Enum(PlanStatus), default=PlanStatus.planned, nullable=False)
     total_distance_meters = Column(Float, nullable=True)
     total_duration_seconds = Column(Float, nullable=True)
     route_geometry = Column(String, nullable=True)
