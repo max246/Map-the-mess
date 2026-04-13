@@ -45,6 +45,7 @@ export * from './rejectedCommunity';
 export * from './reportImageRead';
 export * from './reportRead';
 export * from './reportStatusLogRead';
+export * from './reportUpdate';
 export * from './resetPassword';
 export * from './token';
 export * from './userCreate';

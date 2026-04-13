@@ -11,7 +11,8 @@ import type {
   BodyMarkUnresolvedApiReportsReportIdUnresolvePatch,
   ListReportsApiReportsGetParams,
   ReportImageRead,
-  ReportRead
+  ReportRead,
+  ReportUpdate
 } from '../../model';
 
 import { customInstance } from '../../client';
@@ -94,6 +95,21 @@ const getReportApiReportsReportIdGet = (
       );
     }
   /**
+ * Edit a report's text or remove images. Requires moderator, admin, or superuser role.
+ * @summary Update Report
+ */
+const updateReportApiReportsReportIdPatch = (
+    reportId: string,
+    reportUpdate: ReportUpdate,
+ ) => {
+      return customInstance<ReportRead>(
+      {url: `/api/reports/${reportId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: reportUpdate
+    },
+      );
+    }
+  /**
  * Delete a report. Requires moderator or admin role.
  * @summary Delete Report
  */
@@ -164,12 +180,13 @@ const deleteImageApiReportsImagesImageIdDelete = (
     },
       );
     }
-  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete}};
+  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,updateReportApiReportsReportIdPatch,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete}};
 export type ServeImageApiReportsImagesFilenameGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['serveImageApiReportsImagesFilenameGet']>>>
 export type ExportReportsApiReportsExportGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['exportReportsApiReportsExportGet']>>>
 export type ListReportsApiReportsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listReportsApiReportsGet']>>>
 export type CreateReportApiReportsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['createReportApiReportsPost']>>>
 export type GetReportApiReportsReportIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['getReportApiReportsReportIdGet']>>>
+export type UpdateReportApiReportsReportIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['updateReportApiReportsReportIdPatch']>>>
 export type DeleteReportApiReportsReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteReportApiReportsReportIdDelete']>>>
 export type AddImageApiReportsReportIdImagesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['addImageApiReportsReportIdImagesPost']>>>
 export type MarkCleanedApiReportsReportIdCleanPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markCleanedApiReportsReportIdCleanPatch']>>>

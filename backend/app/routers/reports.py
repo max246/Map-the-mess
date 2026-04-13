@@ -24,7 +24,7 @@ from app.models.report_image import ReportImage, ImageType
 from app.models.report_status_log import ReportStatusLog, ReportStatusAction
 from app.models.user import User
 from app.routers.auth import ALGORITHM, get_current_user, require_moderator_or_admin
-from app.schemas.report import ReportRead, ReportImageRead
+from app.schemas.report import ReportRead, ReportImageRead, ReportUpdate
 
 router = APIRouter()
 
@@ -227,6 +227,54 @@ def get_report(report_id: uuid.UUID, db: Session = Depends(get_db)):
     report = db.query(Report).get(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+
+@router.patch("/{report_id}", response_model=ReportRead)
+def update_report(
+    report_id: uuid.UUID,
+    body: ReportUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Edit a report's text or remove images. Allowed for the report owner, moderator, admin, or superuser."""
+    report = db.query(Report).get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    is_owner = report.created_by_user_id == current_user.id
+    is_privileged = current_user.user_type in ("moderator", "admin", "superuser")
+    if not is_owner and not is_privileged:
+        raise HTTPException(status_code=403, detail="Not authorised to edit this report")
+
+    if body.description is not None:
+        report.description = body.description
+
+    if body.report_type is not None:
+        report.report_type = _validate_report_type(body.report_type)
+
+    if body.what3words is not None:
+        report.what3words = body.what3words
+
+    if body.remove_image_ids:
+        images = (
+            db.query(ReportImage)
+            .filter(
+                ReportImage.id.in_(body.remove_image_ids),
+                ReportImage.report_id == report.id,
+            )
+            .all()
+        )
+        for image in images:
+            for fname in (str(image.url), str(image.thumbnail_url)):
+                if fname:
+                    path = _resolve_image_path(fname)
+                    if os.path.isfile(path):
+                        os.remove(path)
+            db.delete(image)
+
+    db.commit()
+    db.refresh(report)
     return report
 
 
