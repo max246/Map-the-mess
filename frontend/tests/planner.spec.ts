@@ -194,7 +194,8 @@ async function mockApi(page: Page) {
 }
 
 async function loginAsVolunteer(page: Page) {
-  await page.evaluate((token) => {
+  // Set token in localStorage BEFORE React mounts, so AuthContext picks it up
+  await page.addInitScript((token) => {
     localStorage.setItem('token', token)
   }, VOLUNTEER_TOKEN)
 }
@@ -210,8 +211,8 @@ test.describe('Planner List', () => {
     await expect(page.getByRole('heading', { name: /route planner/i })).toBeVisible()
     await expect(page.getByText('Morning cleanup')).toBeVisible()
     await expect(page.getByText('Untitled plan')).toBeVisible()
-    await expect(page.getByText('Planned')).toBeVisible()
-    await expect(page.getByText('In Progress')).toBeVisible()
+    await expect(page.getByText('Planned').first()).toBeVisible()
+    await expect(page.getByText('In Progress').first()).toBeVisible()
   })
 
   test('has create plan button', async ({ page }) => {
@@ -280,8 +281,9 @@ test.describe('Plan Detail', () => {
     await expect(page.getByText('Morning cleanup')).toBeVisible()
 
     await page.getByRole('button', { name: /edit/i }).click()
-    const input = page.getByDisplayValue('Morning cleanup')
+    const input = page.getByPlaceholder('Plan name')
     await expect(input).toBeVisible()
+    await expect(input).toHaveValue('Morning cleanup')
 
     await input.fill('Evening route')
     await page.getByRole('button', { name: /save/i }).click()
