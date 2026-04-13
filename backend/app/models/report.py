@@ -54,3 +54,10 @@ class Report(Base):
         lazy="joined",
         order_by="ReportStatusLog.created_at",
     )
+    comments = relationship(
+        "ReportComment",
+        back_populates="report",
+        cascade="all, delete-orphan",
+        lazy="joined",
+        order_by="ReportComment.created_at",
+    )

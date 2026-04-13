@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead, ReportImageRead, ReportStatusLogRead } from '../api/model'
+import ReportComments from '../components/ReportComments'
 
 const {
   deleteImageApiReportsImagesImageIdDelete,
@@ -1016,6 +1017,13 @@ export default function ReportDetail() {
           )}
         </div>
       )}
+
+      {/* Comments */}
+      <ReportComments
+        reportId={report.id}
+        reportStatus={report.status}
+        reportOwnerId={report.created_by_user_id}
+      />
 
       {/* Admin actions */}
       {canManageUsers && (

@@ -239,7 +239,7 @@
           "Reports"
         ],
         "summary": "Update Report",
-        "description": "Edit a report's text or remove images. Requires moderator, admin, or superuser role.",
+        "description": "Edit a report's text or remove images. Allowed for the report owner, moderator, admin, or superuser.",
         "operationId": "update_report_api_reports__report_id__patch",
         "security": [
           {
@@ -510,6 +510,163 @@
               "type": "string",
               "format": "uuid",
               "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{report_id}/comments": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "List Comments",
+        "description": "List all comments for a report.",
+        "operationId": "list_comments_api_reports__report_id__comments_get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportCommentRead"
+                  },
+                  "title": "Response List Comments Api Reports  Report Id  Comments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Add Comment",
+        "description": "Add a comment to an open report. Requires authentication.",
+        "operationId": "add_comment_api_reports__report_id__comments_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportCommentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCommentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{report_id}/comments/{comment_id}": {
+      "delete": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Delete Comment",
+        "description": "Delete a comment. Allowed for the comment author, moderator, admin, or superuser.",
+        "operationId": "delete_comment_api_reports__report_id__comments__comment_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Comment Id"
             }
           }
         ],
@@ -3992,6 +4149,56 @@
         ],
         "title": "RejectedCommunity"
       },
+      "ReportCommentCreate": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "ReportCommentCreate"
+      },
+      "ReportCommentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "report_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "report_id",
+          "user_id",
+          "body",
+          "created_at"
+        ],
+        "title": "ReportCommentRead"
+      },
       "ReportImageRead": {
         "properties": {
           "id": {
@@ -4147,6 +4354,14 @@
             },
             "type": "array",
             "title": "Status Log",
+            "default": []
+          },
+          "comments": {
+            "items": {
+              "$ref": "#/components/schemas/ReportCommentRead"
+            },
+            "type": "array",
+            "title": "Comments",
             "default": []
           }
         },

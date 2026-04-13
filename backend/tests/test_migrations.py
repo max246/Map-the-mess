@@ -429,6 +429,22 @@ def _check_report_status_log(conn):
     assert "cycle" in _column_names(conn, "report_images")
 
 
+# 19. c3d4e5f6a7b9 — add report_comments table
+@_check("c3d4e5f6a7b9")
+def _check_report_comments(conn):
+    assert "report_comments" in _table_names(conn)
+    cols = _column_names(conn, "report_comments")
+    assert {"id", "report_id", "user_id", "body", "created_at"} <= cols
+
+    fks = inspect(conn).get_foreign_keys("report_comments")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "report_id" in fk_cols
+    assert "user_id" in fk_cols
+
+    indexes = {idx["name"] for idx in inspect(conn).get_indexes("report_comments")}
+    assert "ix_report_comments_report_id" in indexes
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -453,6 +469,7 @@ MIGRATION_CHAIN = [
     "a7b8c9d0e1f2",
     "a1b2c3d4e5f7",
     "b2c3d4e5f6a8",
+    "c3d4e5f6a7b9",
 ]
 
 # ---------------------------------------------------------------------------
@@ -521,6 +538,7 @@ class TestFullUpgrade:
             "community_memberships",
             "event_attendances",
             "report_status_log",
+            "report_comments",
         } <= tables
 
 
