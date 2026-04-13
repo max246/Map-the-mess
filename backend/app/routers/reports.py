@@ -266,7 +266,7 @@ def update_report(
             .all()
         )
         for image in images:
-            for fname in (image.url, image.thumbnail_url):
+            for fname in (str(image.url), str(image.thumbnail_url)):
                 if fname:
                     path = _resolve_image_path(fname)
                     if os.path.isfile(path):
