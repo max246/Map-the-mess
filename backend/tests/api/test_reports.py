@@ -223,18 +223,39 @@ class TestUnresolve:
         assert res.json()["status"] == "pending"
         assert res.json()["resolved_at"] is None
 
-    def test_volunteer_cannot_unresolve(self, client, db, volunteer):
+    def test_volunteer_can_unresolve(self, client, db, volunteer):
         report = _create_report(db, status=ReportStatus.cleaned)
         res = client.patch(
             f"/api/reports/{report.id}/unresolve",
             headers=auth_header(volunteer),
         )
-        assert res.status_code == 403
+        assert res.status_code == 200
+        assert res.json()["status"] == "pending"
 
-    def test_unauthenticated_cannot_unresolve(self, client, db):
+    def test_unauthenticated_can_unresolve(self, client, db):
         report = _create_report(db, status=ReportStatus.cleaned)
         res = client.patch(f"/api/reports/{report.id}/unresolve")
-        assert res.status_code == 401
+        assert res.status_code == 200
+        assert res.json()["status"] == "pending"
+
+    def test_unresolve_with_image(self, client, db, volunteer):
+        report = _create_report(db, status=ReportStatus.cleaned)
+        res = client.patch(
+            f"/api/reports/{report.id}/unresolve",
+            files=[("image", ("proof.jpg", _make_image_buf(), "image/jpeg"))],
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        assert res.json()["status"] == "pending"
+        images = [
+            img for img in res.json()["images"] if img["cycle"] == res.json()["current_cycle"]
+        ]
+        assert len(images) == 1
+        assert images[0]["image_type"] == "report"
+
+    def test_unresolve_nonexistent(self, client, db):
+        res = client.patch("/api/reports/00000000-0000-0000-0000-000000009999/unresolve")
+        assert res.status_code == 404
 
 
 class TestDeleteReport:
@@ -334,3 +355,151 @@ class TestDeleteImage:
             headers=auth_header(moderator),
         )
         assert res.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Status log
+# ---------------------------------------------------------------------------
+
+
+class TestStatusLog:
+    """Tests for the report status history log."""
+
+    def _create_via_api(self, client, headers=None):
+        """Create a report via the API so it gets a log entry."""
+        return client.post(
+            "/api/reports/",
+            data={
+                "latitude": UK_LAT,
+                "longitude": UK_LON,
+                "report_type": "litter",
+                "description": "test",
+            },
+            headers=headers,
+        )
+
+    def test_create_report_logs_created(self, client, db):
+        res = self._create_via_api(client)
+        assert res.status_code == 201
+        data = res.json()
+        assert len(data["status_log"]) == 1
+        assert data["status_log"][0]["action"] == "created"
+        assert data["status_log"][0]["cycle"] == 0
+        assert data["status_log"][0]["performed_by_user_id"] is None
+
+    def test_create_report_with_auth_logs_user(self, client, db, volunteer):
+        res = self._create_via_api(client, headers=auth_header(volunteer))
+        assert res.status_code == 201
+        log = res.json()["status_log"]
+        assert len(log) == 1
+        assert log[0]["performed_by_user_id"] == str(volunteer.id)
+
+    def test_mark_cleaned_logs_cleaned(self, client, db, volunteer):
+        create_res = self._create_via_api(client, headers=auth_header(volunteer))
+        report_id = create_res.json()["id"]
+
+        res = client.patch(
+            f"/api/reports/{report_id}/clean",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 200
+        log = res.json()["status_log"]
+        assert len(log) == 2
+        assert log[0]["action"] == "created"
+        assert log[1]["action"] == "cleaned"
+        assert log[1]["cycle"] == 0
+
+    def test_unresolve_logs_reopened(self, client, db, volunteer, moderator):
+        create_res = self._create_via_api(client, headers=auth_header(volunteer))
+        report_id = create_res.json()["id"]
+
+        client.patch(
+            f"/api/reports/{report_id}/clean",
+            headers=auth_header(volunteer),
+        )
+        res = client.patch(
+            f"/api/reports/{report_id}/unresolve",
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["current_cycle"] == 1
+        log = data["status_log"]
+        assert len(log) == 3
+        assert log[0]["action"] == "created"
+        assert log[1]["action"] == "cleaned"
+        assert log[2]["action"] == "reopened"
+        assert log[2]["cycle"] == 1
+        assert log[2]["performed_by_user_id"] == str(moderator.id)
+
+    def test_full_cycle(self, client, db, volunteer, moderator):
+        """create → clean → reopen → clean = 4 log entries."""
+        create_res = self._create_via_api(client, headers=auth_header(volunteer))
+        report_id = create_res.json()["id"]
+
+        client.patch(f"/api/reports/{report_id}/clean", headers=auth_header(volunteer))
+        client.patch(f"/api/reports/{report_id}/unresolve", headers=auth_header(moderator))
+        res = client.patch(f"/api/reports/{report_id}/clean", headers=auth_header(volunteer))
+
+        assert res.status_code == 200
+        data = res.json()
+        assert data["current_cycle"] == 1
+        log = data["status_log"]
+        assert len(log) == 4
+        actions = [e["action"] for e in log]
+        assert actions == ["created", "cleaned", "reopened", "cleaned"]
+        assert log[2]["cycle"] == 1
+        assert log[3]["cycle"] == 1
+
+    def test_images_stamped_with_cycle(self, client, db, volunteer, moderator):
+        """Images uploaded after a reopen get the new cycle number."""
+        create_res = self._create_via_api(client, headers=auth_header(volunteer))
+        report_id = create_res.json()["id"]
+
+        # Upload image in cycle 0
+        client.post(
+            f"/api/reports/{report_id}/images",
+            data={"image_type": "report"},
+            files=[("file", ("c0.jpg", _make_image_buf(), "image/jpeg"))],
+        )
+
+        # Clean and reopen
+        client.patch(f"/api/reports/{report_id}/clean", headers=auth_header(volunteer))
+        client.patch(f"/api/reports/{report_id}/unresolve", headers=auth_header(moderator))
+
+        # Upload image in cycle 1
+        client.post(
+            f"/api/reports/{report_id}/images",
+            data={"image_type": "report"},
+            files=[("file", ("c1.jpg", _make_image_buf(), "image/jpeg"))],
+        )
+
+        res = client.get(f"/api/reports/{report_id}")
+        images = res.json()["images"]
+        assert len(images) == 2
+        cycles = sorted(img["cycle"] for img in images)
+        assert cycles == [0, 1]
+
+    def test_reopen_increments_current_cycle(self, client, db, volunteer, moderator):
+        """Reopening twice yields current_cycle=2."""
+        create_res = self._create_via_api(client, headers=auth_header(volunteer))
+        report_id = create_res.json()["id"]
+
+        client.patch(f"/api/reports/{report_id}/clean", headers=auth_header(volunteer))
+        client.patch(f"/api/reports/{report_id}/unresolve", headers=auth_header(moderator))
+        client.patch(f"/api/reports/{report_id}/clean", headers=auth_header(volunteer))
+        res = client.patch(f"/api/reports/{report_id}/unresolve", headers=auth_header(moderator))
+
+        assert res.status_code == 200
+        assert res.json()["current_cycle"] == 2
+
+    def test_status_log_ordered_chronologically(self, client, db, volunteer, moderator):
+        create_res = self._create_via_api(client, headers=auth_header(volunteer))
+        report_id = create_res.json()["id"]
+
+        client.patch(f"/api/reports/{report_id}/clean", headers=auth_header(volunteer))
+        res = client.patch(f"/api/reports/{report_id}/unresolve", headers=auth_header(moderator))
+
+        log = res.json()["status_log"]
+        timestamps = [e["created_at"] for e in log]
+        assert timestamps == sorted(timestamps)

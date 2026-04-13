@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 from app.database import get_db
 from app.models.report import Report, ReportStatus, ReportType
 from app.models.report_image import ReportImage, ImageType
+from app.models.report_status_log import ReportStatusLog, ReportStatusAction
 from app.models.user import User
 from app.routers.auth import ALGORITHM, get_current_user, require_moderator_or_admin
 from app.schemas.report import ReportRead, ReportImageRead
@@ -260,6 +261,15 @@ def create_report(
     db.add(report)
     db.flush()
 
+    db.add(
+        ReportStatusLog(
+            report_id=report.id,
+            action=ReportStatusAction.created,
+            cycle=0,
+            performed_by_user_id=current_user.id if current_user else None,
+        )
+    )
+
     if image:
         filename, thumb_filename = _save_upload(image)
         db.add(
@@ -291,7 +301,11 @@ def add_image(
     validated_type = _validate_image_type(image_type)
     filename, thumb_filename = _save_upload(file)
     image = ReportImage(
-        report_id=report_id, url=filename, thumbnail_url=thumb_filename, image_type=validated_type
+        report_id=report_id,
+        url=filename,
+        thumbnail_url=thumb_filename,
+        image_type=validated_type,
+        cycle=report.current_cycle,  # type: ignore[arg-type]
     )
     db.add(image)
     db.commit()
@@ -313,6 +327,14 @@ def mark_cleaned(
     report.resolved_at = datetime.now(timezone.utc)
     if current_user:
         report.resolved_by_user_id = current_user.id
+    db.add(
+        ReportStatusLog(
+            report_id=report.id,
+            action=ReportStatusAction.cleaned,
+            cycle=report.current_cycle,
+            performed_by_user_id=current_user.id if current_user else None,
+        )
+    )
     db.commit()
     db.refresh(report)
     return report
@@ -321,16 +343,39 @@ def mark_cleaned(
 @router.patch("/{report_id}/unresolve", response_model=ReportRead)
 def mark_unresolved(
     report_id: uuid.UUID,
+    image: UploadFile | None = File(None),
     db: Session = Depends(get_db),
-    _user: User = Depends(require_moderator_or_admin),
+    current_user: User | None = Depends(_get_optional_user),
 ):
-    """Set a report back to pending. Requires moderator or admin role."""
+    """Reopen a report. Anyone can reopen with an optional photo."""
     report = db.query(Report).get(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     report.status = ReportStatus.pending
     report.resolved_at = None
     report.resolved_by_user_id = None
+    report.current_cycle = (report.current_cycle or 0) + 1
+    db.add(
+        ReportStatusLog(
+            report_id=report.id,
+            action=ReportStatusAction.reopened,
+            cycle=report.current_cycle,
+            performed_by_user_id=current_user.id if current_user else None,
+        )
+    )
+
+    if image and image.filename:
+        filename, thumb_filename = _save_upload(image)
+        db.add(
+            ReportImage(
+                report_id=report.id,
+                url=filename,
+                thumbnail_url=thumb_filename,
+                image_type=ImageType.report,
+                cycle=report.current_cycle,
+            )
+        )
+
     db.commit()
     db.refresh(report)
     return report
@@ -374,6 +419,15 @@ def delete_image(
             report.status = ReportStatus.pending
             report.resolved_at = None
             report.resolved_by_user_id = None
+            report.current_cycle = (report.current_cycle or 0) + 1
+            db.add(
+                ReportStatusLog(
+                    report_id=report.id,
+                    action=ReportStatusAction.reopened,
+                    cycle=report.current_cycle,
+                    performed_by_user_id=_user.id,
+                )
+            )
 
     db.commit()
 

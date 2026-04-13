@@ -8,6 +8,7 @@
 import type {
   BodyAddImageApiReportsReportIdImagesPost,
   BodyCreateReportApiReportsPost,
+  BodyMarkUnresolvedApiReportsReportIdUnresolvePatch,
   ListReportsApiReportsGetParams,
   ReportImageRead,
   ReportRead
@@ -134,14 +135,20 @@ const markCleanedApiReportsReportIdCleanPatch = (
       );
     }
   /**
- * Set a report back to pending. Requires moderator or admin role.
+ * Reopen a report. Anyone can reopen with an optional photo.
  * @summary Mark Unresolved
  */
 const markUnresolvedApiReportsReportIdUnresolvePatch = (
     reportId: string,
- ) => {
+    bodyMarkUnresolvedApiReportsReportIdUnresolvePatch: BodyMarkUnresolvedApiReportsReportIdUnresolvePatch,
+ ) => {const formData = new FormData();
+if(bodyMarkUnresolvedApiReportsReportIdUnresolvePatch.image !== undefined && bodyMarkUnresolvedApiReportsReportIdUnresolvePatch.image !== null) {
+ formData.append(`image`, bodyMarkUnresolvedApiReportsReportIdUnresolvePatch.image);
+ }
+
       return customInstance<ReportRead>(
-      {url: `/api/reports/${reportId}/unresolve`, method: 'PATCH'
+      {url: `/api/reports/${reportId}/unresolve`, method: 'PATCH',
+       data: formData
     },
       );
     }

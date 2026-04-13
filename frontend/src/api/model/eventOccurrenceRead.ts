@@ -6,8 +6,9 @@
  * OpenAPI spec version: dev
  */
 
-export interface EventRead {
-  id: string;
+export interface EventOccurrenceRead {
+  occurrence_id: string;
+  event_id: string;
   community_id: string;
   title: string;
   description?: string | null;
@@ -17,5 +18,10 @@ export interface EventRead {
   report_ids?: string[];
   attendee_count?: number;
   is_attending?: boolean;
+  is_recurring?: boolean;
+  is_cancelled?: boolean;
+  recurrence_rule?: string | null;
+  recurrence_end?: string | null;
+  is_exception?: boolean;
   created_at: string;
 }

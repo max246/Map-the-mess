@@ -12,6 +12,17 @@ class ReportImageRead(BaseModel):
     url: str
     thumbnail_url: Optional[str] = None
     image_type: str
+    cycle: int = 0
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ReportStatusLogRead(BaseModel):
+    id: uuid.UUID
+    action: str
+    cycle: int
+    performed_by_user_id: Optional[uuid.UUID] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -37,7 +48,9 @@ class ReportRead(BaseModel):
     resolved_by_user_id: Optional[uuid.UUID] = None
     resolved_at: Optional[datetime] = None
     status: str
+    current_cycle: int = 0
     created_at: datetime
     images: list[ReportImageRead] = []
+    status_log: list[ReportStatusLogRead] = []
 
     model_config = {"from_attributes": True}

@@ -6,11 +6,6 @@
  * OpenAPI spec version: dev
  */
 
-export interface ReportImageRead {
-  id: string;
-  url: string;
-  thumbnail_url?: string | null;
-  image_type: string;
-  cycle?: number;
-  created_at: string;
-}
+export type DeleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDeleteParams = {
+scope?: string;
+};

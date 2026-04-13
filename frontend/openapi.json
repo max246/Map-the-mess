@@ -379,13 +379,8 @@
           "Reports"
         ],
         "summary": "Mark Unresolved",
-        "description": "Set a report back to pending. Requires moderator or admin role.",
+        "description": "Reopen a report. Anyone can reopen with an optional photo.",
         "operationId": "mark_unresolved_api_reports__report_id__unresolve_patch",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "report_id",
@@ -398,6 +393,20 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Body_mark_unresolved_api_reports__report_id__unresolve_patch"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2095,7 +2104,87 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventRead"
+                  "$ref": "#/components/schemas/EventOccurrenceRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "List Events",
+        "description": "List expanded event occurrences for a community within a date range.",
+        "operationId": "list_events_api_communities__community_id__events_get",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Community Id"
+            }
+          },
+          {
+            "name": "range_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Range Start"
+            }
+          },
+          {
+            "name": "range_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Range End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventOccurrenceRead"
+                  },
+                  "title": "Response List Events Api Communities  Community Id  Events Get"
                 }
               }
             }
@@ -2113,14 +2202,14 @@
         }
       }
     },
-    "/api/communities/{community_id}/events/{event_id}": {
+    "/api/communities/{community_id}/events/{occurrence_id}": {
       "get": {
         "tags": [
           "Communities"
         ],
         "summary": "Get Event",
-        "description": "Get a single event. Only members, owner, or moderator+ can view.",
-        "operationId": "get_event_api_communities__community_id__events__event_id__get",
+        "description": "Get a single event or occurrence.",
+        "operationId": "get_event_api_communities__community_id__events__occurrence_id__get",
         "parameters": [
           {
             "name": "community_id",
@@ -2133,13 +2222,12 @@
             }
           },
           {
-            "name": "event_id",
+            "name": "occurrence_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Event Id"
+              "title": "Occurrence Id"
             }
           }
         ],
@@ -2149,7 +2237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventRead"
+                  "$ref": "#/components/schemas/EventOccurrenceRead"
                 }
               }
             }
@@ -2171,8 +2259,8 @@
           "Communities"
         ],
         "summary": "Update Event",
-        "description": "Edit an event. Owner only. All fields optional for partial update.",
-        "operationId": "update_event_api_communities__community_id__events__event_id__patch",
+        "description": "Edit an event. Owner only. Supports scoped updates for recurring events.",
+        "operationId": "update_event_api_communities__community_id__events__occurrence_id__patch",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2190,13 +2278,12 @@
             }
           },
           {
-            "name": "event_id",
+            "name": "occurrence_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Event Id"
+              "title": "Occurrence Id"
             }
           }
         ],
@@ -2216,7 +2303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventRead"
+                  "$ref": "#/components/schemas/EventOccurrenceRead"
                 }
               }
             }
@@ -2238,8 +2325,8 @@
           "Communities"
         ],
         "summary": "Delete Event",
-        "description": "Delete an event. Owner or moderator+ only.",
-        "operationId": "delete_event_api_communities__community_id__events__event_id__delete",
+        "description": "Delete an event or occurrence. Owner or moderator+ only.\n\nFor recurring events, ``scope`` controls what is deleted:\n- ``this``: cancel this single occurrence.\n- ``this_and_future``: end the series before this date.\n- ``all``: delete the entire series (parent + exceptions).",
+        "operationId": "delete_event_api_communities__community_id__events__occurrence_id__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2257,13 +2344,22 @@
             }
           },
           {
-            "name": "event_id",
+            "name": "occurrence_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Event Id"
+              "title": "Occurrence Id"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "this",
+              "title": "Scope"
             }
           }
         ],
@@ -2284,14 +2380,14 @@
         }
       }
     },
-    "/api/communities/{community_id}/events/{event_id}/attend": {
+    "/api/communities/{community_id}/events/{occurrence_id}/attend": {
       "post": {
         "tags": [
           "Communities"
         ],
         "summary": "Attend Event",
         "description": "Mark current user as attending an event. Must be a community member or owner.",
-        "operationId": "attend_event_api_communities__community_id__events__event_id__attend_post",
+        "operationId": "attend_event_api_communities__community_id__events__occurrence_id__attend_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2309,13 +2405,12 @@
             }
           },
           {
-            "name": "event_id",
+            "name": "occurrence_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Event Id"
+              "title": "Occurrence Id"
             }
           }
         ],
@@ -2325,7 +2420,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventRead"
+                  "$ref": "#/components/schemas/EventOccurrenceRead"
                 }
               }
             }
@@ -2348,7 +2443,7 @@
         ],
         "summary": "Unattend Event",
         "description": "Remove current user's attendance from an event.",
-        "operationId": "unattend_event_api_communities__community_id__events__event_id__attend_delete",
+        "operationId": "unattend_event_api_communities__community_id__events__occurrence_id__attend_delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2366,13 +2461,12 @@
             }
           },
           {
-            "name": "event_id",
+            "name": "occurrence_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Event Id"
+              "title": "Occurrence Id"
             }
           }
         ],
@@ -2382,7 +2476,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventRead"
+                  "$ref": "#/components/schemas/EventOccurrenceRead"
                 }
               }
             }
@@ -2859,6 +2953,24 @@
         ],
         "title": "Body_create_report_api_reports__post"
       },
+      "Body_mark_unresolved_api_reports__report_id__unresolve_patch": {
+        "properties": {
+          "image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image"
+          }
+        },
+        "type": "object",
+        "title": "Body_mark_unresolved_api_reports__report_id__unresolve_patch"
+      },
       "Body_upload_avatar_api_auth_me_avatar_put": {
         "properties": {
           "file": {
@@ -3031,7 +3143,7 @@
           },
           "events": {
             "items": {
-              "$ref": "#/components/schemas/EventRead"
+              "$ref": "#/components/schemas/EventOccurrenceRead"
             },
             "type": "array",
             "title": "Events",
@@ -3214,6 +3326,29 @@
             "type": "array",
             "title": "Report Ids",
             "default": []
+          },
+          "recurrence_rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence Rule"
+          },
+          "recurrence_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence End"
           }
         },
         "type": "object",
@@ -3225,12 +3360,16 @@
         ],
         "title": "EventCreate"
       },
-      "EventRead": {
+      "EventOccurrenceRead": {
         "properties": {
-          "id": {
+          "occurrence_id": {
+            "type": "string",
+            "title": "Occurrence Id"
+          },
+          "event_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Id"
+            "title": "Event Id"
           },
           "community_id": {
             "type": "string",
@@ -3284,6 +3423,44 @@
             "title": "Is Attending",
             "default": false
           },
+          "is_recurring": {
+            "type": "boolean",
+            "title": "Is Recurring",
+            "default": false
+          },
+          "is_cancelled": {
+            "type": "boolean",
+            "title": "Is Cancelled",
+            "default": false
+          },
+          "recurrence_rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence Rule"
+          },
+          "recurrence_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence End"
+          },
+          "is_exception": {
+            "type": "boolean",
+            "title": "Is Exception",
+            "default": false
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3292,7 +3469,8 @@
         },
         "type": "object",
         "required": [
-          "id",
+          "occurrence_id",
+          "event_id",
           "community_id",
           "title",
           "date",
@@ -3300,7 +3478,7 @@
           "meeting_longitude",
           "created_at"
         ],
-        "title": "EventRead"
+        "title": "EventOccurrenceRead"
       },
       "EventUpdate": {
         "properties": {
@@ -3374,6 +3552,40 @@
               }
             ],
             "title": "Report Ids"
+          },
+          "recurrence_rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence Rule"
+          },
+          "recurrence_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence End"
+          },
+          "update_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Update Scope"
           }
         },
         "type": "object",
@@ -3749,6 +3961,11 @@
             "type": "string",
             "title": "Image Type"
           },
+          "cycle": {
+            "type": "integer",
+            "title": "Cycle",
+            "default": 0
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3849,6 +4066,11 @@
             "type": "string",
             "title": "Status"
           },
+          "current_cycle": {
+            "type": "integer",
+            "title": "Current Cycle",
+            "default": 0
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3860,6 +4082,14 @@
             },
             "type": "array",
             "title": "Images",
+            "default": []
+          },
+          "status_log": {
+            "items": {
+              "$ref": "#/components/schemas/ReportStatusLogRead"
+            },
+            "type": "array",
+            "title": "Status Log",
             "default": []
           }
         },
@@ -3874,6 +4104,48 @@
           "created_at"
         ],
         "title": "ReportRead"
+      },
+      "ReportStatusLogRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "cycle": {
+            "type": "integer",
+            "title": "Cycle"
+          },
+          "performed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Performed By User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "action",
+          "cycle",
+          "created_at"
+        ],
+        "title": "ReportStatusLogRead"
       },
       "ResetPassword": {
         "properties": {

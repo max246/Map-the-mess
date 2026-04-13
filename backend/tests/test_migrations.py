@@ -409,6 +409,26 @@ def _check_organise_images(conn):
     assert "communities" in tables
 
 
+# 17. a1b2c3d4e5f7 — add recurrence columns to community_events
+@_check("a1b2c3d4e5f7")
+def _check_add_recurrence(conn):
+    cols = _column_names(conn, "community_events")
+    assert "recurrence_rule" in cols
+    assert "recurrence_end" in cols
+    assert "parent_event_id" in cols
+    assert "is_cancelled" in cols
+
+
+# 18. b2c3d4e5f6a8 — add report status log table and cycle columns
+@_check("b2c3d4e5f6a8")
+def _check_report_status_log(conn):
+    assert "report_status_log" in _table_names(conn)
+    cols = _column_names(conn, "report_status_log")
+    assert {"id", "report_id", "action", "cycle", "performed_by_user_id", "created_at"} <= cols
+    assert "current_cycle" in _column_names(conn, "reports")
+    assert "cycle" in _column_names(conn, "report_images")
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -431,6 +451,8 @@ MIGRATION_CHAIN = [
     "e5f6a7b8c9d0",
     "f6a7b8c9d0e1",
     "a7b8c9d0e1f2",
+    "a1b2c3d4e5f7",
+    "b2c3d4e5f6a8",
 ]
 
 # ---------------------------------------------------------------------------
@@ -498,6 +520,7 @@ class TestFullUpgrade:
             "event_reports",
             "community_memberships",
             "event_attendances",
+            "report_status_log",
         } <= tables
 
 

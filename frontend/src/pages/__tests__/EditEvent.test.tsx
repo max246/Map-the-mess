@@ -27,9 +27,9 @@ jest.mock('../../api/client', () => ({
 jest.mock('../../api/endpoints/communities/communities', () => ({
   getCommunities: () => ({
     listCommunitiesApiCommunitiesGet: (...args: unknown[]) => mockListCommunities(...args),
-    getEventApiCommunitiesCommunityIdEventsEventIdGet: (...args: unknown[]) =>
+    getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet: (...args: unknown[]) =>
       mockGetEvent(...args),
-    updateEventApiCommunitiesCommunityIdEventsEventIdPatch: (...args: unknown[]) =>
+    updateEventApiCommunitiesCommunityIdEventsOccurrenceIdPatch: (...args: unknown[]) =>
       mockUpdateEvent(...args),
   }),
 }))

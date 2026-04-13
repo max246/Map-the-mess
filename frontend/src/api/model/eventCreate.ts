@@ -13,4 +13,6 @@ export interface EventCreate {
   meeting_latitude: number;
   meeting_longitude: number;
   report_ids?: string[];
+  recurrence_rule?: string | null;
+  recurrence_end?: string | null;
 }

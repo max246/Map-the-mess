@@ -6,11 +6,10 @@
  * OpenAPI spec version: dev
  */
 
-export interface ReportImageRead {
+export interface ReportStatusLogRead {
   id: string;
-  url: string;
-  thumbnail_url?: string | null;
-  image_type: string;
-  cycle?: number;
+  action: string;
+  cycle: number;
+  performed_by_user_id?: string | null;
   created_at: string;
 }

@@ -436,7 +436,7 @@ class TestEvents:
             },
             headers=auth_header(volunteer),
         )
-        event_id = create_res.json()["id"]
+        event_id = create_res.json()["event_id"]
 
         res = client.patch(
             f"/api/communities/{c.id}/events/{event_id}",
@@ -475,7 +475,7 @@ class TestEvents:
             },
             headers=auth_header(volunteer),
         )
-        event_id = create_res.json()["id"]
+        event_id = create_res.json()["event_id"]
 
         res = client.patch(
             f"/api/communities/{c.id}/events/{event_id}",
@@ -497,7 +497,7 @@ class TestEvents:
             },
             headers=auth_header(volunteer),
         )
-        event_id = create_res.json()["id"]
+        event_id = create_res.json()["event_id"]
 
         res = client.get(
             f"/api/communities/{c.id}/events/{event_id}",
@@ -525,7 +525,7 @@ class TestEvents:
             },
             headers=auth_header(volunteer),
         )
-        event_id = create_res.json()["id"]
+        event_id = create_res.json()["event_id"]
 
         res = client.get(
             f"/api/communities/{c.id}/events/{event_id}",
@@ -545,7 +545,7 @@ class TestEvents:
             },
             headers=auth_header(volunteer),
         )
-        event_id = create_res.json()["id"]
+        event_id = create_res.json()["event_id"]
 
         res = client.get(f"/api/communities/{c.id}/events/{event_id}")
         assert res.status_code == 403
@@ -562,7 +562,7 @@ class TestEvents:
             },
             headers=auth_header(volunteer),
         )
-        event_id = create_res.json()["id"]
+        event_id = create_res.json()["event_id"]
 
         res = client.delete(
             f"/api/communities/{c.id}/events/{event_id}",
@@ -591,7 +591,7 @@ class TestEventAttendance:
             headers=auth_header(owner),
         )
         assert res.status_code == 201
-        return res.json()["id"]
+        return res.json()["event_id"]
 
     def test_owner_can_attend(self, client, db, volunteer):
         c = _create_community(db, volunteer)

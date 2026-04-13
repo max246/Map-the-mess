@@ -41,6 +41,10 @@ api.interceptors.response.use(
       authBridge.handleSessionExpired()
     }
 
+    if (error.response?.status === 413) {
+      alert('The image is too large to upload. Please use a smaller image (max 50 MB).')
+    }
+
     return Promise.reject(error)
   }
 )

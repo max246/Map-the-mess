@@ -1,4 +1,18 @@
-import type { EventRead } from '../api/model'
+import type { EventOccurrenceRead } from '../api/model'
+
+/** Minimal event shape needed by calendar utilities. */
+type CalendarEvent = Pick<
+  EventOccurrenceRead,
+  | 'occurrence_id'
+  | 'event_id'
+  | 'title'
+  | 'description'
+  | 'date'
+  | 'meeting_latitude'
+  | 'meeting_longitude'
+  | 'recurrence_rule'
+  | 'recurrence_end'
+>
 
 const EVENT_DURATION_MS = 2 * 60 * 60 * 1000 // 2 hours
 
@@ -45,7 +59,7 @@ function foldLine(line: string): string {
 }
 
 /** Generate an ICS (iCalendar) file content string for an event. */
-export function generateIcsContent(event: EventRead, communityName: string): string {
+export function generateIcsContent(event: CalendarEvent, communityName: string): string {
   const start = new Date(event.date)
   const end = new Date(start.getTime() + EVENT_DURATION_MS)
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${event.meeting_latitude},${event.meeting_longitude}`
@@ -59,22 +73,41 @@ export function generateIcsContent(event: EventRead, communityName: string): str
     'VERSION:2.0',
     'PRODID:-//Map the Mess//Community Cleanup//EN',
     'BEGIN:VEVENT',
-    `UID:${event.id}@mapthemess`,
+    `UID:${event.occurrence_id}@mapthemess`,
     `DTSTART:${formatIcsDate(start)}`,
     `DTEND:${formatIcsDate(end)}`,
     `SUMMARY:${escapeIcsText(`${event.title} — ${communityName}`)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     `LOCATION:${escapeIcsText(mapsUrl)}`,
     `GEO:${event.meeting_latitude};${event.meeting_longitude}`,
-    'END:VEVENT',
-    'END:VCALENDAR',
   ]
+
+  // Add RRULE for recurring events.
+  if (event.recurrence_rule) {
+    let rrule = ''
+    if (event.recurrence_rule === 'weekly') rrule = 'FREQ=WEEKLY'
+    else if (event.recurrence_rule === 'biweekly') rrule = 'FREQ=WEEKLY;INTERVAL=2'
+    else if (event.recurrence_rule === 'monthly') {
+      const dayNames = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
+      const dayIndex = start.getUTCDay() === 0 ? 6 : start.getUTCDay() - 1
+      const nth = Math.ceil(start.getUTCDate() / 7)
+      rrule = `FREQ=MONTHLY;BYDAY=${nth}${dayNames[dayIndex]}`
+    }
+    if (rrule) {
+      if (event.recurrence_end) {
+        rrule += `;UNTIL=${formatIcsDate(new Date(event.recurrence_end))}`
+      }
+      lines.push(`RRULE:${rrule}`)
+    }
+  }
+
+  lines.push('END:VEVENT', 'END:VCALENDAR')
 
   return lines.map(foldLine).join('\r\n')
 }
 
 /** Trigger a browser download of the event as an .ics file. */
-export function downloadIcsFile(event: EventRead, communityName: string): void {
+export function downloadIcsFile(event: CalendarEvent, communityName: string): void {
   const content = generateIcsContent(event, communityName)
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -86,7 +119,7 @@ export function downloadIcsFile(event: EventRead, communityName: string): void {
 }
 
 /** Build a Google Calendar "create event" deep link URL. */
-export function buildGoogleCalendarUrl(event: EventRead, communityName: string): string {
+export function buildGoogleCalendarUrl(event: CalendarEvent, communityName: string): string {
   const start = new Date(event.date)
   const end = new Date(start.getTime() + EVENT_DURATION_MS)
   const fmt = (d: Date) => formatIcsDate(d) // same YYYYMMDDTHHmmssZ format

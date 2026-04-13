@@ -14,11 +14,13 @@ import type {
   CommunityRead,
   CommunityStatusUpdate,
   CommunityVisibilityUpdate,
+  DeleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDeleteParams,
   EventCreate,
-  EventRead,
+  EventOccurrenceRead,
   EventUpdate,
   LeaderboardEntry,
   ListCommunitiesApiCommunitiesGetParams,
+  ListEventsApiCommunitiesCommunityIdEventsGetParams,
   MembershipAction,
   MembershipRead,
   MyCommunities,
@@ -211,7 +213,7 @@ const createEventApiCommunitiesCommunityIdEventsPost = (
     communityId: string,
     eventCreate: EventCreate,
  ) => {
-      return customInstance<EventRead>(
+      return customInstance<EventOccurrenceRead>(
       {url: `/api/communities/${communityId}/events`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: eventCreate
@@ -219,44 +221,65 @@ const createEventApiCommunitiesCommunityIdEventsPost = (
       );
     }
   /**
- * Get a single event. Only members, owner, or moderator+ can view.
- * @summary Get Event
+ * List expanded event occurrences for a community within a date range.
+ * @summary List Events
  */
-const getEventApiCommunitiesCommunityIdEventsEventIdGet = (
+const listEventsApiCommunitiesCommunityIdEventsGet = (
     communityId: string,
-    eventId: string,
+    params?: ListEventsApiCommunitiesCommunityIdEventsGetParams,
  ) => {
-      return customInstance<EventRead>(
-      {url: `/api/communities/${communityId}/events/${eventId}`, method: 'GET'
+      return customInstance<EventOccurrenceRead[]>(
+      {url: `/api/communities/${communityId}/events`, method: 'GET',
+        params
     },
       );
     }
   /**
- * Edit an event. Owner only. All fields optional for partial update.
+ * Get a single event or occurrence.
+ * @summary Get Event
+ */
+const getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet = (
+    communityId: string,
+    occurrenceId: string,
+ ) => {
+      return customInstance<EventOccurrenceRead>(
+      {url: `/api/communities/${communityId}/events/${occurrenceId}`, method: 'GET'
+    },
+      );
+    }
+  /**
+ * Edit an event. Owner only. Supports scoped updates for recurring events.
  * @summary Update Event
  */
-const updateEventApiCommunitiesCommunityIdEventsEventIdPatch = (
+const updateEventApiCommunitiesCommunityIdEventsOccurrenceIdPatch = (
     communityId: string,
-    eventId: string,
+    occurrenceId: string,
     eventUpdate: EventUpdate,
  ) => {
-      return customInstance<EventRead>(
-      {url: `/api/communities/${communityId}/events/${eventId}`, method: 'PATCH',
+      return customInstance<EventOccurrenceRead>(
+      {url: `/api/communities/${communityId}/events/${occurrenceId}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: eventUpdate
     },
       );
     }
   /**
- * Delete an event. Owner or moderator+ only.
+ * Delete an event or occurrence. Owner or moderator+ only.
+
+For recurring events, ``scope`` controls what is deleted:
+- ``this``: cancel this single occurrence.
+- ``this_and_future``: end the series before this date.
+- ``all``: delete the entire series (parent + exceptions).
  * @summary Delete Event
  */
-const deleteEventApiCommunitiesCommunityIdEventsEventIdDelete = (
+const deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete = (
     communityId: string,
-    eventId: string,
+    occurrenceId: string,
+    params?: DeleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDeleteParams,
  ) => {
       return customInstance<void>(
-      {url: `/api/communities/${communityId}/events/${eventId}`, method: 'DELETE'
+      {url: `/api/communities/${communityId}/events/${occurrenceId}`, method: 'DELETE',
+        params
     },
       );
     }
@@ -264,12 +287,12 @@ const deleteEventApiCommunitiesCommunityIdEventsEventIdDelete = (
  * Mark current user as attending an event. Must be a community member or owner.
  * @summary Attend Event
  */
-const attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost = (
+const attendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendPost = (
     communityId: string,
-    eventId: string,
+    occurrenceId: string,
  ) => {
-      return customInstance<EventRead>(
-      {url: `/api/communities/${communityId}/events/${eventId}/attend`, method: 'POST'
+      return customInstance<EventOccurrenceRead>(
+      {url: `/api/communities/${communityId}/events/${occurrenceId}/attend`, method: 'POST'
     },
       );
     }
@@ -277,12 +300,12 @@ const attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost = (
  * Remove current user's attendance from an event.
  * @summary Unattend Event
  */
-const unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete = (
+const unattendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendDelete = (
     communityId: string,
-    eventId: string,
+    occurrenceId: string,
  ) => {
-      return customInstance<EventRead>(
-      {url: `/api/communities/${communityId}/events/${eventId}/attend`, method: 'DELETE'
+      return customInstance<EventOccurrenceRead>(
+      {url: `/api/communities/${communityId}/events/${occurrenceId}/attend`, method: 'DELETE'
     },
       );
     }
@@ -364,7 +387,7 @@ const communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet = (
     },
       );
     }
-  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,getEventApiCommunitiesCommunityIdEventsEventIdGet,updateEventApiCommunitiesCommunityIdEventsEventIdPatch,deleteEventApiCommunitiesCommunityIdEventsEventIdDelete,attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost,unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete,listPublicMembersApiCommunitiesCommunityIdMembersGet,communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet}};
+  return {createCommunityApiCommunitiesPost,listCommunitiesApiCommunitiesGet,myCommunitiesApiCommunitiesMineGet,getCommunityApiCommunitiesCommunityIdGet,deleteCommunityApiCommunitiesCommunityIdDelete,uploadProfileImageApiCommunitiesCommunityIdImagePut,updateCommunityStatusApiCommunitiesCommunityIdStatusPatch,updateCommunityVisibilityApiCommunitiesCommunityIdVisibilityPatch,updateCommunityOwnerApiCommunitiesCommunityIdOwnerPatch,createPostApiCommunitiesCommunityIdPostsPost,updatePostApiCommunitiesCommunityIdPostsPostIdPatch,deletePostApiCommunitiesCommunityIdPostsPostIdDelete,createEventApiCommunitiesCommunityIdEventsPost,listEventsApiCommunitiesCommunityIdEventsGet,getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet,updateEventApiCommunitiesCommunityIdEventsOccurrenceIdPatch,deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete,attendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendPost,unattendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendDelete,joinCommunityApiCommunitiesCommunityIdJoinPost,listMembershipsApiCommunitiesCommunityIdMembershipsGet,updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch,leaveCommunityApiCommunitiesCommunityIdLeaveDelete,listPublicMembersApiCommunitiesCommunityIdMembersGet,communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet}};
 export type CreateCommunityApiCommunitiesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createCommunityApiCommunitiesPost']>>>
 export type ListCommunitiesApiCommunitiesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listCommunitiesApiCommunitiesGet']>>>
 export type MyCommunitiesApiCommunitiesMineGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['myCommunitiesApiCommunitiesMineGet']>>>
@@ -378,11 +401,12 @@ export type CreatePostApiCommunitiesCommunityIdPostsPostResult = NonNullable<Awa
 export type UpdatePostApiCommunitiesCommunityIdPostsPostIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updatePostApiCommunitiesCommunityIdPostsPostIdPatch']>>>
 export type DeletePostApiCommunitiesCommunityIdPostsPostIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['deletePostApiCommunitiesCommunityIdPostsPostIdDelete']>>>
 export type CreateEventApiCommunitiesCommunityIdEventsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['createEventApiCommunitiesCommunityIdEventsPost']>>>
-export type GetEventApiCommunitiesCommunityIdEventsEventIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['getEventApiCommunitiesCommunityIdEventsEventIdGet']>>>
-export type UpdateEventApiCommunitiesCommunityIdEventsEventIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateEventApiCommunitiesCommunityIdEventsEventIdPatch']>>>
-export type DeleteEventApiCommunitiesCommunityIdEventsEventIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['deleteEventApiCommunitiesCommunityIdEventsEventIdDelete']>>>
-export type AttendEventApiCommunitiesCommunityIdEventsEventIdAttendPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['attendEventApiCommunitiesCommunityIdEventsEventIdAttendPost']>>>
-export type UnattendEventApiCommunitiesCommunityIdEventsEventIdAttendDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['unattendEventApiCommunitiesCommunityIdEventsEventIdAttendDelete']>>>
+export type ListEventsApiCommunitiesCommunityIdEventsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listEventsApiCommunitiesCommunityIdEventsGet']>>>
+export type GetEventApiCommunitiesCommunityIdEventsOccurrenceIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['getEventApiCommunitiesCommunityIdEventsOccurrenceIdGet']>>>
+export type UpdateEventApiCommunitiesCommunityIdEventsOccurrenceIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateEventApiCommunitiesCommunityIdEventsOccurrenceIdPatch']>>>
+export type DeleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['deleteEventApiCommunitiesCommunityIdEventsOccurrenceIdDelete']>>>
+export type AttendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['attendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendPost']>>>
+export type UnattendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['unattendEventApiCommunitiesCommunityIdEventsOccurrenceIdAttendDelete']>>>
 export type JoinCommunityApiCommunitiesCommunityIdJoinPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['joinCommunityApiCommunitiesCommunityIdJoinPost']>>>
 export type ListMembershipsApiCommunitiesCommunityIdMembershipsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['listMembershipsApiCommunitiesCommunityIdMembershipsGet']>>>
 export type UpdateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommunities>['updateMembershipApiCommunitiesCommunityIdMembershipsMembershipIdPatch']>>>

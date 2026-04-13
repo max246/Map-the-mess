@@ -6,11 +6,7 @@
  * OpenAPI spec version: dev
  */
 
-export interface ReportImageRead {
-  id: string;
-  url: string;
-  thumbnail_url?: string | null;
-  image_type: string;
-  cycle?: number;
-  created_at: string;
-}
+export type ListEventsApiCommunitiesCommunityIdEventsGetParams = {
+range_start?: string | null;
+range_end?: string | null;
+};

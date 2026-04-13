@@ -30,9 +30,6 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
       FRONTEND_URL: https://mapthemess.uk
-      VIRTUAL_HOST: api.mapthemess.uk
-      VIRTUAL_PORT: "8000"
-      LETSENCRYPT_HOST: api.mapthemess.uk
     depends_on:
       - db
 
@@ -59,6 +56,7 @@ services:
       - certs:/etc/nginx/certs
       - vhost:/etc/nginx/vhost.d
       - ./proxy-conf/mapthemess.uk:/etc/nginx/vhost.d/mapthemess.uk:ro
+      - ./proxy-conf/www.mapthemess.uk:/etc/nginx/vhost.d/www.mapthemess.uk:ro
       - ./proxy-conf/custom_proxy.conf:/etc/nginx/conf.d/custom_proxy.conf:ro
       - html:/usr/share/nginx/html
     environment:

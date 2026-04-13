@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, Float, String, DateTime, Enum, ForeignKey, Uuid
+from sqlalchemy import Column, Float, Integer, String, DateTime, Enum, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 import enum
 
@@ -35,6 +35,7 @@ class Report(Base):
     resolved_by_user_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     status: Column[ReportStatus] = Column(Enum(ReportStatus), default=ReportStatus.pending)
+    current_cycle = Column(Integer, default=0, nullable=False, server_default="0")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     created_by = relationship(
@@ -45,4 +46,11 @@ class Report(Base):
     )
     images = relationship(
         "ReportImage", backref="report", cascade="all, delete-orphan", lazy="joined"
+    )
+    status_log = relationship(
+        "ReportStatusLog",
+        backref="report",
+        cascade="all, delete-orphan",
+        lazy="joined",
+        order_by="ReportStatusLog.created_at",
     )
