@@ -357,6 +357,82 @@ class TestDeleteImage:
         assert res.status_code == 404
 
 
+class TestUpdateReport:
+    def test_moderator_can_edit_description(self, client, db, moderator):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"description": "updated text"},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 200
+        assert res.json()["description"] == "updated text"
+
+    def test_admin_can_edit_report_type(self, client, db, admin):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"report_type": "gas_canister"},
+            headers=auth_header(admin),
+        )
+        assert res.status_code == 200
+        assert res.json()["report_type"] == "gas_canister"
+
+    def test_moderator_can_remove_images(self, client, db, moderator):
+        report = _create_report(db)
+        img = ReportImage(
+            report_id=report.id,
+            url="fake.jpg",
+            thumbnail_url="fake_thumb.jpg",
+            image_type=ImageType.report,
+        )
+        db.add(img)
+        db.commit()
+        db.refresh(img)
+
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"remove_image_ids": [str(img.id)]},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 200
+        assert len(res.json()["images"]) == 0
+
+    def test_volunteer_cannot_edit(self, client, db, volunteer):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"description": "nope"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 403
+
+    def test_unauthenticated_cannot_edit(self, client, db):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"description": "nope"},
+        )
+        assert res.status_code == 401
+
+    def test_edit_nonexistent_report(self, client, db, moderator):
+        res = client.patch(
+            "/api/reports/00000000-0000-0000-0000-000000009999",
+            json={"description": "nope"},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 404
+
+    def test_invalid_report_type(self, client, db, moderator):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"report_type": "invalid_type"},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 400
+
+
 # ---------------------------------------------------------------------------
 # Status log
 # ---------------------------------------------------------------------------

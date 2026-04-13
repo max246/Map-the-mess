@@ -9,8 +9,11 @@ import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead, ReportImageRead, ReportStatusLogRead } from '../api/model'
 
-const { deleteImageApiReportsImagesImageIdDelete, addImageApiReportsReportIdImagesPost } =
-  getReports()
+const {
+  deleteImageApiReportsImagesImageIdDelete,
+  addImageApiReportsReportIdImagesPost,
+  updateReportApiReportsReportIdPatch,
+} = getReports()
 const {
   listFavouritesApiVolunteersFavouritesGet,
   addFavouriteApiVolunteersFavouritesReportIdPost,
@@ -20,7 +23,7 @@ const {
 export default function ReportDetail() {
   const { id } = useParams() as { id: string }
   const navigate = useNavigate()
-  const { token, canManageUsers, isLoggedIn } = useAuth()
+  const { token, user, canManageUsers, isLoggedIn } = useAuth()
   const [report, setReport] = useState<ReportRead | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activePhoto, setActivePhoto] = useState(0)
@@ -43,6 +46,14 @@ export default function ReportDetail() {
   const [reopenPhoto, setReopenPhoto] = useState<File | null>(null)
   const [reopenPhotoPreview, setReopenPhotoPreview] = useState<string | null>(null)
   const [reopening, setReopening] = useState(false)
+  const [editData, setEditData] = useState<{
+    description: string
+    report_type: string
+    what3words: string
+    remove_image_ids: string[]
+  } | null>(null)
+  const [saving, setSaving] = useState(false)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const addPhotoInputRef = useRef<HTMLInputElement>(null)
   const reopenFileInputRef = useRef<HTMLInputElement>(null)
@@ -84,6 +95,9 @@ export default function ReportDetail() {
       alert('Failed to update favourite.')
     }
   }
+
+  const isOwner = !!user && !!report?.created_by_user_id && user.id === report.created_by_user_id
+  const canEdit = canManageUsers || isOwner
 
   // Build image URLs — only show current cycle in the main gallery
   const currentCycle = report?.current_cycle ?? 0
@@ -260,6 +274,33 @@ export default function ReportDetail() {
     }
   }
 
+  const handleSaveEdit = async () => {
+    if (!report || !editData) return
+    setSaving(true)
+    try {
+      const update: {
+        description?: string
+        report_type?: string
+        what3words?: string
+        remove_image_ids?: string[]
+      } = {}
+      if (editData.description !== (report.description || ''))
+        update.description = editData.description
+      if (editData.report_type !== report.report_type) update.report_type = editData.report_type
+      if (editData.what3words !== (report.what3words || '')) update.what3words = editData.what3words
+      if (editData.remove_image_ids.length > 0) update.remove_image_ids = editData.remove_image_ids
+      if (Object.keys(update).length > 0) {
+        await updateReportApiReportsReportIdPatch(id, update)
+        fetchReport()
+      }
+      setEditData(null)
+    } catch {
+      alert('Failed to update report.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (error) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
@@ -363,7 +404,7 @@ export default function ReportDetail() {
                   Resolved
                 </span>
               )}
-              {canManageUsers && (
+              {canEdit && !editData && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -374,16 +415,34 @@ export default function ReportDetail() {
                   Delete
                 </button>
               )}
+              {editData && editData?.remove_image_ids.includes(allPhotos[activePhoto].id) && (
+                <div className="absolute inset-0 bg-red-500 bg-opacity-30 rounded-lg flex items-center justify-center">
+                  <span className="bg-red-600 text-white text-sm font-medium px-3 py-1 rounded">
+                    Marked for removal
+                  </span>
+                </div>
+              )}
             </div>
             <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
               {allPhotos.map((img, i) => (
                 <button
                   key={img.id}
-                  onClick={() => setActivePhoto(i)}
+                  onClick={() =>
+                    editData
+                      ? setEditData({
+                          ...editData,
+                          remove_image_ids: editData.remove_image_ids.includes(img.id)
+                            ? editData.remove_image_ids.filter((x) => x !== img.id)
+                            : [...editData.remove_image_ids, img.id],
+                        })
+                      : setActivePhoto(i)
+                  }
                   className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
-                    i === activePhoto
-                      ? 'border-brand'
-                      : 'border-transparent opacity-60 hover:opacity-100'
+                    editData && editData?.remove_image_ids.includes(img.id)
+                      ? 'border-red-500 opacity-50'
+                      : i === activePhoto
+                        ? 'border-brand'
+                        : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
                   <img
@@ -391,6 +450,11 @@ export default function ReportDetail() {
                     alt={`Thumbnail ${i + 1}`}
                     className="w-full h-full object-cover"
                   />
+                  {editData && editData?.remove_image_ids.includes(img.id) && (
+                    <span className="absolute inset-0 bg-red-500 bg-opacity-40 flex items-center justify-center text-white text-lg font-bold">
+                      X
+                    </span>
+                  )}
                   {img.image_type === 'resolved' && (
                     <span className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-center text-[8px] leading-tight py-0.5">
                       Resolved
@@ -488,7 +552,51 @@ export default function ReportDetail() {
 
       {/* Details */}
       <div className="bg-white rounded-lg shadow p-5 mb-6">
-        <h2 className="font-semibold mb-3">Details</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold">Details</h2>
+          {canEdit && !editData && (
+            <button
+              onClick={() =>
+                report &&
+                setEditData({
+                  description: report.description || '',
+                  report_type: report.report_type || 'litter',
+                  what3words: report.what3words || '',
+                  remove_image_ids: [],
+                })
+              }
+              className="text-sm text-brand hover:underline font-medium"
+            >
+              Edit
+            </button>
+          )}
+          {editData && (
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="text-sm bg-brand text-white px-3 py-1 rounded-lg hover:bg-brand-dark transition disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={() => setEditData(null)}
+                disabled={saving}
+                className="text-sm border border-gray-300 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+
+        {editData && editData?.remove_image_ids.length > 0 && (
+          <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {editData?.remove_image_ids.length} image
+            {editData?.remove_image_ids.length > 1 ? 's' : ''} marked for removal. Click thumbnails
+            above to toggle.
+          </div>
+        )}
 
         <div className="grid gap-3 text-sm">
           <div>
@@ -500,14 +608,35 @@ export default function ReportDetail() {
 
           <div>
             <span className="text-gray-500">Type</span>
-            <p className="font-medium">
-              {report.report_type === 'gas_canister' ? 'Gas Canister' : 'Litter'}
-            </p>
+            {editData ? (
+              <select
+                value={editData.report_type}
+                onChange={(e) => setEditData({ ...editData, report_type: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand mt-1"
+              >
+                <option value="litter">Litter</option>
+                <option value="gas_canister">Gas Canister</option>
+              </select>
+            ) : (
+              <p className="font-medium">
+                {report.report_type === 'gas_canister' ? 'Gas Canister' : 'Litter'}
+              </p>
+            )}
           </div>
 
           <div>
             <span className="text-gray-500">Description</span>
-            <p>{report.description || 'No description provided'}</p>
+            {editData ? (
+              <textarea
+                value={editData.description}
+                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                rows={3}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand mt-1"
+                placeholder="Enter description..."
+              />
+            ) : (
+              <p>{report.description || 'No description provided'}</p>
+            )}
           </div>
 
           {report.address && (
@@ -532,20 +661,30 @@ export default function ReportDetail() {
             </p>
           </div>
 
-          {report.what3words && (
+          {(report.what3words || editData) && (
             <div>
               <span className="text-gray-500">what3words</span>
-              <p>
-                <a
-                  href={`https://what3words.com/${report.what3words}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-brand font-medium underline"
-                >
-                  /// {report.what3words}
-                </a>
-                <span className="text-gray-400 text-xs ml-2">Open in what3words</span>
-              </p>
+              {editData ? (
+                <input
+                  type="text"
+                  value={editData.what3words}
+                  onChange={(e) => setEditData({ ...editData, what3words: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand mt-1"
+                  placeholder="e.g. filled.count.soap"
+                />
+              ) : (
+                <p>
+                  <a
+                    href={`https://what3words.com/${report.what3words}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand font-medium underline"
+                  >
+                    /// {report.what3words}
+                  </a>
+                  <span className="text-gray-400 text-xs ml-2">Open in what3words</span>
+                </p>
+              )}
             </div>
           )}
 

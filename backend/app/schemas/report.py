@@ -36,6 +36,13 @@ class ReportCreate(BaseModel):
     what3words: Optional[str] = None
 
 
+class ReportUpdate(BaseModel):
+    description: Optional[str] = None
+    report_type: Optional[str] = None
+    what3words: Optional[str] = None
+    remove_image_ids: Optional[list[uuid.UUID]] = None
+
+
 class ReportRead(BaseModel):
     id: uuid.UUID
     latitude: float
