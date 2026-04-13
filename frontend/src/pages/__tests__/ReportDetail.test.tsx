@@ -185,6 +185,9 @@ jest.mock('../../api/endpoints/reports/reports', () => ({
     deleteImageApiReportsImagesImageIdDelete: jest.fn(),
     addImageApiReportsReportIdImagesPost: jest.fn(),
     updateReportApiReportsReportIdPatch: (...args: unknown[]) => mockUpdateReport(...args),
+    listCommentsApiReportsReportIdCommentsGet: jest.fn().mockResolvedValue([]),
+    addCommentApiReportsReportIdCommentsPost: jest.fn().mockResolvedValue({}),
+    deleteCommentApiReportsReportIdCommentsCommentIdDelete: jest.fn().mockResolvedValue(undefined),
   }),
 }))
 
