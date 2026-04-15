@@ -21,10 +21,17 @@ logger = logging.getLogger(__name__)
 from app.database import get_db
 from app.models.report import Report, ReportStatus, ReportType
 from app.models.report_image import ReportImage, ImageType
+from app.models.report_comment import ReportComment
 from app.models.report_status_log import ReportStatusLog, ReportStatusAction
 from app.models.user import User
 from app.routers.auth import ALGORITHM, get_current_user, require_moderator_or_admin
-from app.schemas.report import ReportRead, ReportImageRead
+from app.schemas.report import (
+    ReportRead,
+    ReportImageRead,
+    ReportUpdate,
+    ReportCommentCreate,
+    ReportCommentRead,
+)
 
 router = APIRouter()
 
@@ -227,6 +234,54 @@ def get_report(report_id: uuid.UUID, db: Session = Depends(get_db)):
     report = db.query(Report).get(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+
+@router.patch("/{report_id}", response_model=ReportRead)
+def update_report(
+    report_id: uuid.UUID,
+    body: ReportUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Edit a report's text or remove images. Allowed for the report owner, moderator, admin, or superuser."""
+    report = db.query(Report).get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    is_owner = report.created_by_user_id == current_user.id
+    is_privileged = current_user.user_type in ("moderator", "admin", "superuser")
+    if not is_owner and not is_privileged:
+        raise HTTPException(status_code=403, detail="Not authorised to edit this report")
+
+    if body.description is not None:
+        report.description = body.description
+
+    if body.report_type is not None:
+        report.report_type = _validate_report_type(body.report_type)
+
+    if body.what3words is not None:
+        report.what3words = body.what3words
+
+    if body.remove_image_ids:
+        images = (
+            db.query(ReportImage)
+            .filter(
+                ReportImage.id.in_(body.remove_image_ids),
+                ReportImage.report_id == report.id,
+            )
+            .all()
+        )
+        for image in images:
+            for fname in (str(image.url), str(image.thumbnail_url)):
+                if fname:
+                    path = _resolve_image_path(fname)
+                    if os.path.isfile(path):
+                        os.remove(path)
+            db.delete(image)
+
+    db.commit()
+    db.refresh(report)
     return report
 
 
@@ -450,4 +505,71 @@ def delete_report(
                 if os.path.isfile(path):
                     os.remove(path)
     db.delete(report)
+    db.commit()
+
+
+@router.get("/{report_id}/comments", response_model=list[ReportCommentRead])
+def list_comments(
+    report_id: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    """List all comments for a report."""
+    report = db.query(Report).get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return (
+        db.query(ReportComment)
+        .filter(ReportComment.report_id == report_id)
+        .order_by(ReportComment.created_at)
+        .all()
+    )
+
+
+@router.post("/{report_id}/comments", response_model=ReportCommentRead, status_code=201)
+def add_comment(
+    report_id: uuid.UUID,
+    body: ReportCommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Add a comment to an open report. Requires authentication."""
+    report = db.query(Report).get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    if report.status != ReportStatus.pending:
+        raise HTTPException(status_code=400, detail="Comments can only be added to open reports")
+
+    comment = ReportComment(
+        report_id=report_id,
+        user_id=current_user.id,
+        body=body.body,
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+
+@router.delete("/{report_id}/comments/{comment_id}", status_code=204)
+def delete_comment(
+    report_id: uuid.UUID,
+    comment_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a comment. Allowed for the comment author, moderator, admin, or superuser."""
+    comment = (
+        db.query(ReportComment)
+        .filter(ReportComment.id == comment_id, ReportComment.report_id == report_id)
+        .first()
+    )
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    is_author = comment.user_id == current_user.id
+    is_privileged = current_user.user_type in ("moderator", "admin", "superuser")
+    if not is_author and not is_privileged:
+        raise HTTPException(status_code=403, detail="Not authorised to delete this comment")
+
+    db.delete(comment)
     db.commit()

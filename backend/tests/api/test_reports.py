@@ -357,6 +357,82 @@ class TestDeleteImage:
         assert res.status_code == 404
 
 
+class TestUpdateReport:
+    def test_moderator_can_edit_description(self, client, db, moderator):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"description": "updated text"},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 200
+        assert res.json()["description"] == "updated text"
+
+    def test_admin_can_edit_report_type(self, client, db, admin):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"report_type": "gas_canister"},
+            headers=auth_header(admin),
+        )
+        assert res.status_code == 200
+        assert res.json()["report_type"] == "gas_canister"
+
+    def test_moderator_can_remove_images(self, client, db, moderator):
+        report = _create_report(db)
+        img = ReportImage(
+            report_id=report.id,
+            url="fake.jpg",
+            thumbnail_url="fake_thumb.jpg",
+            image_type=ImageType.report,
+        )
+        db.add(img)
+        db.commit()
+        db.refresh(img)
+
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"remove_image_ids": [str(img.id)]},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 200
+        assert len(res.json()["images"]) == 0
+
+    def test_volunteer_cannot_edit(self, client, db, volunteer):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"description": "nope"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 403
+
+    def test_unauthenticated_cannot_edit(self, client, db):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"description": "nope"},
+        )
+        assert res.status_code == 401
+
+    def test_edit_nonexistent_report(self, client, db, moderator):
+        res = client.patch(
+            "/api/reports/00000000-0000-0000-0000-000000009999",
+            json={"description": "nope"},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 404
+
+    def test_invalid_report_type(self, client, db, moderator):
+        report = _create_report(db)
+        res = client.patch(
+            f"/api/reports/{report.id}",
+            json={"report_type": "invalid_type"},
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 400
+
+
 # ---------------------------------------------------------------------------
 # Status log
 # ---------------------------------------------------------------------------
@@ -503,3 +579,137 @@ class TestStatusLog:
         log = res.json()["status_log"]
         timestamps = [e["created_at"] for e in log]
         assert timestamps == sorted(timestamps)
+
+
+# ---------------------------------------------------------------------------
+# Comments
+# ---------------------------------------------------------------------------
+
+
+class TestListComments:
+    def test_list_comments_empty(self, client, db):
+        report = _create_report(db)
+        res = client.get(f"/api/reports/{report.id}/comments")
+        assert res.status_code == 200
+        assert res.json() == []
+
+    def test_list_comments_nonexistent_report(self, client, db):
+        res = client.get("/api/reports/00000000-0000-0000-0000-000000009999/comments")
+        assert res.status_code == 404
+
+
+class TestAddComment:
+    def test_add_comment(self, client, db, volunteer):
+        report = _create_report(db)
+        res = client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "I'll clean this up tomorrow"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 201
+        data = res.json()
+        assert data["body"] == "I'll clean this up tomorrow"
+        assert data["user_id"] == str(volunteer.id)
+        assert data["report_id"] == str(report.id)
+
+    def test_add_comment_requires_auth(self, client, db):
+        report = _create_report(db)
+        res = client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "no auth"},
+        )
+        assert res.status_code == 401
+
+    def test_add_comment_only_on_open_report(self, client, db, volunteer):
+        report = _create_report(db, status=ReportStatus.cleaned)
+        res = client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "too late"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 400
+        assert "open" in res.json()["detail"].lower()
+
+    def test_add_comment_nonexistent_report(self, client, db, volunteer):
+        res = client.post(
+            "/api/reports/00000000-0000-0000-0000-000000009999/comments",
+            json={"body": "nope"},
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 404
+
+    def test_comments_included_in_report_read(self, client, db, volunteer):
+        report = _create_report(db)
+        client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "hello"},
+            headers=auth_header(volunteer),
+        )
+        res = client.get(f"/api/reports/{report.id}")
+        assert res.status_code == 200
+        assert len(res.json()["comments"]) == 1
+        assert res.json()["comments"][0]["body"] == "hello"
+
+
+class TestDeleteComment:
+    def test_author_can_delete_own_comment(self, client, db, volunteer):
+        report = _create_report(db)
+        create_res = client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "delete me"},
+            headers=auth_header(volunteer),
+        )
+        comment_id = create_res.json()["id"]
+        res = client.delete(
+            f"/api/reports/{report.id}/comments/{comment_id}",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 204
+
+    def test_moderator_can_delete_any_comment(self, client, db, volunteer, moderator):
+        report = _create_report(db)
+        create_res = client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "mod will delete"},
+            headers=auth_header(volunteer),
+        )
+        comment_id = create_res.json()["id"]
+        res = client.delete(
+            f"/api/reports/{report.id}/comments/{comment_id}",
+            headers=auth_header(moderator),
+        )
+        assert res.status_code == 204
+
+    def test_other_volunteer_cannot_delete(self, client, db, volunteer):
+        report = _create_report(db)
+        create_res = client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "mine"},
+            headers=auth_header(volunteer),
+        )
+        comment_id = create_res.json()["id"]
+        other = _make_user(db, email="other@example.com")
+        res = client.delete(
+            f"/api/reports/{report.id}/comments/{comment_id}",
+            headers=auth_header(other),
+        )
+        assert res.status_code == 403
+
+    def test_delete_nonexistent_comment(self, client, db, volunteer):
+        report = _create_report(db)
+        res = client.delete(
+            f"/api/reports/{report.id}/comments/00000000-0000-0000-0000-000000009999",
+            headers=auth_header(volunteer),
+        )
+        assert res.status_code == 404
+
+    def test_delete_comment_requires_auth(self, client, db, volunteer):
+        report = _create_report(db)
+        create_res = client.post(
+            f"/api/reports/{report.id}/comments",
+            json={"body": "no auth delete"},
+            headers=auth_header(volunteer),
+        )
+        comment_id = create_res.json()["id"]
+        res = client.delete(f"/api/reports/{report.id}/comments/{comment_id}")
+        assert res.status_code == 401

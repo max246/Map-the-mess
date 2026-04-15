@@ -37,6 +37,9 @@ const EventDetail = lazy(() => import('./pages/EventDetail'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
 const Tools = lazy(() => import('./pages/Tools'))
 const VolunteerProfile = lazy(() => import('./pages/VolunteerProfile'))
+const PlannerList = lazy(() => import('./pages/PlannerList'))
+const CreatePlan = lazy(() => import('./pages/CreatePlan'))
+const PlanDetail = lazy(() => import('./pages/PlanDetail'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 const RouteFallback = () => (
@@ -110,6 +113,9 @@ function App() {
                 <Route path="/communities/:id/posts/:postId" element={<PostDetail />} />
                 <Route path="/communities/:id/events/:eventId" element={<EventDetail />} />
                 <Route path="/communities/:id/events/:eventId/edit" element={<EditEvent />} />
+                <Route path="/planner" element={<PlannerList />} />
+                <Route path="/planner/new" element={<CreatePlan />} />
+                <Route path="/planner/:id" element={<PlanDetail />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

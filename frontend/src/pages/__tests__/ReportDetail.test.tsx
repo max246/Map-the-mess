@@ -7,6 +7,7 @@ import ReportDetail from '../ReportDetail'
 const REPORT_WITH_IMAGES = {
   id: '00000000-0000-0000-0000-00000000ab42',
   description: 'Broken bottles near park',
+  report_type: 'litter',
   status: 'reported',
   latitude: 51.50735,
   longitude: -0.12776,
@@ -14,6 +15,7 @@ const REPORT_WITH_IMAGES = {
   what3words: 'filled.count.soap',
   address: '123 Test Street, London',
   resolved_at: null,
+  created_by_user_id: 'owner-user-id',
   current_cycle: 0,
   status_log: [
     {
@@ -167,15 +169,25 @@ jest.mock('../../api/client', () => ({
   thumbnailUrl: (img: { path: string }) => `/api/${img.path}?thumb`,
 }))
 
-let mockAuth = { token: null as string | null, canManageUsers: false, isLoggedIn: false }
+let mockAuth = {
+  token: null as string | null,
+  user: null as { id: string; email: string; userType: string; exp: number } | null,
+  canManageUsers: false,
+  isLoggedIn: false,
+}
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => mockAuth,
 }))
 
+const mockUpdateReport = jest.fn()
 jest.mock('../../api/endpoints/reports/reports', () => ({
   getReports: () => ({
     deleteImageApiReportsImagesImageIdDelete: jest.fn(),
     addImageApiReportsReportIdImagesPost: jest.fn(),
+    updateReportApiReportsReportIdPatch: (...args: unknown[]) => mockUpdateReport(...args),
+    listCommentsApiReportsReportIdCommentsGet: jest.fn().mockResolvedValue([]),
+    addCommentApiReportsReportIdCommentsPost: jest.fn().mockResolvedValue({}),
+    deleteCommentApiReportsReportIdCommentsCommentIdDelete: jest.fn().mockResolvedValue(undefined),
   }),
 }))
 
@@ -210,8 +222,9 @@ function renderReportDetail(reportId: string = '00000000-0000-0000-0000-00000000
 describe('ReportDetail', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockAuth = { token: null, canManageUsers: false, isLoggedIn: false }
+    mockAuth = { token: null, user: null, canManageUsers: false, isLoggedIn: false }
     mockGet.mockResolvedValue({ data: REPORT_WITH_IMAGES })
+    mockUpdateReport.mockResolvedValue({ data: REPORT_WITH_IMAGES })
   })
 
   /* ── Loading & error states ──────────────────────── */
@@ -558,5 +571,243 @@ describe('ReportDetail', () => {
         expect.objectContaining({ headers: expect.any(Object) })
       )
     })
+  })
+
+  /* ── Edit report ───────────────────────────────── */
+
+  it('does not show Edit button for anonymous users', async () => {
+    renderReportDetail()
+    await screen.findByText('Broken bottles near park')
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument()
+  })
+
+  it('does not show Edit button for logged-in non-owner, non-admin user', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'other-user', email: 'other@test.com', userType: 'volunteer', exp: 9999999999 },
+      canManageUsers: false,
+      isLoggedIn: true,
+    }
+    renderReportDetail()
+    await screen.findByText('Broken bottles near park')
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument()
+  })
+
+  it('shows Edit button for admin users', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'admin-user', email: 'admin@test.com', userType: 'admin', exp: 9999999999 },
+      canManageUsers: true,
+      isLoggedIn: true,
+    }
+    renderReportDetail()
+    expect(await screen.findByRole('button', { name: /^edit$/i })).toBeInTheDocument()
+  })
+
+  it('shows Edit button for report owner', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: {
+        id: 'owner-user-id',
+        email: 'owner@test.com',
+        userType: 'volunteer',
+        exp: 9999999999,
+      },
+      canManageUsers: false,
+      isLoggedIn: true,
+    }
+    renderReportDetail()
+    expect(await screen.findByRole('button', { name: /^edit$/i })).toBeInTheDocument()
+  })
+
+  it('opens edit form with pre-filled values when clicking Edit', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'admin-user', email: 'admin@test.com', userType: 'admin', exp: 9999999999 },
+      canManageUsers: true,
+      isLoggedIn: true,
+    }
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }))
+
+    const descriptionField = screen.getByPlaceholderText('Enter description...')
+    expect(descriptionField).toHaveValue('Broken bottles near park')
+
+    const w3wField = screen.getByPlaceholderText('e.g. filled.count.soap')
+    expect(w3wField).toHaveValue('filled.count.soap')
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+  })
+
+  it('cancels edit mode without saving', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'admin-user', email: 'admin@test.com', userType: 'admin', exp: 9999999999 },
+      canManageUsers: true,
+      isLoggedIn: true,
+    }
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }))
+    expect(screen.getByPlaceholderText('Enter description...')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByPlaceholderText('Enter description...')).not.toBeInTheDocument()
+    expect(mockUpdateReport).not.toHaveBeenCalled()
+  })
+
+  it('saves edited description and calls update API', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'admin-user', email: 'admin@test.com', userType: 'admin', exp: 9999999999 },
+      canManageUsers: true,
+      isLoggedIn: true,
+    }
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }))
+
+    const descriptionField = screen.getByPlaceholderText('Enter description...')
+    await user.clear(descriptionField)
+    await user.type(descriptionField, 'Updated description')
+
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    await waitFor(() => {
+      expect(mockUpdateReport).toHaveBeenCalledWith(
+        '00000000-0000-0000-0000-00000000ab42',
+        expect.objectContaining({ description: 'Updated description' })
+      )
+    })
+  })
+
+  it('saves edited what3words', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'admin-user', email: 'admin@test.com', userType: 'admin', exp: 9999999999 },
+      canManageUsers: true,
+      isLoggedIn: true,
+    }
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }))
+
+    const w3wField = screen.getByPlaceholderText('e.g. filled.count.soap')
+    await user.clear(w3wField)
+    await user.type(w3wField, 'new.words.here')
+
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    await waitFor(() => {
+      expect(mockUpdateReport).toHaveBeenCalledWith(
+        '00000000-0000-0000-0000-00000000ab42',
+        expect.objectContaining({ what3words: 'new.words.here' })
+      )
+    })
+  })
+
+  it('does not call API when nothing changed', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'admin-user', email: 'admin@test.com', userType: 'admin', exp: 9999999999 },
+      canManageUsers: true,
+      isLoggedIn: true,
+    }
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }))
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Enter description...')).not.toBeInTheDocument()
+    })
+    expect(mockUpdateReport).not.toHaveBeenCalled()
+  })
+
+  it('marks images for removal in edit mode by clicking thumbnails', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: { id: 'admin-user', email: 'admin@test.com', userType: 'admin', exp: 9999999999 },
+      canManageUsers: true,
+      isLoggedIn: true,
+    }
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }))
+
+    // Click first thumbnail to mark for removal
+    const thumbnail1 = screen.getByAltText('Thumbnail 1')
+    await user.click(thumbnail1.closest('button')!)
+
+    // Should show removal indicator
+    expect(screen.getByText(/1 image marked for removal/i)).toBeInTheDocument()
+
+    // Save should include image ID
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    await waitFor(() => {
+      expect(mockUpdateReport).toHaveBeenCalledWith(
+        '00000000-0000-0000-0000-00000000ab42',
+        expect.objectContaining({
+          remove_image_ids: ['00000000-0000-0000-0000-000000000101'],
+        })
+      )
+    })
+  })
+
+  it('owner can edit their own report', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: {
+        id: 'owner-user-id',
+        email: 'owner@test.com',
+        userType: 'volunteer',
+        exp: 9999999999,
+      },
+      canManageUsers: false,
+      isLoggedIn: true,
+    }
+    const user = userEvent.setup()
+    renderReportDetail()
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }))
+
+    const descriptionField = screen.getByPlaceholderText('Enter description...')
+    await user.clear(descriptionField)
+    await user.type(descriptionField, 'Owner updated this')
+
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    await waitFor(() => {
+      expect(mockUpdateReport).toHaveBeenCalledWith(
+        '00000000-0000-0000-0000-00000000ab42',
+        expect.objectContaining({ description: 'Owner updated this' })
+      )
+    })
+  })
+
+  it('owner does not see Admin Actions section', async () => {
+    mockAuth = {
+      token: 'abc',
+      user: {
+        id: 'owner-user-id',
+        email: 'owner@test.com',
+        userType: 'volunteer',
+        exp: 9999999999,
+      },
+      canManageUsers: false,
+      isLoggedIn: true,
+    }
+    renderReportDetail()
+    await screen.findByText('Broken bottles near park')
+    expect(screen.queryByText('Admin Actions')).not.toBeInTheDocument()
   })
 })

@@ -10,8 +10,11 @@ import type {
   BodyCreateReportApiReportsPost,
   BodyMarkUnresolvedApiReportsReportIdUnresolvePatch,
   ListReportsApiReportsGetParams,
+  ReportCommentCreate,
+  ReportCommentRead,
   ReportImageRead,
-  ReportRead
+  ReportRead,
+  ReportUpdate
 } from '../../model';
 
 import { customInstance } from '../../client';
@@ -94,6 +97,21 @@ const getReportApiReportsReportIdGet = (
       );
     }
   /**
+ * Edit a report's text or remove images. Allowed for the report owner, moderator, admin, or superuser.
+ * @summary Update Report
+ */
+const updateReportApiReportsReportIdPatch = (
+    reportId: string,
+    reportUpdate: ReportUpdate,
+ ) => {
+      return customInstance<ReportRead>(
+      {url: `/api/reports/${reportId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: reportUpdate
+    },
+      );
+    }
+  /**
  * Delete a report. Requires moderator or admin role.
  * @summary Delete Report
  */
@@ -164,14 +182,58 @@ const deleteImageApiReportsImagesImageIdDelete = (
     },
       );
     }
-  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete}};
+  /**
+ * List all comments for a report.
+ * @summary List Comments
+ */
+const listCommentsApiReportsReportIdCommentsGet = (
+    reportId: string,
+ ) => {
+      return customInstance<ReportCommentRead[]>(
+      {url: `/api/reports/${reportId}/comments`, method: 'GET'
+    },
+      );
+    }
+  /**
+ * Add a comment to an open report. Requires authentication.
+ * @summary Add Comment
+ */
+const addCommentApiReportsReportIdCommentsPost = (
+    reportId: string,
+    reportCommentCreate: ReportCommentCreate,
+ ) => {
+      return customInstance<ReportCommentRead>(
+      {url: `/api/reports/${reportId}/comments`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: reportCommentCreate
+    },
+      );
+    }
+  /**
+ * Delete a comment. Allowed for the comment author, moderator, admin, or superuser.
+ * @summary Delete Comment
+ */
+const deleteCommentApiReportsReportIdCommentsCommentIdDelete = (
+    reportId: string,
+    commentId: string,
+ ) => {
+      return customInstance<void>(
+      {url: `/api/reports/${reportId}/comments/${commentId}`, method: 'DELETE'
+    },
+      );
+    }
+  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,updateReportApiReportsReportIdPatch,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete,listCommentsApiReportsReportIdCommentsGet,addCommentApiReportsReportIdCommentsPost,deleteCommentApiReportsReportIdCommentsCommentIdDelete}};
 export type ServeImageApiReportsImagesFilenameGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['serveImageApiReportsImagesFilenameGet']>>>
 export type ExportReportsApiReportsExportGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['exportReportsApiReportsExportGet']>>>
 export type ListReportsApiReportsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listReportsApiReportsGet']>>>
 export type CreateReportApiReportsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['createReportApiReportsPost']>>>
 export type GetReportApiReportsReportIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['getReportApiReportsReportIdGet']>>>
+export type UpdateReportApiReportsReportIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['updateReportApiReportsReportIdPatch']>>>
 export type DeleteReportApiReportsReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteReportApiReportsReportIdDelete']>>>
 export type AddImageApiReportsReportIdImagesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['addImageApiReportsReportIdImagesPost']>>>
 export type MarkCleanedApiReportsReportIdCleanPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markCleanedApiReportsReportIdCleanPatch']>>>
 export type MarkUnresolvedApiReportsReportIdUnresolvePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markUnresolvedApiReportsReportIdUnresolvePatch']>>>
 export type DeleteImageApiReportsImagesImageIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteImageApiReportsImagesImageIdDelete']>>>
+export type ListCommentsApiReportsReportIdCommentsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listCommentsApiReportsReportIdCommentsGet']>>>
+export type AddCommentApiReportsReportIdCommentsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['addCommentApiReportsReportIdCommentsPost']>>>
+export type DeleteCommentApiReportsReportIdCommentsCommentIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteCommentApiReportsReportIdCommentsCommentIdDelete']>>>
