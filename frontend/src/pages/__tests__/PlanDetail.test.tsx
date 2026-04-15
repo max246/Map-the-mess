@@ -100,8 +100,16 @@ jest.mock('react-leaflet', () => ({
 
 jest.mock('leaflet', () => ({
   icon: () => ({}),
+  divIcon: () => ({}),
   latLngBounds: () => ({ pad: jest.fn().mockReturnThis() }),
   latLng: (lat: number, lng: number) => ({ lat, lng }),
+  layerGroup: () => ({
+    addTo: jest.fn().mockReturnThis(),
+    clearLayers: jest.fn(),
+    remove: jest.fn(),
+  }),
+  circle: () => ({ addTo: jest.fn().mockReturnThis() }),
+  marker: () => ({ addTo: jest.fn().mockReturnThis() }),
 }))
 
 import PlanDetail from '../PlanDetail'
@@ -292,6 +300,44 @@ describe('PlanDetail', () => {
       expect(screen.getByText(/back to plans/i)).toBeInTheDocument()
     })
     expect(screen.getByText(/back to plans/i).closest('a')).toHaveAttribute('href', '/planner')
+  })
+
+  it('does not show progress bar for planned status', async () => {
+    renderPlanDetail()
+    await waitFor(() => {
+      expect(screen.getByText('Morning cleanup')).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/resolved \(/i)).not.toBeInTheDocument()
+  })
+
+  it('shows progress bar when in_progress', async () => {
+    mockGetPlan.mockResolvedValue({
+      ...PLAN,
+      status: 'in_progress',
+      plan_reports: [
+        { ...PLAN.plan_reports[0], report: { ...PLAN.plan_reports[0].report, status: 'cleaned' } },
+        PLAN.plan_reports[1],
+      ],
+    })
+    renderPlanDetail()
+    await waitFor(() => {
+      expect(screen.getByText(/1 of 2 resolved \(50%\)/i)).toBeInTheDocument()
+    })
+  })
+
+  it('marks resolved stops with Resolved badge', async () => {
+    mockGetPlan.mockResolvedValue({
+      ...PLAN,
+      status: 'in_progress',
+      plan_reports: [
+        { ...PLAN.plan_reports[0], report: { ...PLAN.plan_reports[0].report, status: 'cleaned' } },
+        PLAN.plan_reports[1],
+      ],
+    })
+    renderPlanDetail()
+    await waitFor(() => {
+      expect(screen.getByText('Resolved')).toBeInTheDocument()
+    })
   })
 
   it('shows not found for missing plan', async () => {

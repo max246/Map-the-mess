@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import PageMeta from '../components/PageMeta'
+import LocateButton from '../components/LocateButton'
 import { getPlanner } from '../api/endpoints/planner/planner'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl, API_BASE_URL } from '../api/client'
@@ -16,10 +17,14 @@ const {
   deletePlanApiPlannerPlanIdDelete,
 } = getPlanner()
 
-function createNumberedIcon(n: number) {
+function createNumberedIcon(n: number, resolved = false) {
+  const fill = resolved ? '#16a34a' : '#2563eb'
+  const inner = resolved
+    ? `<path d="M7 12.5 l3.2 3.2 L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`
+    : `<text x="12" y="16" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="sans-serif">${n}</text>`
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
-    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>
-    <text x="12" y="16" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="sans-serif">${n}</text>
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="${fill}" stroke="#fff" stroke-width="1.5"/>
+    ${inner}
   </svg>`
   return L.icon({
     iconUrl: `data:image/svg+xml;base64,${btoa(svg)}`,
@@ -196,6 +201,10 @@ export default function PlanDetail() {
   }
 
   const sortedReports = [...(plan.plan_reports || [])].sort((a, b) => a.visit_order - b.visit_order)
+  const resolvedCount = sortedReports.filter((pr) => pr.report.status === 'cleaned').length
+  const progressPct = sortedReports.length
+    ? Math.round((resolvedCount / sortedReports.length) * 100)
+    : 0
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -209,14 +218,14 @@ export default function PlanDetail() {
 
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-        <div>
+        <div className="w-full sm:w-auto min-w-0">
           {editingName ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <input
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-1.5 text-lg font-bold flex-1 min-w-[150px]"
+                className="border border-gray-300 rounded-lg px-3 py-1.5 text-lg font-bold flex-1 min-w-0"
                 placeholder="Plan name"
                 autoFocus
                 onKeyDown={(e) => {
@@ -315,6 +324,25 @@ export default function PlanDetail() {
         </button>
       </div>
 
+      {/* Progress */}
+      {(plan.status === 'in_progress' || plan.status === 'completed') &&
+        sortedReports.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-medium text-gray-700">Progress</span>
+              <span className="text-sm text-gray-600">
+                {resolvedCount} of {sortedReports.length} resolved ({progressPct}%)
+              </span>
+            </div>
+            <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-600 transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        )}
+
       {/* Map */}
       <div className="rounded-lg overflow-hidden shadow mb-6" style={{ height: 400 }}>
         <MapContainer
@@ -332,7 +360,7 @@ export default function PlanDetail() {
             <Marker
               key={pr.id}
               position={[pr.report.latitude, pr.report.longitude]}
-              icon={createNumberedIcon(pr.visit_order)}
+              icon={createNumberedIcon(pr.visit_order, pr.report.status === 'cleaned')}
             />
           ))}
           {plan.route_geometry && (
@@ -341,6 +369,7 @@ export default function PlanDetail() {
               style={{ color: '#2563eb', weight: 4, opacity: 0.7 }}
             />
           )}
+          <LocateButton />
         </MapContainer>
       </div>
 
@@ -349,13 +378,19 @@ export default function PlanDetail() {
       <div className="flex flex-col gap-3">
         {sortedReports.map((pr) => {
           const firstImage = pr.report.images?.find((img) => img.image_type === 'report')
+          const isResolved = pr.report.status === 'cleaned'
           return (
-            <div key={pr.id} className="bg-white rounded-lg shadow flex overflow-hidden">
-              <div className="w-10 flex-shrink-0 bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
-                {pr.visit_order}
+            <div
+              key={pr.id}
+              className={`bg-white rounded-lg shadow flex overflow-hidden ${isResolved ? 'opacity-75' : ''}`}
+            >
+              <div
+                className={`w-10 flex-shrink-0 text-white flex items-center justify-center font-bold text-sm ${isResolved ? 'bg-green-600' : 'bg-blue-600'}`}
+              >
+                {isResolved ? '✓' : pr.visit_order}
               </div>
               <Link to={`/report/${pr.report.id}`} className="flex flex-1 min-w-0">
-                <div className="w-20 h-20 flex-shrink-0 bg-gray-100">
+                <div className="w-20 h-20 flex-shrink-0 bg-gray-100 relative">
                   {firstImage ? (
                     <img
                       src={thumbnailUrl(firstImage)}
@@ -369,9 +404,16 @@ export default function PlanDetail() {
                   )}
                 </div>
                 <div className="flex-1 p-3 min-w-0">
-                  <p className="text-sm text-gray-700 truncate">
-                    {pr.report.description || 'No description'}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-700 truncate flex-1">
+                      {pr.report.description || 'No description'}
+                    </p>
+                    {isResolved && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 flex-shrink-0">
+                        Resolved
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                     {pr.leg_distance_meters != null && (
                       <span>{formatDistance(pr.leg_distance_meters)} walk</span>
