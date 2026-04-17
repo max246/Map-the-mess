@@ -6,6 +6,7 @@ Usage:
     python utils/dev_seed.py wipe-reports   # delete all reports and their images
     python utils/dev_seed.py wipe-users     # delete all users except the superuser
     python utils/dev_seed.py reset          # all of the above (wipe everything, then seed users)
+    python utils/dev_seed.py make-stale     # mark 2 random pending reports as stale
 """
 
 import argparse
@@ -41,8 +42,9 @@ from passlib.context import CryptContext
 
 from app.database import SessionLocal
 from app.models.user import User, UserType
-from app.models.report import Report
+from app.models.report import Report, ReportStatus
 from app.models.report_image import ReportImage
+from app.models.report_status_log import ReportStatusAction, ReportStatusLog
 from app.models.favourite import Favourite
 from app.models.refresh_token import RefreshToken
 
@@ -120,6 +122,31 @@ def wipe_users(db) -> None:
     print(f"Deleted {count} users (superuser kept).")
 
 
+def make_stale(db, count: int = 2) -> None:
+    """Append a `stale` log entry to N random pending reports that aren't already stale."""
+    candidates = [
+        r
+        for r in db.query(Report).filter(Report.status == ReportStatus.pending).all()
+        if not r.is_stale
+    ]
+    if not candidates:
+        print("No eligible pending reports to mark stale.")
+        return
+    picks = random.sample(candidates, min(count, len(candidates)))
+    for report in picks:
+        db.add(
+            ReportStatusLog(
+                report_id=report.id,
+                action=ReportStatusAction.stale,
+                cycle=report.current_cycle,
+                performed_by_user_id=None,
+            )
+        )
+        print(f"Marked stale: {report.id} — {report.description or '(no description)'}")
+    db.commit()
+    print(f"\nDone — {len(picks)} report(s) marked stale.\n")
+
+
 def verify_user(db, email: str) -> None:
     """Mark a user as verified by email address."""
     user = db.query(User).filter(User.email == email).first()
@@ -140,14 +167,14 @@ def main() -> None:
     )
     parser.add_argument(
         "command",
-        choices=["users", "wipe-reports", "wipe-users", "reset", "verify"],
+        choices=["users", "wipe-reports", "wipe-users", "reset", "verify", "make-stale"],
         help="Action to perform",
     )
     parser.add_argument(
         "--count",
         type=int,
-        default=5,
-        help="Number of users to create (default: 5)",
+        default=None,
+        help="Number of users to create, or reports to mark stale (defaults: 5 for users, 2 for make-stale)",
     )
     parser.add_argument(
         "--email",
@@ -163,7 +190,7 @@ def main() -> None:
     db = SessionLocal()
     try:
         if args.command == "users":
-            seed_users(db, args.count)
+            seed_users(db, args.count if args.count is not None else 5)
         elif args.command == "wipe-reports":
             wipe_reports(db)
         elif args.command == "wipe-users":
@@ -173,10 +200,12 @@ def main() -> None:
                 print("Usage: python utils/dev_seed.py verify --email user@example.com")
                 sys.exit(1)
             verify_user(db, args.email)
+        elif args.command == "make-stale":
+            make_stale(db, args.count if args.count is not None else 2)
         elif args.command == "reset":
             wipe_reports(db)
             wipe_users(db)
-            seed_users(db, args.count)
+            seed_users(db, args.count if args.count is not None else 5)
     finally:
         db.close()
 

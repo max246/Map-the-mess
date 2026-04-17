@@ -22,6 +22,7 @@ export interface ReportRead {
   resolved_at?: string | null;
   status: string;
   current_cycle?: number;
+  is_stale?: boolean;
   created_at: string;
   images?: ReportImageRead[];
   status_log?: ReportStatusLogRead[];

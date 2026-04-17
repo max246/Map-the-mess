@@ -70,6 +70,7 @@ class ReportRead(BaseModel):
     resolved_at: Optional[datetime] = None
     status: str
     current_cycle: int = 0
+    is_stale: bool = False
     created_at: datetime
     images: list[ReportImageRead] = []
     status_log: list[ReportStatusLogRead] = []

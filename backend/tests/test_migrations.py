@@ -445,6 +445,20 @@ def _check_report_comments(conn):
     assert "ix_report_comments_report_id" in indexes
 
 
+@_check("c4d5e6f7a8b9")
+def _check_stale_enum_values(conn):
+    """Verify `stale` and `unstale` are registered on the reportstatusaction enum."""
+    result = conn.execute(
+        text(
+            "SELECT enumlabel FROM pg_enum "
+            "JOIN pg_type ON pg_enum.enumtypid = pg_type.oid "
+            "WHERE pg_type.typname = 'reportstatusaction'"
+        )
+    )
+    labels = {row[0] for row in result}
+    assert {"stale", "unstale"} <= labels
+
+
 @_check("6f3b919a6597")
 def _check_plans_and_plan_reports(conn):
     assert "plans" in _table_names(conn)
@@ -511,6 +525,7 @@ MIGRATION_CHAIN = [
     "b2c3d4e5f6a8",
     "c3d4e5f6a7b9",
     "6f3b919a6597",
+    "c4d5e6f7a8b9",
 ]
 
 # ---------------------------------------------------------------------------

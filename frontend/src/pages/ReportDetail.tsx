@@ -17,6 +17,7 @@ const {
   deleteImageApiReportsImagesImageIdDelete,
   addImageApiReportsReportIdImagesPost,
   updateReportApiReportsReportIdPatch,
+  markUnstaleApiReportsReportIdUnstalePost,
 } = getReports()
 const {
   listFavouritesApiVolunteersFavouritesGet,
@@ -51,6 +52,7 @@ export default function ReportDetail() {
   const [reopenPhoto, setReopenPhoto] = useState<File | null>(null)
   const [reopenPhotoPreview, setReopenPhotoPreview] = useState<string | null>(null)
   const [reopening, setReopening] = useState(false)
+  const [unstaling, setUnstaling] = useState(false)
   const [editData, setEditData] = useState<{
     description: string
     report_type: string
@@ -85,6 +87,19 @@ export default function ReportDetail() {
       .then((favs) => setIsFavourite(favs.some((r) => r.id === id)))
       .catch(() => {})
   }, [id, isLoggedIn])
+
+  const handleUnstale = async () => {
+    if (!id) return
+    setUnstaling(true)
+    try {
+      await markUnstaleApiReportsReportIdUnstalePost(id)
+      fetchReport()
+    } catch {
+      alert('Failed to mark as in progress. Please try again.')
+    } finally {
+      setUnstaling(false)
+    }
+  }
 
   const toggleFavourite = async () => {
     if (!id) return
@@ -770,6 +785,12 @@ export default function ReportDetail() {
               } else if (entry.action === 'reopened') {
                 dotColor = 'bg-orange-500'
                 label = 'Reopened'
+              } else if (entry.action === 'stale') {
+                dotColor = 'bg-amber-500'
+                label = 'No recent activity'
+              } else if (entry.action === 'unstale') {
+                dotColor = 'bg-blue-500'
+                label = 'Marked as in progress'
               }
 
               return (
@@ -832,6 +853,35 @@ export default function ReportDetail() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Stale notice */}
+      {report.is_stale && report.status !== 'cleaned' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <span aria-hidden className="text-xl">
+              ⏰
+            </span>
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900">No recent activity</p>
+              <p className="text-sm text-amber-800 mt-1">
+                This report hasn&rsquo;t been updated in a while. If someone&rsquo;s on it but just
+                busy, mark it as in progress to reset the clock.
+              </p>
+              {isLoggedIn ? (
+                <button
+                  onClick={handleUnstale}
+                  disabled={unstaling}
+                  className="mt-3 bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-700 transition disabled:opacity-50"
+                >
+                  {unstaling ? 'Saving…' : "I'm on it"}
+                </button>
+              ) : (
+                <p className="mt-2 text-xs text-amber-700">Sign in to mark this as in progress.</p>
+              )}
+            </div>
           </div>
         </div>
       )}
