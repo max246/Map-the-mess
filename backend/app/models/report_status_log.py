@@ -13,6 +13,8 @@ class ReportStatusAction(str, enum.Enum):
     created = "created"
     cleaned = "cleaned"
     reopened = "reopened"
+    stale = "stale"
+    unstale = "unstale"
 
 
 class ReportStatusLog(Base):

@@ -47,7 +47,7 @@ const exportReportsApiReportsExportGet = (
       );
     }
   /**
- * List all reports, optionally filtered by status and/or report type. Authenticated users with city coordinates get nearby reports.
+ * List all reports, optionally filtered by status, report type, or staleness. Authenticated users with city coordinates get nearby reports.
  * @summary List Reports
  */
 const listReportsApiReportsGet = (
@@ -153,6 +153,18 @@ const markCleanedApiReportsReportIdCleanPatch = (
       );
     }
   /**
+ * Clear the stale marker on a report — "I'm on it." Resets the inactivity clock.
+ * @summary Mark Unstale
+ */
+const markUnstaleApiReportsReportIdUnstalePost = (
+    reportId: string,
+ ) => {
+      return customInstance<ReportRead>(
+      {url: `/api/reports/${reportId}/unstale`, method: 'POST'
+    },
+      );
+    }
+  /**
  * Reopen a report. Anyone can reopen with an optional photo.
  * @summary Mark Unresolved
  */
@@ -222,7 +234,7 @@ const deleteCommentApiReportsReportIdCommentsCommentIdDelete = (
     },
       );
     }
-  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,updateReportApiReportsReportIdPatch,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete,listCommentsApiReportsReportIdCommentsGet,addCommentApiReportsReportIdCommentsPost,deleteCommentApiReportsReportIdCommentsCommentIdDelete}};
+  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,updateReportApiReportsReportIdPatch,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnstaleApiReportsReportIdUnstalePost,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete,listCommentsApiReportsReportIdCommentsGet,addCommentApiReportsReportIdCommentsPost,deleteCommentApiReportsReportIdCommentsCommentIdDelete}};
 export type ServeImageApiReportsImagesFilenameGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['serveImageApiReportsImagesFilenameGet']>>>
 export type ExportReportsApiReportsExportGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['exportReportsApiReportsExportGet']>>>
 export type ListReportsApiReportsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listReportsApiReportsGet']>>>
@@ -232,6 +244,7 @@ export type UpdateReportApiReportsReportIdPatchResult = NonNullable<Awaited<Retu
 export type DeleteReportApiReportsReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteReportApiReportsReportIdDelete']>>>
 export type AddImageApiReportsReportIdImagesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['addImageApiReportsReportIdImagesPost']>>>
 export type MarkCleanedApiReportsReportIdCleanPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markCleanedApiReportsReportIdCleanPatch']>>>
+export type MarkUnstaleApiReportsReportIdUnstalePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markUnstaleApiReportsReportIdUnstalePost']>>>
 export type MarkUnresolvedApiReportsReportIdUnresolvePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markUnresolvedApiReportsReportIdUnresolvePatch']>>>
 export type DeleteImageApiReportsImagesImageIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteImageApiReportsImagesImageIdDelete']>>>
 export type ListCommentsApiReportsReportIdCommentsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listCommentsApiReportsReportIdCommentsGet']>>>

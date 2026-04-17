@@ -194,10 +194,11 @@ def list_reports(
     request: Request,
     status: str | None = None,
     report_type: str | None = None,
+    is_stale: bool | None = None,
     radius_km: float = 30.0,
     db: Session = Depends(get_db),
 ):
-    """List all reports, optionally filtered by status and/or report type. Authenticated users with city coordinates get nearby reports."""
+    """List all reports, optionally filtered by status, report type, or staleness. Authenticated users with city coordinates get nearby reports."""
     q = db.query(Report)
     if status:
         q = q.filter(Report.status == status)
@@ -226,7 +227,10 @@ def list_reports(
             )
         )
         q = q.filter(distance <= radius_km)
-    return q.order_by(Report.created_at.desc()).all()
+    results = q.order_by(Report.created_at.desc()).all()
+    if is_stale is not None:
+        results = [r for r in results if r.is_stale == is_stale]
+    return results
 
 
 @router.get("/{report_id}", response_model=ReportRead)
@@ -388,6 +392,31 @@ def mark_cleaned(
             action=ReportStatusAction.cleaned,
             cycle=report.current_cycle,
             performed_by_user_id=current_user.id if current_user else None,
+        )
+    )
+    db.commit()
+    db.refresh(report)
+    return report
+
+
+@router.post("/{report_id}/unstale", response_model=ReportRead)
+def mark_unstale(
+    report_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Clear the stale marker on a report — "I'm on it." Resets the inactivity clock."""
+    report = db.query(Report).get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    if not report.is_stale:
+        raise HTTPException(status_code=400, detail="Report is not currently stale")
+    db.add(
+        ReportStatusLog(
+            report_id=report.id,
+            action=ReportStatusAction.unstale,
+            cycle=report.current_cycle,
+            performed_by_user_id=current_user.id,
         )
     )
     db.commit()

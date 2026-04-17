@@ -184,6 +184,87 @@ SUPERUSER_PASSWORD=$2b$12$...the-hash...
 
 If the superuser already exists in the database, you'll need to delete the existing record for it to be re-created with the new hash on next startup.
 
+## Stale-report scanner
+
+Open reports that haven't seen any activity for `REPORT_STALE_DAYS` (default `30`) get a `stale` entry appended to their timeline. The map and the report detail page surface this with an amber pin / banner, and any registered user can clear the flag from the report page ("I'm on it") — that emits an `unstale` entry and resets the inactivity clock.
+
+### Configure
+
+Two env vars (already in `.env.example` and `backend/.env.example`):
+
+```env
+REPORT_STALE_DAYS=30          # how many days of silence before a report is flagged
+ADMIN_TASK_SECRET=<random>    # required by the cron-trigger endpoint
+```
+
+Generate a secret:
+
+```bash
+cd backend
+python utils/generate_task_secret.py
+```
+
+### Run the scan
+
+The scan is a single protected endpoint:
+
+```
+POST /api/admin/tasks/mark-stale
+Header: X-Task-Secret: <ADMIN_TASK_SECRET>
+```
+
+Trigger it manually with curl:
+
+```bash
+curl -fsS -X POST \
+  -H "X-Task-Secret: $ADMIN_TASK_SECRET" \
+  http://localhost:8000/api/admin/tasks/mark-stale
+# → {"marked": 3}
+```
+
+### Schedule it (production)
+
+Cron runs with a near-empty environment, so `$ADMIN_TASK_SECRET` won't resolve unless you arrange for it. The cleanest approach for this stack is to run `curl` *inside the backend container*, where `ADMIN_TASK_SECRET` is already injected from `.env` by docker-compose — the secret never has to be copied or exported anywhere else.
+
+Add a single line to the host's crontab (`crontab -e` as the user that owns the deployment):
+
+```cron
+0 0 * * * docker compose -f /opt/map-the-mess/docker-compose.prod.yml exec -T backend sh -c 'curl -fsS -X POST -H "X-Task-Secret: $ADMIN_TASK_SECRET" http://localhost:8000/api/admin/tasks/mark-stale' >> /var/log/stale-scan.log 2>&1
+```
+
+Notes on the flags:
+- `-T` disables TTY allocation — required for non-interactive cron.
+- The single-quoted `sh -c '...'` keeps `$ADMIN_TASK_SECRET` unexpanded by the host shell so it gets resolved *inside* the container.
+- Adjust `/opt/map-the-mess/docker-compose.prod.yml` to wherever the compose file lives on your host.
+
+Verify the line works before relying on the schedule:
+
+```bash
+docker compose -f /opt/map-the-mess/docker-compose.prod.yml exec -T backend \
+  sh -c 'curl -fsS -X POST -H "X-Task-Secret: $ADMIN_TASK_SECRET" http://localhost:8000/api/admin/tasks/mark-stale'
+# → {"marked": 0}
+```
+
+The endpoint is idempotent — re-running it within the same day is a no-op for already-stale reports, and a fresh `unstale` entry pushes the next eligibility back by `REPORT_STALE_DAYS`.
+
+### Test locally
+
+The dev seed script can flip random pending reports to stale so you can see the UI without waiting 30 days:
+
+```bash
+cd backend
+python utils/dev_seed.py make-stale            # 2 random reports
+python utils/dev_seed.py make-stale --count 5  # override
+```
+
+After running, check the map (amber pins, "Stale" filter) and the report detail page ("I'm on it" banner).
+
+### Behaviour notes
+
+- **Cleaned reports are terminal** — they are never marked stale.
+- **Cycle-aware** — staleness applies to the *current* cycle. Reopening a report (which bumps the cycle) starts a fresh clock automatically.
+- **Auth model** — the trigger endpoint uses a shared secret (intended for cron / CI); the `POST /api/reports/{id}/unstale` endpoint requires a normal user JWT.
+
 ## Dev Environment (develop branch)
 
 When a PR is merged into the `develop` branch, a GitHub Actions workflow automatically builds and pushes Docker images tagged as `develop`.

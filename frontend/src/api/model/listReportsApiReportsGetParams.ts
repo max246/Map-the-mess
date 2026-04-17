@@ -9,5 +9,6 @@
 export type ListReportsApiReportsGetParams = {
 status?: string | null;
 report_type?: string | null;
+is_stale?: boolean | null;
 radius_km?: number;
 };
