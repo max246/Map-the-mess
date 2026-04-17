@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react'
 import api from '../api/client'
+import { flush as flushOfflineQueue } from '../offline/reportQueue'
 
 interface User {
   id: string
@@ -100,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refresh_token', refresh_token)
     setToken(access_token)
     setSessionExpired(false)
+    // Drain any queued offline items that were waiting on a valid session.
+    void flushOfflineQueue().catch(() => {})
     return res.data
   }
 

@@ -18,13 +18,32 @@ export type PendingReportInput = {
   photos: Blob[]
 }
 
-export type PendingReport = PendingReportInput & {
+export type PendingResolveInput = {
+  reportId: string | number
+  photos: Blob[]
+}
+
+type PendingCommon = {
   id: string
   createdAt: number
   status: 'pending' | 'syncing' | 'failed'
   lastError?: string
   attempts: number
 }
+
+export type PendingCreateReport = PendingCommon & {
+  kind: 'create'
+  body: PendingReportBody
+  photos: Blob[]
+}
+
+export type PendingResolveReport = PendingCommon & {
+  kind: 'resolve'
+  reportId: string | number
+  photos: Blob[]
+}
+
+export type PendingReport = PendingCreateReport | PendingResolveReport
 
 export type FlushProgress = {
   total: number
@@ -77,11 +96,19 @@ const emit = () => {
   listeners.forEach((cb) => cb(s))
 }
 
+// Legacy records (pre-resolve support) have no `kind` field — treat them as create.
+const normalizeRow = (row: Record<string, unknown>): PendingReport => {
+  if (!('kind' in row)) {
+    return { ...(row as object), kind: 'create' } as PendingReport
+  }
+  return row as unknown as PendingReport
+}
+
 const refresh = async () => {
   if (!hasIndexedDb()) return
   const db = await getDb()
-  const all = (await db.getAll(STORE)) as PendingReport[]
-  cachedItems = all.sort((a, b) => a.createdAt - b.createdAt)
+  const all = (await db.getAll(STORE)) as Record<string, unknown>[]
+  cachedItems = all.map(normalizeRow).sort((a, b) => a.createdAt - b.createdAt)
   emit()
 }
 
@@ -92,13 +119,30 @@ const makeId = () => {
   return `pr_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
 
-export const enqueue = async (input: PendingReportInput): Promise<PendingReport> => {
-  const record: PendingReport = {
+export const enqueue = async (input: PendingReportInput): Promise<PendingCreateReport> => {
+  const record: PendingCreateReport = {
     id: makeId(),
     createdAt: Date.now(),
     status: 'pending',
     attempts: 0,
+    kind: 'create',
     body: input.body,
+    photos: input.photos,
+  }
+  const db = await getDb()
+  await db.put(STORE, record)
+  await refresh()
+  return record
+}
+
+export const enqueueResolve = async (input: PendingResolveInput): Promise<PendingResolveReport> => {
+  const record: PendingResolveReport = {
+    id: makeId(),
+    createdAt: Date.now(),
+    status: 'pending',
+    attempts: 0,
+    kind: 'resolve',
+    reportId: input.reportId,
     photos: input.photos,
   }
   const db = await getDb()
@@ -126,16 +170,23 @@ export const clear = async (): Promise<void> => {
 
 const updateItem = async (id: string, patch: Partial<PendingReport>) => {
   const db = await getDb()
-  const existing = (await db.get(STORE, id)) as PendingReport | undefined
+  const existing = (await db.get(STORE, id)) as Record<string, unknown> | undefined
   if (!existing) return
-  await db.put(STORE, { ...existing, ...patch })
+  const merged = { ...normalizeRow(existing), ...patch }
+  await db.put(STORE, merged)
   await refresh()
 }
 
-const unitsFor = (report: PendingReport) => Math.max(report.photos.length, 1)
+const unitsFor = (report: PendingReport) => {
+  if (report.kind === 'resolve') {
+    // N photo uploads + 1 final /clean PATCH
+    return report.photos.length + 1
+  }
+  return Math.max(report.photos.length, 1)
+}
 
-const postReport = (
-  report: PendingReport,
+const postCreateReport = (
+  report: PendingCreateReport,
   onUploadProgress: (loaded: number, total: number) => void
 ) => {
   const formData = new FormData()
@@ -168,6 +219,27 @@ const postExtraImage = (
   })
 }
 
+const postResolveImage = (
+  reportId: string | number,
+  file: Blob,
+  onUploadProgress: (loaded: number, total: number) => void
+) => {
+  const formData = new FormData()
+  formData.append('image_type', 'resolved')
+  formData.append('file', file)
+  return api.post(`/api/reports/${reportId}/images`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000,
+    onUploadProgress: (e) => onUploadProgress(e.loaded, e.total ?? 0),
+  })
+}
+
+const patchClean = (reportId: string | number) => {
+  return api.patch(`/api/reports/${reportId}/clean`, undefined, {
+    timeout: 120000,
+  })
+}
+
 const isNetworkError = (err: unknown): boolean => {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return true
   const e = err as { code?: string; message?: string; response?: unknown }
@@ -175,6 +247,12 @@ const isNetworkError = (err: unknown): boolean => {
   if (!e.response) return true
   if (e.code === 'ERR_NETWORK' || e.code === 'ECONNABORTED') return true
   return false
+}
+
+// Auth errors are "retryable when the user logs back in" — keep the item pending.
+const isAuthError = (err: unknown): boolean => {
+  const status = (err as { response?: { status?: number } })?.response?.status
+  return status === 401 || status === 403
 }
 
 export const flush = async (): Promise<{ synced: number; failed: number }> => {
@@ -211,48 +289,73 @@ export const flush = async (): Promise<{ synced: number; failed: number }> => {
       emit()
 
       try {
-        const firstPhoto = report.photos[0]
-        const firstTotal = firstPhoto ? firstPhoto.size : 0
-        const created = await postReport(report, (loaded, totalBytes) => {
-          currentProgress = {
-            total,
-            completed,
-            currentReportId: report.id,
-            bytesSent: loaded,
-            bytesTotal: totalBytes || firstTotal,
+        if (report.kind === 'resolve') {
+          for (let i = 0; i < report.photos.length; i++) {
+            const photo = report.photos[i]
+            const photoTotal = photo.size
+            await postResolveImage(report.reportId, photo, (loaded, totalBytes) => {
+              currentProgress = {
+                total,
+                completed,
+                currentReportId: report.id,
+                bytesSent: loaded,
+                bytesTotal: totalBytes || photoTotal,
+              }
+              emit()
+            })
+            completed += 1
+            currentProgress = { total, completed, currentReportId: report.id }
+            emit()
           }
+          await patchClean(report.reportId)
+          completed += 1
+          currentProgress = { total, completed, currentReportId: report.id }
           emit()
-        })
-        completed += 1
-        currentProgress = { total, completed, currentReportId: report.id }
-        emit()
-
-        const createdReport = created.data as { id: string | number }
-        for (let i = 1; i < report.photos.length; i++) {
-          const photo = report.photos[i]
-          const photoTotal = photo.size
-          await postExtraImage(String(createdReport.id), photo, (loaded, totalBytes) => {
+        } else {
+          const firstPhoto = report.photos[0]
+          const firstTotal = firstPhoto ? firstPhoto.size : 0
+          const created = await postCreateReport(report, (loaded, totalBytes) => {
             currentProgress = {
               total,
               completed,
               currentReportId: report.id,
               bytesSent: loaded,
-              bytesTotal: totalBytes || photoTotal,
+              bytesTotal: totalBytes || firstTotal,
             }
             emit()
           })
           completed += 1
           currentProgress = { total, completed, currentReportId: report.id }
           emit()
+
+          const createdReport = created.data as { id: string | number }
+          for (let i = 1; i < report.photos.length; i++) {
+            const photo = report.photos[i]
+            const photoTotal = photo.size
+            await postExtraImage(String(createdReport.id), photo, (loaded, totalBytes) => {
+              currentProgress = {
+                total,
+                completed,
+                currentReportId: report.id,
+                bytesSent: loaded,
+                bytesTotal: totalBytes || photoTotal,
+              }
+              emit()
+            })
+            completed += 1
+            currentProgress = { total, completed, currentReportId: report.id }
+            emit()
+          }
         }
 
         await remove(report.id)
         synced += 1
       } catch (err) {
-        failed += 1
         const message = (err as Error)?.message ?? 'Unknown error'
-        if (isNetworkError(err)) {
-          // Leave as pending so we retry later; don't burn an attempt counter.
+        const network = isNetworkError(err)
+        const auth = isAuthError(err)
+        if (network || auth) {
+          // Leave as pending so we retry later (on reconnect or after re-login).
           await updateItem(report.id, { status: 'pending', lastError: message })
         } else {
           // Server returned a real error — mark failed so the user sees a retry button.
@@ -261,9 +364,12 @@ export const flush = async (): Promise<{ synced: number; failed: number }> => {
             lastError: message,
             attempts: (report.attempts ?? 0) + 1,
           })
+          failed += 1
         }
         // Don't keep hammering the network if we're clearly offline.
-        if (isNetworkError(err)) break
+        if (network) break
+        // Auth errors affect every item in the queue — no point trying the rest until re-login.
+        if (auth) break
       }
     }
 
