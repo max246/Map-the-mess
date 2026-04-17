@@ -9,6 +9,9 @@ import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead, ReportImageRead, ReportStatusLogRead } from '../api/model'
 import ReportComments from '../components/ReportComments'
+import { enqueueResolve } from '../offline/reportQueue'
+
+const RESOLVE_TIMEOUT_MS = 25000
 
 const {
   deleteImageApiReportsImagesImageIdDelete,
@@ -38,6 +41,7 @@ export default function ReportDetail() {
   const [resolving, setResolving] = useState(false)
   const [resolveProgress, setResolveProgress] = useState(0)
   const [resolveLabel, setResolveLabel] = useState('')
+  const [resolveQueuedOffline, setResolveQueuedOffline] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lightboxPhotos, setLightboxPhotos] = useState<ReportImageRead[]>([])
@@ -149,6 +153,19 @@ export default function ReportDetail() {
     setResolvePhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const queueResolveOffline = async () => {
+    await enqueueResolve({
+      reportId: id,
+      photos: resolvePhotos.slice(),
+    })
+    setResolveQueuedOffline(true)
+    setShowResolveForm(false)
+    setResolvePhotos([])
+    setResolvePhotoPreviews([])
+    setResolverName('')
+    setResolverEmail('')
+  }
+
   const handleResolve = async (e: FormEvent) => {
     e.preventDefault()
     if (resolvePhotos.length === 0) {
@@ -159,9 +176,22 @@ export default function ReportDetail() {
       alert('Please fill in your name and email.')
       return
     }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setResolving(true)
+      try {
+        await queueResolveOffline()
+      } finally {
+        setResolving(false)
+      }
+      return
+    }
+
     setResolving(true)
     setResolveProgress(0)
     const totalFiles = resolvePhotos.length
+    const abortController = new AbortController()
+    const timeoutHandle = setTimeout(() => abortController.abort(), RESOLVE_TIMEOUT_MS)
     try {
       // Upload resolve photos
       for (let i = 0; i < resolvePhotos.length; i++) {
@@ -172,6 +202,7 @@ export default function ReportDetail() {
         await api.post(`/api/reports/${id}/images`, formData, {
           headers: { 'Content-Type': 'multipart/form-data', ...authHeaders },
           timeout: 120000,
+          signal: abortController.signal,
           onUploadProgress: (e) => {
             const fileProgress = e.total ? e.loaded / e.total : 0
             const overall = ((i + fileProgress) / totalFiles) * 100
@@ -186,6 +217,7 @@ export default function ReportDetail() {
       // Mark as cleaned
       const res = await api.patch(`/api/reports/${id}/clean`, undefined, {
         headers: authHeaders,
+        signal: abortController.signal,
       })
       setReport(res.data)
       setShowResolveForm(false)
@@ -195,9 +227,22 @@ export default function ReportDetail() {
       setResolverEmail('')
       // Re-fetch to get updated images
       fetchReport()
-    } catch {
-      alert('Failed to resolve report. Please try again.')
+    } catch (err) {
+      const hasResponse = !!(err as { response?: unknown })?.response
+      if (abortController.signal.aborted || !hasResponse) {
+        // Timeout or network-layer failure — queue it so the user doesn't lose their photos.
+        try {
+          await queueResolveOffline()
+        } catch (queueErr) {
+          console.error(queueErr)
+          alert('Failed to resolve report. Please try again.')
+        }
+      } else {
+        alert('Failed to resolve report. Please try again.')
+      }
+      console.error(err)
     } finally {
+      clearTimeout(timeoutHandle)
       setResolving(false)
       setResolveProgress(0)
       setResolveLabel('')
@@ -794,7 +839,18 @@ export default function ReportDetail() {
       {/* Resolve section */}
       {report.status !== 'cleaned' && (
         <div className="bg-white rounded-lg shadow p-5 mb-6">
-          {!showResolveForm ? (
+          {resolveQueuedOffline ? (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-4 text-sm">
+              <div className="flex items-start gap-2">
+                <span aria-hidden>📡</span>
+                <div>
+                  <strong className="block mb-1">Saved on your device</strong>
+                  Your resolve photos are saved locally and will upload automatically when
+                  you&rsquo;re back online. You can safely close the app.
+                </div>
+              </div>
+            </div>
+          ) : !showResolveForm ? (
             <button
               onClick={() => setShowResolveForm(true)}
               className="w-full bg-brand text-white font-semibold py-3 rounded-lg hover:bg-brand-dark transition"

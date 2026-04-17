@@ -86,10 +86,17 @@ export default function ReportLitter() {
     setPhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const uploadFile = (url: string, formData: FormData, fileIndex: number, totalFiles: number) => {
+  const uploadFile = (
+    url: string,
+    formData: FormData,
+    fileIndex: number,
+    totalFiles: number,
+    signal?: AbortSignal
+  ) => {
     return api.post(url, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,
+      signal,
       onUploadProgress: (e) => {
         const fileProgress = e.total ? e.loaded / e.total : 0
         const overall = ((fileIndex + fileProgress) / totalFiles) * 100
@@ -97,6 +104,8 @@ export default function ReportLitter() {
       },
     })
   }
+
+  const SUBMIT_TIMEOUT_MS = 25000
 
   const queueOffline = async () => {
     await enqueueReport({
@@ -138,6 +147,8 @@ export default function ReportLitter() {
     setUploadProgress(0)
 
     const totalFiles = Math.max(photos.length, 1)
+    const abortController = new AbortController()
+    const timeoutHandle = setTimeout(() => abortController.abort(), SUBMIT_TIMEOUT_MS)
 
     try {
       // Create report with first image (if any)
@@ -152,7 +163,7 @@ export default function ReportLitter() {
       if (words) formData.append('what3words', words)
       if (photos[0]) formData.append('image', photos[0])
 
-      const res = await uploadFile('/api/reports/', formData, 0, totalFiles)
+      const res = await uploadFile('/api/reports/', formData, 0, totalFiles, abortController.signal)
       const report = res.data
 
       // Upload remaining images
@@ -161,7 +172,13 @@ export default function ReportLitter() {
         const imgData = new FormData()
         imgData.append('image_type', 'report')
         imgData.append('file', photos[i])
-        await uploadFile(`/api/reports/${report.id}/images`, imgData, i, totalFiles)
+        await uploadFile(
+          `/api/reports/${report.id}/images`,
+          imgData,
+          i,
+          totalFiles,
+          abortController.signal
+        )
       }
 
       setUploadProgress(100)
@@ -171,8 +188,8 @@ export default function ReportLitter() {
       const hasResponse = !!(err as { response?: unknown })?.response
       if (status === 400) {
         alert('Location must be within the United Kingdom.')
-      } else if (!hasResponse) {
-        // Network-layer failure — queue it so the user doesn't lose their report.
+      } else if (abortController.signal.aborted || !hasResponse) {
+        // Timeout or network-layer failure — queue it so the user doesn't lose their report.
         try {
           await queueOffline()
         } catch (queueErr) {
@@ -184,6 +201,7 @@ export default function ReportLitter() {
       }
       console.error(err)
     } finally {
+      clearTimeout(timeoutHandle)
       setSubmitting(false)
       setUploadProgress(0)
       setUploadLabel('')
