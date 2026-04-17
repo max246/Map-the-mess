@@ -223,7 +223,7 @@ test.describe('Create Event page', () => {
     await expect(page.getByPlaceholder('Event title')).toBeVisible()
     await expect(page.getByRole('button', { name: /write/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /preview/i })).toBeVisible()
-    await expect(page.getByText(/date & time/i)).toBeVisible()
+    await expect(page.getByText('Date & time', { exact: true })).toBeVisible()
   })
 
   test('Create button is disabled without title', async ({ page }) => {
