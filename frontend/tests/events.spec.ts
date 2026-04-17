@@ -223,7 +223,7 @@ test.describe('Create Event page', () => {
     await expect(page.getByPlaceholder('Event title')).toBeVisible()
     await expect(page.getByRole('button', { name: /write/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /preview/i })).toBeVisible()
-    await expect(page.getByText(/date & time/i)).toBeVisible()
+    await expect(page.getByText('Date & time', { exact: true })).toBeVisible()
   })
 
   test('Create button is disabled without title', async ({ page }) => {
@@ -249,7 +249,9 @@ test.describe('Create Event page', () => {
 
     await page.getByPlaceholder('Event title').fill('Beach Cleanup')
     await page.getByPlaceholder(/describe the event/i).fill('Bring gloves')
-    await page.locator('input[type="datetime-local"]').fill('2099-04-15T10:00')
+    await page.getByRole('button', { name: /pick date & time/i }).click()
+    await page.getByRole('button', { name: /next month/i }).click()
+    await page.locator('.rdp-day_button:not([disabled])').first().click()
 
     await page.getByRole('button', { name: /create event/i }).click()
     await page.waitForURL('**/communities/1')

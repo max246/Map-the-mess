@@ -45,6 +45,19 @@ jest.mock('../../components/MarkdownRenderer', () => ({ content }: { content: st
   <div data-testid="markdown-renderer">{content}</div>
 ))
 
+jest.mock(
+  '../../components/DateTimePicker',
+  () =>
+    ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+      <input
+        data-testid="datetime-picker"
+        type="datetime-local"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    )
+)
+
 function renderCreateEvent() {
   return render(
     <MemoryRouter initialEntries={['/communities/00000000-0000-0000-0000-000000000001/events/new']}>
