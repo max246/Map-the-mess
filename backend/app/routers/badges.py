@@ -50,6 +50,6 @@ def acknowledge_badge(
         id=badge_def.id,
         name=badge_def.name,
         description=badge_def.description,
-        awarded_at=row.awarded_at,
-        acknowledged_at=row.acknowledged_at,
+        awarded_at=row.awarded_at,  # type: ignore[arg-type]
+        acknowledged_at=row.acknowledged_at,  # type: ignore[arg-type]
     )

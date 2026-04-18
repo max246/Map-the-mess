@@ -136,7 +136,7 @@ def evaluate_badges(db: Session, user: User) -> list[BadgeRead]:
     earned_ids = _earned_badge_ids(db, user)
 
     existing_rows = db.query(UserBadge).filter(UserBadge.user_id == user.id).all()
-    existing_by_id = {row.badge_id: row for row in existing_rows}
+    existing_by_id: dict[str, UserBadge] = {str(row.badge_id): row for row in existing_rows}
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     missing_ids = [bid for bid in earned_ids if bid not in existing_by_id]
@@ -162,21 +162,21 @@ def evaluate_badges(db: Session, user: User) -> list[BadgeRead]:
     if new_rows:
         db.commit()
         for row in new_rows:
-            existing_by_id[row.badge_id] = row
+            existing_by_id[str(row.badge_id)] = row
 
     # Return in a stable order: grouped by definition order (reporting → resolving → loyalty)
     result: list[BadgeRead] = []
     for badge_id, badge_def in _ALL_BADGES.items():
-        row = existing_by_id.get(badge_id)
-        if row is None:
+        existing_row = existing_by_id.get(badge_id)
+        if existing_row is None:
             continue
         result.append(
             BadgeRead(
                 id=badge_def.id,
                 name=badge_def.name,
                 description=badge_def.description,
-                awarded_at=row.awarded_at,
-                acknowledged_at=row.acknowledged_at,
+                awarded_at=existing_row.awarded_at,  # type: ignore[arg-type]
+                acknowledged_at=existing_row.acknowledged_at,  # type: ignore[arg-type]
             )
         )
     return result

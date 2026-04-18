@@ -172,8 +172,8 @@ const markUnresolvedApiReportsReportIdUnresolvePatch = (
     reportId: string,
     bodyMarkUnresolvedApiReportsReportIdUnresolvePatch: BodyMarkUnresolvedApiReportsReportIdUnresolvePatch,
  ) => {const formData = new FormData();
-if(markUnresolvedApiReportsReportIdUnresolvePatchBody.image !== undefined && markUnresolvedApiReportsReportIdUnresolvePatchBody.image !== null) {
- formData.append(`image`, markUnresolvedApiReportsReportIdUnresolvePatchBody.image);
+if(bodyMarkUnresolvedApiReportsReportIdUnresolvePatch.image !== undefined && bodyMarkUnresolvedApiReportsReportIdUnresolvePatch.image !== null) {
+ formData.append(`image`, bodyMarkUnresolvedApiReportsReportIdUnresolvePatch.image);
  }
 
       return customInstance<ReportRead>(
