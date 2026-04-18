@@ -3565,6 +3565,54 @@
         }
       }
     },
+    "/api/badges/{badge_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "Badges"
+        ],
+        "summary": "Acknowledge Badge",
+        "description": "Mark a badge as seen by the current user.\n\nRe-running evaluate_badges first ensures the row exists even if the user\nhits this endpoint before their next profile fetch.",
+        "operationId": "acknowledge_badge_api_badges__badge_id__acknowledge_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "badge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Badge Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadgeRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -3597,6 +3645,30 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "awarded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awarded At"
+          },
+          "acknowledged_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged At"
           }
         },
         "type": "object",

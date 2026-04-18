@@ -80,6 +80,8 @@ class BadgeRead(BaseModel):
     id: str
     name: str
     description: str
+    awarded_at: datetime | None = None
+    acknowledged_at: datetime | None = None
 
 
 class PublicProfile(BaseModel):
