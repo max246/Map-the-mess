@@ -10,4 +10,6 @@ export interface BadgeRead {
   id: string;
   name: string;
   description: string;
+  awarded_at?: string | null;
+  acknowledged_at?: string | null;
 }

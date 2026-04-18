@@ -121,6 +121,24 @@ jest.mock('../../context/AuthContext', () => ({
   useAuth: () => mockAuth,
 }))
 
+const mockAcknowledge = jest.fn()
+let mockBadges: {
+  id: string
+  name: string
+  description: string
+  awarded_at?: string | null
+  acknowledged_at?: string | null
+}[] = []
+jest.mock('../../context/BadgesContext', () => ({
+  BadgesProvider: ({ children }: { children: React.ReactNode }) => children,
+  useBadges: () => ({
+    badges: mockBadges,
+    unacknowledged: mockBadges.filter((b) => b.awarded_at && !b.acknowledged_at),
+    refresh: jest.fn(),
+    acknowledge: mockAcknowledge,
+  }),
+}))
+
 function renderDashboard() {
   return render(
     <MemoryRouter>
@@ -150,6 +168,7 @@ describe('VolunteerDashboard', () => {
     mockListReports.mockResolvedValue([])
     mockAddFavourite.mockResolvedValue({})
     mockRemoveFavourite.mockResolvedValue({})
+    mockBadges = []
     global.fetch = jest.fn()
   })
 
@@ -692,5 +711,86 @@ describe('VolunteerDashboard', () => {
     // The city section should show a "Change" button (not the avatar one)
     const citySection = screen.getByText('London').closest('div')!
     expect(citySection.querySelector('button')).toHaveTextContent('Change')
+  })
+
+  /* ── Badges ──────────────────────────────────────── */
+
+  it('shows an empty-state message when the user has no badges', async () => {
+    mockBadges = []
+    renderDashboard()
+    expect(await screen.findByText(/no badges yet/i)).toBeInTheDocument()
+  })
+
+  it('renders earned badges with Share buttons', async () => {
+    mockBadges = [
+      {
+        id: 'reporter_1',
+        name: 'First Spotter',
+        description: 'Reported your first litter',
+        awarded_at: '2026-04-01T00:00:00Z',
+        acknowledged_at: '2026-04-02T00:00:00Z',
+      },
+    ]
+    renderDashboard()
+
+    expect(await screen.findByText('First Spotter')).toBeInTheDocument()
+    // Share button is present on every badge
+    expect(screen.getByRole('button', { name: /^share$/i })).toBeInTheDocument()
+    // No NEW pill or Got-it button when already acknowledged
+    expect(screen.queryByText(/^NEW$/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /got it/i })).not.toBeInTheDocument()
+  })
+
+  it('highlights unacknowledged badges with a NEW pill and a Got it button', async () => {
+    mockBadges = [
+      {
+        id: 'reporter_1',
+        name: 'First Spotter',
+        description: 'Reported your first litter',
+        awarded_at: '2026-04-01T00:00:00Z',
+        acknowledged_at: null,
+      },
+    ]
+    renderDashboard()
+
+    expect(await screen.findByText('First Spotter')).toBeInTheDocument()
+    expect(screen.getByText('NEW')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /got it/i })).toBeInTheDocument()
+  })
+
+  it('calls acknowledge when the user clicks Got it', async () => {
+    mockBadges = [
+      {
+        id: 'reporter_1',
+        name: 'First Spotter',
+        description: 'Reported your first litter',
+        awarded_at: '2026-04-01T00:00:00Z',
+        acknowledged_at: null,
+      },
+    ]
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+
+    await user.click(await screen.findByRole('button', { name: /got it/i }))
+    expect(mockAcknowledge).toHaveBeenCalledWith('reporter_1')
+  })
+
+  it('opens the share modal when the user clicks Share on a badge', async () => {
+    mockBadges = [
+      {
+        id: 'reporter_1',
+        name: 'First Spotter',
+        description: 'Reported your first litter',
+        awarded_at: '2026-04-01T00:00:00Z',
+        acknowledged_at: '2026-04-02T00:00:00Z',
+      },
+    ]
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    renderDashboard()
+
+    await user.click(await screen.findByRole('button', { name: /^share$/i }))
+    expect(
+      await screen.findByRole('heading', { name: /share your achievement/i })
+    ).toBeInTheDocument()
   })
 })
