@@ -81,6 +81,8 @@ const REOPENED_REPORT = {
 /* ── Helpers ──────────────────────────────────────── */
 
 async function mockApi(page: Page, report: Record<string, unknown>) {
+  let currentReport = report
+
   await page.route(/\/api\/reports\/images\//, async (route: Route) => {
     // Return a 1x1 transparent PNG for any image request
     const pixel = Buffer.from(
@@ -91,6 +93,7 @@ async function mockApi(page: Page, report: Record<string, unknown>) {
   })
 
   await page.route(/\/api\/reports\/[0-9a-f-]+\/unresolve/, async (route: Route) => {
+    currentReport = REOPENED_REPORT
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -102,7 +105,7 @@ async function mockApi(page: Page, report: Record<string, unknown>) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(report),
+      body: JSON.stringify(currentReport),
     })
   })
 
