@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import PageMeta from '../components/PageMeta'
 import CityAutocomplete from '../components/CityAutocomplete'
 import { getAuth } from '../api/endpoints/auth/auth'
@@ -8,6 +8,8 @@ import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
 import ShareCleanupModal from '../components/ShareCleanupModal'
+import ShareBadgeModal from '../components/ShareBadgeModal'
+import { useBadges } from '../context/BadgesContext'
 import type { ReportRead, BadgeRead } from '../api/model'
 
 const {
@@ -128,8 +130,9 @@ function ProfileSection() {
   const [cityMsg, setCityMsg] = useState('')
   const [editingCity, setEditingCity] = useState(false)
 
-  // Badges
-  const [badges, setBadges] = useState<BadgeRead[]>([])
+  // Badges (from shared context so the global banner stays in sync)
+  const { badges, acknowledge: acknowledgeBadge } = useBadges()
+  const [badgeToShare, setBadgeToShare] = useState<BadgeRead | null>(null)
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -150,7 +153,6 @@ function ProfileSection() {
       .then((profile) => {
         setFullName(profile.full_name || '')
         setAvatar(avatarSrc(profile.avatar_url))
-        setBadges(profile.badges || [])
         // Reverse-geocode to show current city name
         if (
           profile.city_latitude &&
@@ -515,34 +517,83 @@ function ProfileSection() {
       </div>
 
       {/* Badges */}
-      <div className="mt-6 pt-5 border-t border-gray-100">
+      <div id="badges" className="mt-6 pt-5 border-t border-gray-100 scroll-mt-20">
         <h3 className="text-sm font-semibold text-gray-700 mb-2">Badges</h3>
         {badges.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {badges.map((badge) => (
-              <div key={badge.id} className="flex flex-col items-center gap-1.5">
-                <img
-                  src={`/badges/thumbs/${badge.id}.jpg`}
-                  alt={badge.name}
-                  title={badge.description}
-                  className="w-[150px] h-[150px] object-contain"
-                />
-                <span className="text-sm text-gray-600 text-center leading-tight font-medium">
-                  {badge.name}
-                </span>
-              </div>
-            ))}
+            {badges.map((badge) => {
+              const isNew = badge.awarded_at && !badge.acknowledged_at
+              return (
+                <div
+                  key={badge.id}
+                  className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition ${
+                    isNew ? 'bg-amber-50 ring-2 ring-amber-400 ring-offset-1' : ''
+                  }`}
+                >
+                  <div className="relative">
+                    <img
+                      src={`/badges/thumbs/${badge.id}.jpg`}
+                      alt={badge.name}
+                      title={badge.description}
+                      className="w-[150px] h-[150px] object-contain"
+                    />
+                    {isNew && (
+                      <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-600 text-center leading-tight font-medium">
+                    {badge.name}
+                  </span>
+                  <div className="flex gap-1.5 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setBadgeToShare(badge)}
+                      className="px-2.5 py-1 bg-brand text-white rounded text-xs font-medium hover:opacity-90 transition"
+                    >
+                      Share
+                    </button>
+                    {isNew && (
+                      <button
+                        type="button"
+                        onClick={() => acknowledgeBadge(badge.id)}
+                        className="px-2.5 py-1 border border-gray-300 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 transition"
+                      >
+                        Got it
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <p className="text-sm text-gray-400">No badges yet — keep volunteering!</p>
         )}
       </div>
+
+      {badgeToShare && (
+        <ShareBadgeModal
+          badge={badgeToShare}
+          volunteerName={fullName || 'Volunteer'}
+          onClose={() => setBadgeToShare(null)}
+        />
+      )}
     </div>
   )
 }
 
 export default function VolunteerDashboard() {
   const { isLoggedIn, user } = useAuth()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (!location.hash) return
+    const el = document.getElementById(location.hash.slice(1))
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [location.hash])
+
   const [tab, setTab] = useState<Tab>('favourites')
   const [favourites, setFavourites] = useState<ReportRead[]>([])
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())

@@ -113,8 +113,14 @@ export default function ReportPopup({ report }: ReportPopupProps) {
 
         {/* Status + description */}
         <strong style={{ fontSize: '14px', display: 'block' }}>
-          {report.status === 'cleaned' ? '✅' : '🔴'} {report.description || 'No description'}
+          {report.status === 'cleaned' ? '✅' : report.is_stale ? '⏰' : '🔴'}{' '}
+          {report.description || 'No description'}
         </strong>
+        {report.is_stale && report.status !== 'cleaned' && (
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#b45309', fontWeight: 500 }}>
+            No recent activity
+          </p>
+        )}
 
         {/* Address */}
         {report.address && (

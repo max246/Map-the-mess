@@ -445,6 +445,20 @@ def _check_report_comments(conn):
     assert "ix_report_comments_report_id" in indexes
 
 
+@_check("c4d5e6f7a8b9")
+def _check_stale_enum_values(conn):
+    """Verify `stale` and `unstale` are registered on the reportstatusaction enum."""
+    result = conn.execute(
+        text(
+            "SELECT enumlabel FROM pg_enum "
+            "JOIN pg_type ON pg_enum.enumtypid = pg_type.oid "
+            "WHERE pg_type.typname = 'reportstatusaction'"
+        )
+    )
+    labels = {row[0] for row in result}
+    assert {"stale", "unstale"} <= labels
+
+
 @_check("6f3b919a6597")
 def _check_plans_and_plan_reports(conn):
     assert "plans" in _table_names(conn)
@@ -485,6 +499,26 @@ def _check_plans_and_plan_reports(conn):
     assert "report_id" in fk_cols
 
 
+@_check("d5e6f7a8b9c0")
+def _check_user_badges(conn):
+    assert "user_badges" in _table_names(conn)
+    cols = _column_names(conn, "user_badges")
+    assert {"id", "user_id", "badge_id", "awarded_at", "acknowledged_at"} <= cols
+
+    indexes = {idx["name"] for idx in inspect(conn).get_indexes("user_badges")}
+    assert "ix_user_badges_id" in indexes
+    assert "ix_user_badges_user_id" in indexes
+    assert "ix_user_badges_badge_id" in indexes
+
+    fks = inspect(conn).get_foreign_keys("user_badges")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "user_id" in fk_cols
+
+    uniques = inspect(conn).get_unique_constraints("user_badges")
+    unique_col_sets = [set(u["column_names"]) for u in uniques]
+    assert {"user_id", "badge_id"} in unique_col_sets
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -511,6 +545,8 @@ MIGRATION_CHAIN = [
     "b2c3d4e5f6a8",
     "c3d4e5f6a7b9",
     "6f3b919a6597",
+    "c4d5e6f7a8b9",
+    "d5e6f7a8b9c0",
 ]
 
 # ---------------------------------------------------------------------------
@@ -582,6 +618,7 @@ class TestFullUpgrade:
             "report_comments",
             "plans",
             "plan_reports",
+            "user_badges",
         } <= tables
 
 

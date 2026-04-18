@@ -14,6 +14,7 @@ from app.models.community_post import CommunityPost  # noqa: F401
 from app.models.community_event import CommunityEvent, event_reports  # noqa: F401
 from app.models.community_membership import CommunityMembership  # noqa: F401
 from app.models.planner import Plan, PlanReport  # noqa: F401
+from app.models.user_badge import UserBadge  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -9,11 +9,15 @@ import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead, ReportImageRead, ReportStatusLogRead } from '../api/model'
 import ReportComments from '../components/ReportComments'
+import { enqueueResolve } from '../offline/reportQueue'
+
+const RESOLVE_TIMEOUT_MS = 25000
 
 const {
   deleteImageApiReportsImagesImageIdDelete,
   addImageApiReportsReportIdImagesPost,
   updateReportApiReportsReportIdPatch,
+  markUnstaleApiReportsReportIdUnstalePost,
 } = getReports()
 const {
   listFavouritesApiVolunteersFavouritesGet,
@@ -38,6 +42,7 @@ export default function ReportDetail() {
   const [resolving, setResolving] = useState(false)
   const [resolveProgress, setResolveProgress] = useState(0)
   const [resolveLabel, setResolveLabel] = useState('')
+  const [resolveQueuedOffline, setResolveQueuedOffline] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lightboxPhotos, setLightboxPhotos] = useState<ReportImageRead[]>([])
@@ -47,6 +52,7 @@ export default function ReportDetail() {
   const [reopenPhoto, setReopenPhoto] = useState<File | null>(null)
   const [reopenPhotoPreview, setReopenPhotoPreview] = useState<string | null>(null)
   const [reopening, setReopening] = useState(false)
+  const [unstaling, setUnstaling] = useState(false)
   const [editData, setEditData] = useState<{
     description: string
     report_type: string
@@ -81,6 +87,19 @@ export default function ReportDetail() {
       .then((favs) => setIsFavourite(favs.some((r) => r.id === id)))
       .catch(() => {})
   }, [id, isLoggedIn])
+
+  const handleUnstale = async () => {
+    if (!id) return
+    setUnstaling(true)
+    try {
+      await markUnstaleApiReportsReportIdUnstalePost(id)
+      fetchReport()
+    } catch {
+      alert('Failed to mark as in progress. Please try again.')
+    } finally {
+      setUnstaling(false)
+    }
+  }
 
   const toggleFavourite = async () => {
     if (!id) return
@@ -149,6 +168,19 @@ export default function ReportDetail() {
     setResolvePhotoPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const queueResolveOffline = async () => {
+    await enqueueResolve({
+      reportId: id,
+      photos: resolvePhotos.slice(),
+    })
+    setResolveQueuedOffline(true)
+    setShowResolveForm(false)
+    setResolvePhotos([])
+    setResolvePhotoPreviews([])
+    setResolverName('')
+    setResolverEmail('')
+  }
+
   const handleResolve = async (e: FormEvent) => {
     e.preventDefault()
     if (resolvePhotos.length === 0) {
@@ -159,9 +191,22 @@ export default function ReportDetail() {
       alert('Please fill in your name and email.')
       return
     }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setResolving(true)
+      try {
+        await queueResolveOffline()
+      } finally {
+        setResolving(false)
+      }
+      return
+    }
+
     setResolving(true)
     setResolveProgress(0)
     const totalFiles = resolvePhotos.length
+    const abortController = new AbortController()
+    const timeoutHandle = setTimeout(() => abortController.abort(), RESOLVE_TIMEOUT_MS)
     try {
       // Upload resolve photos
       for (let i = 0; i < resolvePhotos.length; i++) {
@@ -172,6 +217,7 @@ export default function ReportDetail() {
         await api.post(`/api/reports/${id}/images`, formData, {
           headers: { 'Content-Type': 'multipart/form-data', ...authHeaders },
           timeout: 120000,
+          signal: abortController.signal,
           onUploadProgress: (e) => {
             const fileProgress = e.total ? e.loaded / e.total : 0
             const overall = ((i + fileProgress) / totalFiles) * 100
@@ -186,6 +232,7 @@ export default function ReportDetail() {
       // Mark as cleaned
       const res = await api.patch(`/api/reports/${id}/clean`, undefined, {
         headers: authHeaders,
+        signal: abortController.signal,
       })
       setReport(res.data)
       setShowResolveForm(false)
@@ -195,9 +242,22 @@ export default function ReportDetail() {
       setResolverEmail('')
       // Re-fetch to get updated images
       fetchReport()
-    } catch {
-      alert('Failed to resolve report. Please try again.')
+    } catch (err) {
+      const hasResponse = !!(err as { response?: unknown })?.response
+      if (abortController.signal.aborted || !hasResponse) {
+        // Timeout or network-layer failure — queue it so the user doesn't lose their photos.
+        try {
+          await queueResolveOffline()
+        } catch (queueErr) {
+          console.error(queueErr)
+          alert('Failed to resolve report. Please try again.')
+        }
+      } else {
+        alert('Failed to resolve report. Please try again.')
+      }
+      console.error(err)
     } finally {
+      clearTimeout(timeoutHandle)
       setResolving(false)
       setResolveProgress(0)
       setResolveLabel('')
@@ -725,6 +785,12 @@ export default function ReportDetail() {
               } else if (entry.action === 'reopened') {
                 dotColor = 'bg-orange-500'
                 label = 'Reopened'
+              } else if (entry.action === 'stale') {
+                dotColor = 'bg-amber-500'
+                label = 'No recent activity'
+              } else if (entry.action === 'unstale') {
+                dotColor = 'bg-blue-500'
+                label = 'Marked as in progress'
               }
 
               return (
@@ -791,10 +857,50 @@ export default function ReportDetail() {
         </div>
       )}
 
+      {/* Stale notice */}
+      {report.is_stale && report.status !== 'cleaned' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <span aria-hidden className="text-xl">
+              ⏰
+            </span>
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900">No recent activity</p>
+              <p className="text-sm text-amber-800 mt-1">
+                This report hasn&rsquo;t been updated in a while. If someone&rsquo;s on it but just
+                busy, mark it as in progress to reset the clock.
+              </p>
+              {isLoggedIn ? (
+                <button
+                  onClick={handleUnstale}
+                  disabled={unstaling}
+                  className="mt-3 bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-700 transition disabled:opacity-50"
+                >
+                  {unstaling ? 'Saving…' : "I'm on it"}
+                </button>
+              ) : (
+                <p className="mt-2 text-xs text-amber-700">Sign in to mark this as in progress.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Resolve section */}
       {report.status !== 'cleaned' && (
         <div className="bg-white rounded-lg shadow p-5 mb-6">
-          {!showResolveForm ? (
+          {resolveQueuedOffline ? (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-4 text-sm">
+              <div className="flex items-start gap-2">
+                <span aria-hidden>📡</span>
+                <div>
+                  <strong className="block mb-1">Saved on your device</strong>
+                  Your resolve photos are saved locally and will upload automatically when
+                  you&rsquo;re back online. You can safely close the app.
+                </div>
+              </div>
+            </div>
+          ) : !showResolveForm ? (
             <button
               onClick={() => setShowResolveForm(true)}
               className="w-full bg-brand text-white font-semibold py-3 rounded-lg hover:bg-brand-dark transition"

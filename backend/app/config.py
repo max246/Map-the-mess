@@ -25,3 +25,6 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 MAIL_FROM = os.getenv("MAIL_FROM", "")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 OSRM_URL = os.getenv("OSRM_URL", "https://router.project-osrm.org")
+
+REPORT_STALE_DAYS = int(os.getenv("REPORT_STALE_DAYS", "30"))
+ADMIN_TASK_SECRET = os.getenv("ADMIN_TASK_SECRET", "")

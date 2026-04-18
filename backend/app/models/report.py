@@ -61,3 +61,14 @@ class Report(Base):
         lazy="joined",
         order_by="ReportComment.created_at",
     )
+
+    @property
+    def is_stale(self) -> bool:
+        from app.models.report_status_log import ReportStatusAction
+
+        if not self.status_log:
+            return False
+        cycle_entries = [e for e in self.status_log if e.cycle == self.current_cycle]
+        if not cycle_entries:
+            return False
+        return cycle_entries[-1].action == ReportStatusAction.stale

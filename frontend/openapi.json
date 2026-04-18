@@ -78,7 +78,7 @@
           "Reports"
         ],
         "summary": "List Reports",
-        "description": "List all reports, optionally filtered by status and/or report type. Authenticated users with city coordinates get nearby reports.",
+        "description": "List all reports, optionally filtered by status, report type, or staleness. Authenticated users with city coordinates get nearby reports.",
         "operationId": "list_reports_api_reports__get",
         "parameters": [
           {
@@ -111,6 +111,22 @@
                 }
               ],
               "title": "Report Type"
+            }
+          },
+          {
+            "name": "is_stale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Stale"
             }
           },
           {
@@ -394,6 +410,55 @@
         "summary": "Mark Cleaned",
         "description": "Mark a report as cleaned. Attaches the user id if authenticated.",
         "operationId": "mark_cleaned_api_reports__report_id__clean_patch",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{report_id}/unstale": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Mark Unstale",
+        "description": "Clear the stale marker on a report \u2014 \"I'm on it.\" Resets the inactivity clock.",
+        "operationId": "mark_unstale_api_reports__report_id__unstale_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "report_id",
@@ -3452,6 +3517,102 @@
         }
       }
     },
+    "/api/admin/tasks/mark-stale": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Trigger Mark Stale",
+        "description": "Scan pending reports and append a `stale` log entry to those inactive for the configured window.",
+        "operationId": "trigger_mark_stale_api_admin_tasks_mark_stale_post",
+        "parameters": [
+          {
+            "name": "x-task-secret",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Task-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/badges/{badge_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "Badges"
+        ],
+        "summary": "Acknowledge Badge",
+        "description": "Mark a badge as seen by the current user.\n\nRe-running evaluate_badges first ensures the row exists even if the user\nhits this endpoint before their next profile fetch.",
+        "operationId": "acknowledge_badge_api_badges__badge_id__acknowledge_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "badge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Badge Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadgeRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -3484,6 +3645,30 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "awarded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awarded At"
+          },
+          "acknowledged_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged At"
           }
         },
         "type": "object",
@@ -5026,6 +5211,11 @@
             "type": "integer",
             "title": "Current Cycle",
             "default": 0
+          },
+          "is_stale": {
+            "type": "boolean",
+            "title": "Is Stale",
+            "default": false
           },
           "created_at": {
             "type": "string",

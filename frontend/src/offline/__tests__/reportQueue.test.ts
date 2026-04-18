@@ -1,9 +1,11 @@
 const mockPost = jest.fn()
+const mockPatch = jest.fn()
 
 jest.mock('../../api/client', () => ({
   __esModule: true,
   default: {
     post: (...args: unknown[]) => mockPost(...args),
+    patch: (...args: unknown[]) => mockPatch(...args),
   },
 }))
 
@@ -53,6 +55,7 @@ const loadQueue = async () => {
 describe('reportQueue', () => {
   beforeEach(() => {
     mockPost.mockReset()
+    mockPatch.mockReset()
     stores.clear()
     Object.defineProperty(navigator, 'onLine', {
       configurable: true,
@@ -192,6 +195,58 @@ describe('reportQueue', () => {
     const sawCompletion = snapshots.some((s) => s.flushing === false)
     expect(wasFlushing).toBe(true)
     expect(sawCompletion).toBe(true)
+  })
+
+  it('enqueues a resolve action and flushes it via image uploads + clean PATCH', async () => {
+    const queue = await loadQueue()
+    mockPatch.mockResolvedValue({ data: { id: 'report-99', status: 'cleaned' } })
+    mockPost.mockResolvedValue({ data: { id: 'img-1' } })
+
+    await queue.enqueueResolve({ reportId: 'report-99', photos: [makePhoto(), makePhoto()] })
+    const result = await queue.flush()
+
+    expect(result).toEqual({ synced: 1, failed: 0 })
+    expect(mockPost).toHaveBeenCalledTimes(2)
+    expect(mockPost.mock.calls[0][0]).toBe('/api/reports/report-99/images')
+    expect(mockPost.mock.calls[1][0]).toBe('/api/reports/report-99/images')
+    expect(mockPatch).toHaveBeenCalledTimes(1)
+    expect(mockPatch.mock.calls[0][0]).toBe('/api/reports/report-99/clean')
+    const items = await queue.list()
+    expect(items).toHaveLength(0)
+  })
+
+  it('keeps a resolve action pending on a 401 auth error', async () => {
+    const queue = await loadQueue()
+    const authErr = Object.assign(new Error('Unauthorized'), {
+      response: { status: 401, data: {} },
+    })
+    mockPost.mockRejectedValue(authErr)
+
+    await queue.enqueueResolve({ reportId: 'report-42', photos: [makePhoto()] })
+    const result = await queue.flush()
+
+    expect(result.synced).toBe(0)
+    expect(result.failed).toBe(0)
+    const items = await queue.list()
+    expect(items).toHaveLength(1)
+    expect(items[0].status).toBe('pending')
+    expect(items[0].attempts).toBe(0)
+  })
+
+  it('normalizes legacy rows (no kind field) as create', async () => {
+    // Seed the store directly with a legacy-shaped row.
+    getStore('pending_reports').set('legacy-1', {
+      id: 'legacy-1',
+      createdAt: 1,
+      status: 'pending',
+      attempts: 0,
+      body: sampleBody,
+      photos: [],
+    })
+    const queue = await loadQueue()
+    const items = await queue.list()
+    expect(items).toHaveLength(1)
+    expect(items[0].kind).toBe('create')
   })
 
   it('dedups concurrent flush calls', async () => {

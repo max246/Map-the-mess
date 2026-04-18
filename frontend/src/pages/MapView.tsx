@@ -33,14 +33,16 @@ function createPinIcon(color: string) {
 
 const pendingIcon = createPinIcon('#ef4444')
 const cleanedIcon = createPinIcon('#22c55e')
+const staleIcon = createPinIcon('#f59e0b')
 
-type Filter = 'all' | 'unresolved' | 'resolved' | 'favourites'
+type Filter = 'all' | 'unresolved' | 'resolved' | 'stale' | 'favourites'
 type TypeFilter = 'all' | 'litter' | 'gas_canister'
 
 const FILTERS: { key: Filter; label: string; auth?: boolean }[] = [
   { key: 'all', label: 'All' },
   { key: 'unresolved', label: 'Unresolved' },
   { key: 'resolved', label: 'Resolved' },
+  { key: 'stale', label: 'Stale' },
   { key: 'favourites', label: 'Favourites', auth: true },
 ]
 
@@ -59,10 +61,12 @@ function ZoomMarker({ report }: { report: ReportRead }) {
     }
   }
 
+  const icon = report.status === 'cleaned' ? cleanedIcon : report.is_stale ? staleIcon : pendingIcon
+
   return (
     <Marker
       position={[report.latitude, report.longitude]}
-      icon={report.status === 'cleaned' ? cleanedIcon : pendingIcon}
+      icon={icon}
       eventHandlers={{ click: handleClick }}
     >
       <ReportPopup report={report} />
@@ -120,6 +124,7 @@ export default function MapView() {
   const filteredReports = allReports.filter((r) => {
     if (filter === 'unresolved' && r.status === 'cleaned') return false
     if (filter === 'resolved' && r.status !== 'cleaned') return false
+    if (filter === 'stale' && !r.is_stale) return false
     if (filter === 'favourites' && !favouriteIds.has(r.id)) return false
     if (typeFilter !== 'all' && r.report_type !== typeFilter) return false
     return true

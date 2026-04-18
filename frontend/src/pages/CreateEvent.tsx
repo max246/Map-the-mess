@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { thumbnailUrl } from '../api/client'
 import MeetingPointPicker from '../components/MeetingPointPicker'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import DateTimePicker from '../components/DateTimePicker'
 import type { CommunityRead, ReportRead } from '../api/model'
 
 const { listCommunitiesApiCommunitiesGet, createEventApiCommunitiesCommunityIdEventsPost } =
@@ -119,17 +120,23 @@ export default function CreateEvent() {
       <h1 className="text-2xl font-bold mb-6">New Event</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Title</label>
-          <input
-            type="text"
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="Event title"
-          />
+        {/* Title + Date & time */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium mb-1">Title</label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              placeholder="Event title"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Date & time</label>
+            <DateTimePicker value={date} onChange={setDate} mode="datetime" />
+          </div>
         </div>
 
         {/* Description */}
@@ -179,18 +186,6 @@ export default function CreateEvent() {
           )}
         </div>
 
-        {/* Date & time */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Date & time</label>
-          <input
-            type="datetime-local"
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-
         {/* Recurrence */}
         <div>
           <label className="block text-sm font-medium mb-1">Repeats</label>
@@ -209,11 +204,11 @@ export default function CreateEvent() {
               <label className="block text-xs text-gray-500 mb-1">
                 End date (optional — leave empty for ongoing)
               </label>
-              <input
-                type="date"
+              <DateTimePicker
                 value={recurrenceEnd}
-                onChange={(e) => setRecurrenceEnd(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                onChange={setRecurrenceEnd}
+                mode="date"
+                placeholder="No end date"
               />
             </div>
           )}

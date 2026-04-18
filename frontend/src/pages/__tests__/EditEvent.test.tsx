@@ -48,6 +48,19 @@ jest.mock('../../components/MarkdownRenderer', () => ({ content }: { content: st
   <div data-testid="markdown-renderer">{content}</div>
 ))
 
+jest.mock(
+  '../../components/DateTimePicker',
+  () =>
+    ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+      <input
+        data-testid="datetime-picker"
+        type="datetime-local"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    )
+)
+
 const EXISTING_EVENT = {
   id: '00000000-0000-0000-0000-000000000005',
   community_id: '00000000-0000-0000-0000-000000000001',

@@ -32,13 +32,14 @@ Because clean streets shouldn't depend on the council noticing.
 - 📍 Interactive map with litter reports (Leaflet / OpenStreetMap)
 - 🔥 Heatmap view — toggle between pin markers and a density heatmap to spot litter hotspots at a glance
 - 📸 Photo upload with geolocation, auto-thumbnails, and Full-HD optimisation
-- 🔍 Filter by status (pending / cleaned / favourites) and report type (litter / gas canister)
+- 🔍 Filter by status (pending / cleaned / stale / favourites) and report type (litter / gas canister)
+- ⏰ Stale-report detection — reports with no activity for 30 days are flagged on the timeline and surfaced via an amber pin on the map; any registered user can clear the flag with "I'm on it"
 - 🏷️ Report types — categorise reports as litter or gas canister
 - ✏️ Edit reports — update description, type, what3words, and manage images (owner / moderator / admin)
 - 🖼️ Image management — add extra photos to existing reports or delete individual images
 - ⭐ Favourite reports — bookmark reports and view them in the volunteer dashboard
 - 🔁 Reopen reports — mark a cleaned report as still dirty, with optional photo proof
-- 📜 Status timeline — visual history of report lifecycle (created, cleaned, reopened) with per-cycle photo galleries
+- 📜 Status timeline — visual history of report lifecycle (created, cleaned, reopened, stale, in-progress) with per-cycle photo galleries
 - 💬 Report comments — logged-in users can discuss open reports; paginated, newest first
 - 🏠 Reverse geocoding — reports automatically get a human-readable address
 - 🔤 what3words integration for precise location sharing
