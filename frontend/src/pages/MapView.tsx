@@ -125,7 +125,9 @@ export default function MapView() {
   const [mapZoom, setMapZoom] = useState(6)
   const [binsRefreshKey, setBinsRefreshKey] = useState(0)
   const [binForm, setBinForm] = useState<
-    { mode: 'add'; initialPosition: { lat: number; lng: number } | null } | { mode: 'edit'; bin: BinRead } | null
+    | { mode: 'add'; initialPosition: { lat: number; lng: number } | null }
+    | { mode: 'edit'; bin: BinRead }
+    | null
   >(null)
   const [openPanel, setOpenPanel] = useState<'status' | 'type' | 'layer' | null>(null)
   const togglePanel = (p: 'status' | 'type' | 'layer') =>

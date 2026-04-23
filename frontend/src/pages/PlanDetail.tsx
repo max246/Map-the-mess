@@ -226,9 +226,7 @@ export default function PlanDetail() {
     | { kind: 'report'; visitOrder: number; pr: (typeof sortedReports)[number] }
     | { kind: 'bin'; visitOrder: number; pb: (typeof sortedBins)[number] }
   const allStops: Stop[] = [
-    ...sortedReports.map(
-      (pr): Stop => ({ kind: 'report', visitOrder: pr.visit_order, pr })
-    ),
+    ...sortedReports.map((pr): Stop => ({ kind: 'report', visitOrder: pr.visit_order, pr })),
     ...sortedBins.map((pb): Stop => ({ kind: 'bin', visitOrder: pb.visit_order, pb })),
   ].sort((a, b) => a.visitOrder - b.visitOrder)
 
@@ -467,10 +465,7 @@ export default function PlanDetail() {
           }
           const pb = stop.pb
           return (
-            <div
-              key={`b-${pb.id}`}
-              className="bg-white rounded-lg shadow flex overflow-hidden"
-            >
+            <div key={`b-${pb.id}`} className="bg-white rounded-lg shadow flex overflow-hidden">
               <div className="w-10 flex-shrink-0 bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
                 {pb.visit_order}
               </div>

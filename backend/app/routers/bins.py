@@ -54,7 +54,7 @@ def _validate_coords(latitude: float, longitude: float) -> None:
 
 
 def _can_modify(bin_obj: Bin, user: User) -> bool:
-    is_owner = bin_obj.created_by_user_id == user.id
+    is_owner = bool(bin_obj.created_by_user_id == user.id)
     is_privileged = user.user_type in ("moderator", "admin", "superuser")
     return is_owner or is_privileged
 
