@@ -3126,7 +3126,7 @@
           "Planner"
         ],
         "summary": "Create Plan",
-        "description": "Create a new walking plan with OSRM-optimised route.",
+        "description": "Create a new walking plan with OSRM-optimised route.\n\nBoth reports and optional bin drop-offs are treated as OSRM waypoints and\ninterleaved in the optimised order.",
         "operationId": "create_plan_api_planner__post",
         "security": [
           {
@@ -3613,6 +3613,277 @@
         }
       }
     },
+    "/api/bins/": {
+      "get": {
+        "tags": [
+          "Bins"
+        ],
+        "summary": "List Bins",
+        "description": "List bins, optionally filtered to those within ``radius_km`` of (latitude, longitude).\n\nThe map only shows bins at high zoom, so the default radius is small (1 km).",
+        "operationId": "list_bins_api_bins__get",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Centre latitude for radius query",
+              "title": "Latitude"
+            },
+            "description": "Centre latitude for radius query"
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Centre longitude for radius query",
+              "title": "Longitude"
+            },
+            "description": "Centre longitude for radius query"
+          },
+          {
+            "name": "radius_km",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Radius in kilometres",
+              "default": 1.0,
+              "title": "Radius Km"
+            },
+            "description": "Radius in kilometres"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BinRead"
+                  },
+                  "title": "Response List Bins Api Bins  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Bins"
+        ],
+        "summary": "Create Bin",
+        "description": "Create a new bin location. Requires authentication.",
+        "operationId": "create_bin_api_bins__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BinCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bins/{bin_id}": {
+      "get": {
+        "tags": [
+          "Bins"
+        ],
+        "summary": "Get Bin",
+        "operationId": "get_bin_api_bins__bin_id__get",
+        "parameters": [
+          {
+            "name": "bin_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Bin Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Bins"
+        ],
+        "summary": "Update Bin",
+        "description": "Edit a bin. Allowed for the owner, moderator, admin, or superuser.",
+        "operationId": "update_bin_api_bins__bin_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bin_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Bin Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BinUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Bins"
+        ],
+        "summary": "Delete Bin",
+        "description": "Delete a bin. Allowed for the owner, moderator, admin, or superuser.",
+        "operationId": "delete_bin_api_bins__bin_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bin_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Bin Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -3678,6 +3949,138 @@
           "description"
         ],
         "title": "BadgeRead"
+      },
+      "BinCreate": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "BinCreate"
+      },
+      "BinRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "created_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "latitude",
+          "longitude",
+          "description",
+          "created_at"
+        ],
+        "title": "BinRead"
+      },
+      "BinUpdate": {
+        "properties": {
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "BinUpdate"
       },
       "Body_add_image_api_reports__report_id__images_post": {
         "properties": {
@@ -4549,6 +4952,57 @@
         "type": "object",
         "title": "MyCommunities"
       },
+      "PlanBinRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "bin_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Bin Id"
+          },
+          "visit_order": {
+            "type": "integer",
+            "title": "Visit Order"
+          },
+          "leg_distance_meters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leg Distance Meters"
+          },
+          "leg_duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leg Duration Seconds"
+          },
+          "bin": {
+            "$ref": "#/components/schemas/BinRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "bin_id",
+          "visit_order",
+          "bin"
+        ],
+        "title": "PlanBinRead"
+      },
       "PlanCreate": {
         "properties": {
           "report_ids": {
@@ -4577,6 +5031,15 @@
               }
             ],
             "title": "Name"
+          },
+          "bin_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Bin Ids",
+            "default": []
           }
         },
         "type": "object",
@@ -4762,6 +5225,14 @@
             },
             "type": "array",
             "title": "Plan Reports",
+            "default": []
+          },
+          "plan_bins": {
+            "items": {
+              "$ref": "#/components/schemas/PlanBinRead"
+            },
+            "type": "array",
+            "title": "Plan Bins",
             "default": []
           }
         },

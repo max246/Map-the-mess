@@ -6,14 +6,18 @@ import PageMeta from '../components/PageMeta'
 import LocateButton from '../components/LocateButton'
 import { getPlanner } from '../api/endpoints/planner/planner'
 import { getReports } from '../api/endpoints/reports/reports'
+import { getBins } from '../api/endpoints/bins/bins'
 import { useAuth } from '../context/AuthContext'
-import type { ReportRead } from '../api/model'
+import type { ReportRead, BinRead } from '../api/model'
 
 const { createPlanApiPlannerPost } = getPlanner()
 const { listReportsApiReportsGet } = getReports()
+const { listBinsApiBinsGet } = getBins()
 
 const UK_CENTER: [number, number] = [53.5, -1.5]
 const MAX_REPORTS = 10
+const MAX_BINS = 5
+const BIN_FETCH_RADIUS_KM = 5
 
 function createPinIcon(color: string) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
@@ -28,9 +32,9 @@ function createPinIcon(color: string) {
   })
 }
 
-function createNumberedIcon(n: number) {
+function createNumberedIcon(n: number, color: string = '#2563eb') {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
-    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
     <text x="12" y="16" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="sans-serif">${n}</text>
   </svg>`
   return L.icon({
@@ -41,7 +45,23 @@ function createNumberedIcon(n: number) {
   })
 }
 
+function createBinIcon(selected: boolean) {
+  const fill = selected ? '#7c3aed' : '#0ea5e9'
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="${fill}" stroke="#fff" stroke-width="1.5"/>
+    <path d="M8 9h8l-.8 9.5a1.5 1.5 0 01-1.5 1.4h-3.4a1.5 1.5 0 01-1.5-1.4L8 9zm2-2h4v1.2h-4V7z" fill="#fff"/>
+  </svg>`
+  return L.icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(svg)}`,
+    iconSize: [28, 42],
+    iconAnchor: [14, 42],
+    popupAnchor: [0, -42],
+  })
+}
+
 const pendingIcon = createPinIcon('#ef4444')
+const binIconIdle = createBinIcon(false)
+const binIconSelected = createBinIcon(true)
 
 const startIcon = L.icon({
   iconUrl: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
@@ -81,7 +101,9 @@ export default function CreatePlan() {
   const { isLoggedIn } = useAuth()
   const navigate = useNavigate()
   const [reports, setReports] = useState<ReportRead[]>([])
+  const [bins, setBins] = useState<BinRead[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [selectedBins, setSelectedBins] = useState<Set<string>>(new Set())
   const [startPoint, setStartPoint] = useState<[number, number] | null>(null)
   const [flyTo, setFlyTo] = useState<[number, number] | null>(null)
   const [name, setName] = useState('')
@@ -94,12 +116,35 @@ export default function CreatePlan() {
       .catch(() => setReports([]))
   }, [])
 
+  useEffect(() => {
+    if (!startPoint) return
+    listBinsApiBinsGet({
+      latitude: startPoint[0],
+      longitude: startPoint[1],
+      radius_km: BIN_FETCH_RADIUS_KM,
+    })
+      .then(setBins)
+      .catch(() => setBins([]))
+  }, [startPoint])
+
   const toggleReport = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(id)) {
         next.delete(id)
       } else if (next.size < MAX_REPORTS) {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const toggleBin = (id: string) => {
+    setSelectedBins((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else if (next.size < MAX_BINS) {
         next.add(id)
       }
       return next
@@ -124,6 +169,7 @@ export default function CreatePlan() {
     try {
       const plan = await createPlanApiPlannerPost({
         report_ids: Array.from(selected),
+        bin_ids: Array.from(selectedBins),
         start_latitude: startPoint[0],
         start_longitude: startPoint[1],
         name: name.trim() || undefined,
@@ -156,7 +202,7 @@ export default function CreatePlan() {
             className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[150px] max-w-xs"
           />
           <span className="text-sm text-gray-500 whitespace-nowrap">
-            {selected.size}/{MAX_REPORTS} selected
+            {selected.size}/{MAX_REPORTS} reports · {selectedBins.size}/{MAX_BINS} bins
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -206,6 +252,14 @@ export default function CreatePlan() {
               />
             )
           })}
+          {bins.map((b) => (
+            <Marker
+              key={b.id}
+              position={[b.latitude, b.longitude]}
+              icon={selectedBins.has(b.id) ? binIconSelected : binIconIdle}
+              eventHandlers={{ click: () => toggleBin(b.id) }}
+            />
+          ))}
         </MapContainer>
       </div>
     </div>

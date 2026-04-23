@@ -51,6 +51,13 @@ class Plan(Base):
         lazy="joined",
         order_by="PlanReport.visit_order",
     )
+    plan_bins = relationship(
+        "PlanBin",
+        backref="plan",
+        cascade="all, delete-orphan",
+        lazy="joined",
+        order_by="PlanBin.visit_order",
+    )
 
     @property
     def report_count(self) -> int:
@@ -71,3 +78,17 @@ class PlanReport(Base):
     leg_duration_seconds = Column(Float, nullable=True)
 
     report = relationship("Report", lazy="joined")
+
+
+class PlanBin(Base):
+    __tablename__ = "plan_bins"
+    __table_args__ = (UniqueConstraint("plan_id", "bin_id", name="uq_plan_bin"),)
+
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
+    plan_id = Column(Uuid, ForeignKey("plans.id", ondelete="CASCADE"), nullable=False, index=True)
+    bin_id = Column(Uuid, ForeignKey("bins.id", ondelete="CASCADE"), nullable=False, index=True)
+    visit_order = Column(Integer, nullable=False)
+    leg_distance_meters = Column(Float, nullable=True)
+    leg_duration_seconds = Column(Float, nullable=True)
+
+    bin = relationship("Bin", lazy="joined")

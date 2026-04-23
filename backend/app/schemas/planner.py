@@ -8,6 +8,7 @@ from urllib.parse import quote
 
 from pydantic import BaseModel, field_validator
 
+from app.schemas.bin import BinRead
 from app.schemas.report import ReportRead
 
 
@@ -16,6 +17,7 @@ class PlanCreate(BaseModel):
     start_latitude: float
     start_longitude: float
     name: Optional[str] = None
+    bin_ids: list[uuid.UUID] = []
 
     @field_validator("report_ids")
     @classmethod
@@ -26,6 +28,15 @@ class PlanCreate(BaseModel):
             raise ValueError("A plan can contain at most 10 reports")
         if len(set(v)) != len(v):
             raise ValueError("Duplicate report IDs are not allowed")
+        return v
+
+    @field_validator("bin_ids")
+    @classmethod
+    def validate_bin_ids(cls, v: list[uuid.UUID]) -> list[uuid.UUID]:
+        if len(v) > 5:
+            raise ValueError("A plan can contain at most 5 bin drop-offs")
+        if len(set(v)) != len(v):
+            raise ValueError("Duplicate bin IDs are not allowed")
         return v
 
 
@@ -44,6 +55,17 @@ class PlanReportRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PlanBinRead(BaseModel):
+    id: uuid.UUID
+    bin_id: uuid.UUID
+    visit_order: int
+    leg_distance_meters: Optional[float] = None
+    leg_duration_seconds: Optional[float] = None
+    bin: BinRead
+
+    model_config = {"from_attributes": True}
+
+
 class PlanRead(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
@@ -58,6 +80,7 @@ class PlanRead(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     plan_reports: list[PlanReportRead] = []
+    plan_bins: list[PlanBinRead] = []
 
     model_config = {"from_attributes": True}
 
