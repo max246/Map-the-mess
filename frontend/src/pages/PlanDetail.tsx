@@ -44,6 +44,19 @@ const startIcon = L.icon({
   popupAnchor: [0, -42],
 })
 
+function createBinStopIcon(n: number) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="#7c3aed" stroke="#fff" stroke-width="1.5"/>
+    <text x="12" y="16" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="sans-serif">${n}</text>
+  </svg>`
+  return L.icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(svg)}`,
+    iconSize: [28, 42],
+    iconAnchor: [14, 42],
+    popupAnchor: [0, -42],
+  })
+}
+
 function statusBadge(status: string) {
   switch (status) {
     case 'in_progress':
@@ -86,6 +99,9 @@ function FitBounds({ plan }: { plan: PlanRead }) {
     const points: [number, number][] = [[plan.start_latitude, plan.start_longitude]]
     plan.plan_reports?.forEach((pr) => {
       points.push([pr.report.latitude, pr.report.longitude])
+    })
+    plan.plan_bins?.forEach((pb) => {
+      points.push([pb.bin.latitude, pb.bin.longitude])
     })
     if (points.length > 0) {
       const bounds = L.latLngBounds(points.map((p) => L.latLng(p[0], p[1])))
@@ -201,10 +217,20 @@ export default function PlanDetail() {
   }
 
   const sortedReports = [...(plan.plan_reports || [])].sort((a, b) => a.visit_order - b.visit_order)
+  const sortedBins = [...(plan.plan_bins || [])].sort((a, b) => a.visit_order - b.visit_order)
   const resolvedCount = sortedReports.filter((pr) => pr.report.status === 'cleaned').length
   const progressPct = sortedReports.length
     ? Math.round((resolvedCount / sortedReports.length) * 100)
     : 0
+  type Stop =
+    | { kind: 'report'; visitOrder: number; pr: (typeof sortedReports)[number] }
+    | { kind: 'bin'; visitOrder: number; pb: (typeof sortedBins)[number] }
+  const allStops: Stop[] = [
+    ...sortedReports.map(
+      (pr): Stop => ({ kind: 'report', visitOrder: pr.visit_order, pr })
+    ),
+    ...sortedBins.map((pb): Stop => ({ kind: 'bin', visitOrder: pb.visit_order, pb })),
+  ].sort((a, b) => a.visitOrder - b.visitOrder)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -363,6 +389,13 @@ export default function PlanDetail() {
               icon={createNumberedIcon(pr.visit_order, pr.report.status === 'cleaned')}
             />
           ))}
+          {sortedBins.map((pb) => (
+            <Marker
+              key={pb.id}
+              position={[pb.bin.latitude, pb.bin.longitude]}
+              icon={createBinStopIcon(pb.visit_order)}
+            />
+          ))}
           {plan.route_geometry && (
             <GeoJSON
               data={plan.route_geometry as unknown as GeoJSON.GeoJsonObject}
@@ -373,60 +406,96 @@ export default function PlanDetail() {
         </MapContainer>
       </div>
 
-      {/* Report list */}
-      <h2 className="text-lg font-semibold mb-3">Stops ({sortedReports.length})</h2>
+      {/* Stops list (reports + bins, interleaved by visit order) */}
+      <h2 className="text-lg font-semibold mb-3">Stops ({allStops.length})</h2>
       <div className="flex flex-col gap-3">
-        {sortedReports.map((pr) => {
-          const firstImage = pr.report.images?.find((img) => img.image_type === 'report')
-          const isResolved = pr.report.status === 'cleaned'
+        {allStops.map((stop) => {
+          if (stop.kind === 'report') {
+            const pr = stop.pr
+            const firstImage = pr.report.images?.find((img) => img.image_type === 'report')
+            const isResolved = pr.report.status === 'cleaned'
+            return (
+              <div
+                key={`r-${pr.id}`}
+                className={`bg-white rounded-lg shadow flex overflow-hidden ${isResolved ? 'opacity-75' : ''}`}
+              >
+                <div
+                  className={`w-10 flex-shrink-0 text-white flex items-center justify-center font-bold text-sm ${isResolved ? 'bg-green-600' : 'bg-blue-600'}`}
+                >
+                  {isResolved ? '✓' : pr.visit_order}
+                </div>
+                <Link to={`/report/${pr.report.id}`} className="flex flex-1 min-w-0">
+                  <div className="w-20 h-20 flex-shrink-0 bg-gray-100 relative">
+                    {firstImage ? (
+                      <img
+                        src={thumbnailUrl(firstImage)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-xl">
+                        📷
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 p-3 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-700 truncate flex-1">
+                        {pr.report.description || 'No description'}
+                      </p>
+                      {isResolved && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 flex-shrink-0">
+                          Resolved
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                      {pr.leg_distance_meters != null && (
+                        <span>{formatDistance(pr.leg_distance_meters)} walk</span>
+                      )}
+                      {pr.leg_duration_seconds != null && (
+                        <span>{formatDuration(pr.leg_duration_seconds)}</span>
+                      )}
+                      {pr.report.what3words && (
+                        <span className="text-brand">/// {pr.report.what3words}</span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )
+          }
+          const pb = stop.pb
           return (
             <div
-              key={pr.id}
-              className={`bg-white rounded-lg shadow flex overflow-hidden ${isResolved ? 'opacity-75' : ''}`}
+              key={`b-${pb.id}`}
+              className="bg-white rounded-lg shadow flex overflow-hidden"
             >
-              <div
-                className={`w-10 flex-shrink-0 text-white flex items-center justify-center font-bold text-sm ${isResolved ? 'bg-green-600' : 'bg-blue-600'}`}
-              >
-                {isResolved ? '✓' : pr.visit_order}
+              <div className="w-10 flex-shrink-0 bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
+                {pb.visit_order}
               </div>
-              <Link to={`/report/${pr.report.id}`} className="flex flex-1 min-w-0">
-                <div className="w-20 h-20 flex-shrink-0 bg-gray-100 relative">
-                  {firstImage ? (
-                    <img
-                      src={thumbnailUrl(firstImage)}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300 text-xl">
-                      📷
-                    </div>
+              <div className="w-20 h-20 flex-shrink-0 bg-purple-50 flex items-center justify-center text-2xl">
+                🗑️
+              </div>
+              <div className="flex-1 p-3 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-700 truncate flex-1">
+                    Drop off at bin{pb.bin.description ? ` — ${pb.bin.description}` : ''}
+                  </p>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 flex-shrink-0">
+                    Bin
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                  {pb.leg_distance_meters != null && (
+                    <span>{formatDistance(pb.leg_distance_meters)} walk</span>
                   )}
+                  {pb.leg_duration_seconds != null && (
+                    <span>{formatDuration(pb.leg_duration_seconds)}</span>
+                  )}
+                  {pb.bin.address && <span className="truncate">{pb.bin.address}</span>}
                 </div>
-                <div className="flex-1 p-3 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-gray-700 truncate flex-1">
-                      {pr.report.description || 'No description'}
-                    </p>
-                    {isResolved && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 flex-shrink-0">
-                        Resolved
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                    {pr.leg_distance_meters != null && (
-                      <span>{formatDistance(pr.leg_distance_meters)} walk</span>
-                    )}
-                    {pr.leg_duration_seconds != null && (
-                      <span>{formatDuration(pr.leg_duration_seconds)}</span>
-                    )}
-                    {pr.report.what3words && (
-                      <span className="text-brand">/// {pr.report.what3words}</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
+              </div>
             </div>
           )
         })}

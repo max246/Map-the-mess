@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import 'leaflet.heat'
@@ -9,10 +9,16 @@ import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import { useAuth } from '../context/AuthContext'
 import ReportPopup from '../components/ReportPopup'
 import LocateButton from '../components/LocateButton'
-import type { ReportRead } from '../api/model'
+import BinsLayer from '../components/BinsLayer'
+import BinFormModal from '../components/BinFormModal'
+import { getBins } from '../api/endpoints/bins/bins'
+import type { ReportRead, BinRead } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
 const { listFavouritesApiVolunteersFavouritesGet } = getVolunteers()
+const { deleteBinApiBinsBinIdDelete } = getBins()
+
+const BIN_ZOOM_THRESHOLD = 16
 
 // Default centre: somewhere in Britain
 const UK_CENTER: [number, number] = [53.5, -1.5]
@@ -74,6 +80,17 @@ function ZoomMarker({ report }: { report: ReportRead }) {
   )
 }
 
+function ZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
+  const map = useMap()
+  useEffect(() => {
+    onZoom(map.getZoom())
+  }, [map, onZoom])
+  useMapEvents({
+    zoomend: (e) => onZoom(e.target.getZoom()),
+  })
+  return null
+}
+
 function HeatmapLayer({ reports }: { reports: ReportRead[] }) {
   const map = useMap()
 
@@ -104,9 +121,41 @@ export default function MapView() {
   const [filter, setFilter] = useState<Filter>('unresolved')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [layer, setLayer] = useState<'pins' | 'heatmap'>('pins')
+  const [showBins, setShowBins] = useState(true)
+  const [mapZoom, setMapZoom] = useState(6)
+  const [binsRefreshKey, setBinsRefreshKey] = useState(0)
+  const [binForm, setBinForm] = useState<
+    { mode: 'add'; initialPosition: { lat: number; lng: number } | null } | { mode: 'edit'; bin: BinRead } | null
+  >(null)
   const [openPanel, setOpenPanel] = useState<'status' | 'type' | 'layer' | null>(null)
   const togglePanel = (p: 'status' | 'type' | 'layer') =>
     setOpenPanel((prev) => (prev === p ? null : p))
+
+  const handleBinDelete = async (bin: BinRead) => {
+    if (!window.confirm('Delete this bin?')) return
+    try {
+      await deleteBinApiBinsBinIdDelete(bin.id)
+      setBinsRefreshKey((k) => k + 1)
+    } catch {
+      alert('Failed to delete bin')
+    }
+  }
+
+  const handleAddBinClick = () => {
+    const openWithPosition = (pos: { lat: number; lng: number } | null) => {
+      setShowBins(true)
+      setBinForm({ mode: 'add', initialPosition: pos })
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => openWithPosition({ lat: p.coords.latitude, lng: p.coords.longitude }),
+        () => openWithPosition(null),
+        { timeout: 5000 }
+      )
+    } else {
+      openWithPosition(null)
+    }
+  }
 
   useEffect(() => {
     listReportsApiReportsGet()
@@ -222,6 +271,19 @@ export default function MapView() {
           )}
         </div>
 
+        {/* Bins toggle */}
+        <div className="flex flex-col items-end md:flex-row md:items-center gap-2 md:justify-end">
+          <button
+            onClick={() => setShowBins((v) => !v)}
+            className={`w-10 h-10 flex items-center justify-center rounded-lg shadow-lg transition ${
+              showBins ? 'bg-brand text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+            title={showBins ? 'Hide bins (shown when zoomed in)' : 'Show bins (zoom in to see)'}
+          >
+            <span className="text-lg leading-none">🗑️</span>
+          </button>
+        </div>
+
         {/* Layer toggle */}
         <div className="flex flex-col items-end md:flex-row md:items-center gap-2 md:justify-end">
           <button
@@ -278,8 +340,45 @@ export default function MapView() {
         ) : (
           <HeatmapLayer reports={filteredReports} />
         )}
+        {showBins && (
+          <BinsLayer
+            refreshKey={binsRefreshKey}
+            onEdit={(bin) => setBinForm({ mode: 'edit', bin })}
+            onDelete={handleBinDelete}
+          />
+        )}
         <LocateButton />
+        <ZoomTracker onZoom={setMapZoom} />
       </MapContainer>
+
+      {isLoggedIn && (
+        <button
+          onClick={handleAddBinClick}
+          className="absolute bottom-3 left-3 z-[1000] bg-brand text-white shadow-lg rounded-lg px-3 h-10 flex items-center gap-1 text-sm font-medium hover:opacity-90 transition"
+          title="Add a bin location"
+        >
+          <span className="text-base leading-none">🗑️</span>
+          <span>Add bin</span>
+        </button>
+      )}
+
+      {showBins && mapZoom < BIN_ZOOM_THRESHOLD && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 text-gray-600 text-xs px-3 py-1 rounded-full shadow">
+          Zoom in to see bins
+        </div>
+      )}
+
+      {binForm && (
+        <BinFormModal
+          initialPosition={binForm.mode === 'add' ? binForm.initialPosition : null}
+          existing={binForm.mode === 'edit' ? binForm.bin : null}
+          onClose={() => setBinForm(null)}
+          onSaved={() => {
+            setBinForm(null)
+            setBinsRefreshKey((k) => k + 1)
+          }}
+        />
+      )}
     </div>
   )
 }

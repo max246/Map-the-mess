@@ -20,6 +20,9 @@ import { customInstance } from '../../client';
   export const getPlanner = () => {
 /**
  * Create a new walking plan with OSRM-optimised route.
+
+Both reports and optional bin drop-offs are treated as OSRM waypoints and
+interleaved in the optimised order.
  * @summary Create Plan
  */
 const createPlanApiPlannerPost = (
