@@ -39,8 +39,11 @@ const REPORTS = [
 /* ── mocks ────────────────────────────────────────────── */
 const mockListReports = jest.fn()
 const mockListFavourites = jest.fn()
+const mockListBins = jest.fn()
+const mockDeleteBin = jest.fn()
 const mockFlyTo = jest.fn()
 const mockGetZoom = jest.fn()
+const mockGetCenter = jest.fn()
 
 jest.mock('../../api/endpoints/reports/reports', () => ({
   getReports: () => ({
@@ -53,6 +56,16 @@ jest.mock('../../api/endpoints/volunteers/volunteers', () => ({
     listFavouritesApiVolunteersFavouritesGet: (...args: unknown[]) => mockListFavourites(...args),
   }),
 }))
+
+jest.mock('../../api/endpoints/bins/bins', () => ({
+  getBins: () => ({
+    listBinsApiBinsGet: (...args: unknown[]) => mockListBins(...args),
+    deleteBinApiBinsBinIdDelete: (...args: unknown[]) => mockDeleteBin(...args),
+  }),
+}))
+
+jest.mock('../../components/BinsLayer', () => () => null)
+jest.mock('../../components/BinFormModal', () => () => null)
 
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ isLoggedIn: false }),
@@ -92,10 +105,12 @@ jest.mock('react-leaflet', () => ({
   useMap: () => ({
     flyTo: mockFlyTo,
     getZoom: mockGetZoom,
+    getCenter: mockGetCenter,
     removeLayer: jest.fn(),
     on: jest.fn(),
     off: jest.fn(),
   }),
+  useMapEvents: () => null,
 }))
 
 jest.mock('react-leaflet-cluster', () => ({
@@ -145,7 +160,9 @@ describe('MapView', () => {
     jest.clearAllMocks()
     mockListReports.mockResolvedValue(REPORTS)
     mockListFavourites.mockResolvedValue([])
+    mockListBins.mockResolvedValue([])
     mockGetZoom.mockReturnValue(6)
+    mockGetCenter.mockReturnValue({ lat: 53.5, lng: -1.5 })
   })
 
   it('renders the map container', async () => {

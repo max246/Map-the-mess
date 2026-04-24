@@ -519,6 +519,57 @@ def _check_user_badges(conn):
     assert {"user_id", "badge_id"} in unique_col_sets
 
 
+@_check("c353677dd88c")
+def _check_bins(conn):
+    assert "bins" in _table_names(conn)
+    cols = _column_names(conn, "bins")
+    assert {
+        "id",
+        "latitude",
+        "longitude",
+        "description",
+        "address",
+        "created_by_user_id",
+        "created_at",
+        "updated_at",
+    } <= cols
+
+    indexes = {idx["name"] for idx in inspect(conn).get_indexes("bins")}
+    assert "ix_bins_id" in indexes
+
+    fks = inspect(conn).get_foreign_keys("bins")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "created_by_user_id" in fk_cols
+
+
+@_check("d463788ee99d")
+def _check_plan_bins(conn):
+    assert "plan_bins" in _table_names(conn)
+    cols = _column_names(conn, "plan_bins")
+    assert {
+        "id",
+        "plan_id",
+        "bin_id",
+        "visit_order",
+        "leg_distance_meters",
+        "leg_duration_seconds",
+    } <= cols
+
+    indexes = {idx["name"] for idx in inspect(conn).get_indexes("plan_bins")}
+    assert "ix_plan_bins_id" in indexes
+    assert "ix_plan_bins_plan_id" in indexes
+    assert "ix_plan_bins_bin_id" in indexes
+
+    fks = inspect(conn).get_foreign_keys("plan_bins")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "plan_id" in fk_cols
+    assert "bin_id" in fk_cols
+
+    uniques = inspect(conn).get_unique_constraints("plan_bins")
+    unique_col_sets = [set(u["column_names"]) for u in uniques]
+    assert {"plan_id", "bin_id"} in unique_col_sets
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -547,6 +598,8 @@ MIGRATION_CHAIN = [
     "6f3b919a6597",
     "c4d5e6f7a8b9",
     "d5e6f7a8b9c0",
+    "c353677dd88c",
+    "d463788ee99d",
 ]
 
 # ---------------------------------------------------------------------------

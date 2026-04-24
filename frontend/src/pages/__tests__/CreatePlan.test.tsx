@@ -53,6 +53,13 @@ jest.mock('../../api/endpoints/planner/planner', () => ({
   }),
 }))
 
+const mockListBins = jest.fn()
+jest.mock('../../api/endpoints/bins/bins', () => ({
+  getBins: () => ({
+    listBinsApiBinsGet: (...args: unknown[]) => mockListBins(...args),
+  }),
+}))
+
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ isLoggedIn: true }),
 }))
@@ -124,6 +131,7 @@ describe('CreatePlan', () => {
     jest.clearAllMocks()
     mockListReports.mockResolvedValue(REPORTS)
     mockCreatePlan.mockResolvedValue(CREATED_PLAN)
+    mockListBins.mockResolvedValue([])
   })
 
   it('renders the page heading and map', async () => {
@@ -139,7 +147,7 @@ describe('CreatePlan', () => {
 
   it('shows selection counter', () => {
     renderCreatePlan()
-    expect(screen.getByText('0/10 selected')).toBeInTheDocument()
+    expect(screen.getByText('0/10 reports · 0/5 bins')).toBeInTheDocument()
   })
 
   it('shows start point instruction banner', () => {
@@ -169,10 +177,10 @@ describe('CreatePlan', () => {
     })
 
     await user.click(screen.getAllByTestId('marker')[0])
-    expect(screen.getByText('1/10 selected')).toBeInTheDocument()
+    expect(screen.getByText('1/10 reports · 0/5 bins')).toBeInTheDocument()
 
     await user.click(screen.getAllByTestId('marker')[0])
-    expect(screen.getByText('0/10 selected')).toBeInTheDocument()
+    expect(screen.getByText('0/10 reports · 0/5 bins')).toBeInTheDocument()
   })
 
   it('has cancel button linking back', () => {

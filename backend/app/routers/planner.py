@@ -14,7 +14,8 @@ from sqlalchemy.orm import Session
 
 from app.config import OSRM_URL
 from app.database import get_db
-from app.models.planner import Plan, PlanReport, PlanStatus
+from app.models.bin import Bin
+from app.models.planner import Plan, PlanBin, PlanReport, PlanStatus
 from app.models.report import Report
 from app.models.user import User
 from app.routers.auth import get_current_user
@@ -76,13 +77,18 @@ def _call_osrm_trip(
 
 
 def _build_google_maps_url(plan: Plan) -> str:
-    """Build a Google Maps Directions URL from the plan's ordered waypoints."""
-    ordered = sorted(plan.plan_reports, key=lambda pr: pr.visit_order)
-    if not ordered:
+    """Build a Google Maps Directions URL from the plan's ordered waypoints (reports + bins)."""
+    stops: list[tuple[int, float, float]] = []
+    for pr in plan.plan_reports:
+        stops.append((int(pr.visit_order), float(pr.report.latitude), float(pr.report.longitude)))
+    for pb in plan.plan_bins:
+        stops.append((int(pb.visit_order), float(pb.bin.latitude), float(pb.bin.longitude)))
+    stops.sort(key=lambda s: s[0])
+    if not stops:
         return ""
 
     origin = f"{plan.start_latitude},{plan.start_longitude}"
-    destination = f"{ordered[-1].report.latitude},{ordered[-1].report.longitude}"
+    destination = f"{stops[-1][1]},{stops[-1][2]}"
 
     url = (
         f"https://www.google.com/maps/dir/?api=1"
@@ -91,8 +97,8 @@ def _build_google_maps_url(plan: Plan) -> str:
         f"&travelmode=walking"
     )
 
-    if len(ordered) > 1:
-        waypoints = "|".join(f"{pr.report.latitude},{pr.report.longitude}" for pr in ordered[:-1])
+    if len(stops) > 1:
+        waypoints = "|".join(f"{lat},{lon}" for _, lat, lon in stops[:-1])
         url += f"&waypoints={waypoints}"
 
     return url
@@ -123,36 +129,51 @@ def create_plan(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Create a new walking plan with OSRM-optimised route."""
+    """Create a new walking plan with OSRM-optimised route.
+
+    Both reports and optional bin drop-offs are treated as OSRM waypoints and
+    interleaved in the optimised order.
+    """
     # Fetch reports
     reports = db.query(Report).filter(Report.id.in_(body.report_ids)).all()
     if len(reports) != len(body.report_ids):
         found_ids = {r.id for r in reports}
         missing = [str(rid) for rid in body.report_ids if rid not in found_ids]
         raise HTTPException(status_code=404, detail=f"Reports not found: {', '.join(missing)}")
-
-    # Build a lookup keyed by report id (preserving input order)
     report_by_id: dict[uuid.UUID, Report] = {r.id: r for r in reports}  # type: ignore[misc]
-    # Ordered list matching body.report_ids so OSRM input index maps correctly
     ordered_reports = [report_by_id[rid] for rid in body.report_ids]
 
-    # Call OSRM
+    # Fetch optional bins
+    ordered_bins: list[Bin] = []
+    if body.bin_ids:
+        bins = db.query(Bin).filter(Bin.id.in_(body.bin_ids)).all()
+        if len(bins) != len(body.bin_ids):
+            found_ids = {b.id for b in bins}
+            missing = [str(bid) for bid in body.bin_ids if bid not in found_ids]
+            raise HTTPException(status_code=404, detail=f"Bins not found: {', '.join(missing)}")
+        bin_by_id: dict[uuid.UUID, Bin] = {b.id: b for b in bins}  # type: ignore[misc]
+        ordered_bins = [bin_by_id[bid] for bid in body.bin_ids]
+
+    # Call OSRM with reports first, then bins (order matters for demuxing below)
     waypoints_lonlat: list[tuple[float, float]] = [
         (float(r.longitude), float(r.latitude)) for r in ordered_reports
-    ]
+    ] + [(float(b.longitude), float(b.latitude)) for b in ordered_bins]
     osrm_data = _call_osrm_trip(body.start_longitude, body.start_latitude, waypoints_lonlat)
 
     trip = osrm_data["trips"][0]
     osrm_waypoints = osrm_data["waypoints"]
     legs = trip["legs"]
 
-    # Map OSRM optimised order back to reports.
-    # osrm_waypoints[0] is the start point (source=first).
-    # osrm_waypoints[1:] correspond to ordered_reports by input index.
-    # Each waypoint's waypoint_index gives its position in the trip.
+    # osrm_waypoints[0] is the start; [1..] correspond to input waypoints in input order.
+    # Input indices 1..N are reports, N+1..N+M are bins.
+    n_reports = len(ordered_reports)
     trip_pos_to_report: dict[int, Report] = {}
+    trip_pos_to_bin: dict[int, Bin] = {}
     for i, wp in enumerate(osrm_waypoints[1:]):
-        trip_pos_to_report[wp["waypoint_index"]] = ordered_reports[i]
+        if i < n_reports:
+            trip_pos_to_report[wp["waypoint_index"]] = ordered_reports[i]
+        else:
+            trip_pos_to_bin[wp["waypoint_index"]] = ordered_bins[i - n_reports]
 
     # Create Plan
     plan = Plan(
@@ -165,14 +186,22 @@ def create_plan(
         route_geometry=json.dumps(trip["geometry"]),
     )
 
-    # Create PlanReport entries with optimised visit order
-    for trip_pos in sorted(trip_pos_to_report.keys()):
-        report = trip_pos_to_report[trip_pos]
-        # Leg at index (trip_pos - 1) leads TO this position (pos 0 is start)
-        leg = legs[trip_pos - 1] if trip_pos >= 1 and trip_pos - 1 < len(legs) else None
+    # Create PlanReport / PlanBin entries with optimised visit order
+    for trip_pos, report in trip_pos_to_report.items():
+        leg = legs[trip_pos - 1] if 1 <= trip_pos <= len(legs) else None
         plan.plan_reports.append(
             PlanReport(
                 report_id=report.id,
+                visit_order=trip_pos,
+                leg_distance_meters=leg["distance"] if leg else None,
+                leg_duration_seconds=leg["duration"] if leg else None,
+            )
+        )
+    for trip_pos, bin_obj in trip_pos_to_bin.items():
+        leg = legs[trip_pos - 1] if 1 <= trip_pos <= len(legs) else None
+        plan.plan_bins.append(
+            PlanBin(
+                bin_id=bin_obj.id,
                 visit_order=trip_pos,
                 leg_distance_meters=leg["distance"] if leg else None,
                 leg_duration_seconds=leg["duration"] if leg else None,
@@ -297,7 +326,31 @@ def export_gpx(
 ):
     """Export a plan as a downloadable GPX file."""
     plan = _get_user_plan(plan_id, current_user, db)
-    ordered = sorted(plan.plan_reports, key=lambda pr: pr.visit_order)
+    # Merge reports + bins, sorted by visit order
+    stops: list[tuple[int, str, float, float, str | None]] = []
+    for pr in plan.plan_reports:
+        r = pr.report
+        stops.append(
+            (
+                int(pr.visit_order),
+                f"Stop {pr.visit_order}: {r.report_type}",
+                float(r.latitude),
+                float(r.longitude),
+                str(r.description) if r.description else None,
+            )
+        )
+    for pb in plan.plan_bins:
+        b = pb.bin
+        stops.append(
+            (
+                int(pb.visit_order),
+                f"Stop {pb.visit_order}: bin",
+                float(b.latitude),
+                float(b.longitude),
+                str(b.description) if b.description else None,
+            )
+        )
+    stops.sort(key=lambda s: s[0])
 
     gpx = ET.Element(
         "gpx",
@@ -324,20 +377,16 @@ def export_gpx(
     )
     ET.SubElement(wpt, "name").text = "Start"
 
-    # Report waypoints
-    for pr in ordered:
-        r = pr.report
+    # Stop waypoints (reports + bins, in route order)
+    for _, name, lat, lon, desc in stops:
         wpt = ET.SubElement(
             gpx,
             "wpt",
-            {
-                "lat": str(r.latitude),
-                "lon": str(r.longitude),
-            },
+            {"lat": str(lat), "lon": str(lon)},
         )
-        ET.SubElement(wpt, "name").text = f"Stop {pr.visit_order}: {r.report_type}"
-        if r.description:
-            ET.SubElement(wpt, "desc").text = r.description
+        ET.SubElement(wpt, "name").text = name
+        if desc:
+            ET.SubElement(wpt, "desc").text = desc
 
     # Route track from stored geometry
     if plan.route_geometry:

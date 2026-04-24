@@ -5,6 +5,7 @@
  * Backend for the community litter reporting platform
  * OpenAPI spec version: dev
  */
+import type { PlanBinRead } from './planBinRead';
 import type { PlanReadRouteGeometry } from './planReadRouteGeometry';
 import type { PlanReportRead } from './planReportRead';
 
@@ -22,4 +23,5 @@ export interface PlanRead {
   created_at: string;
   updated_at?: string | null;
   plan_reports?: PlanReportRead[];
+  plan_bins?: PlanBinRead[];
 }

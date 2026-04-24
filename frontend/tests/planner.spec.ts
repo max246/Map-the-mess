@@ -302,7 +302,7 @@ test.describe('Create Plan', () => {
     await page.goto('/planner/new')
     await expect(page.getByRole('heading', { name: /create plan/i })).toBeVisible()
     await expect(page.getByPlaceholder(/plan name/i)).toBeVisible()
-    await expect(page.getByText('0/10 selected')).toBeVisible()
+    await expect(page.getByText('0/10 reports · 0/5 bins')).toBeVisible()
   })
 
   test('shows start point instruction', async ({ page }) => {

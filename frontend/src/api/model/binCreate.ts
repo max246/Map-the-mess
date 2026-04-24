@@ -6,10 +6,8 @@
  * OpenAPI spec version: dev
  */
 
-export interface PlanCreate {
-  report_ids: string[];
-  start_latitude: number;
-  start_longitude: number;
-  name?: string | null;
-  bin_ids?: string[];
+export interface BinCreate {
+  latitude: number;
+  longitude: number;
+  description?: string;
 }

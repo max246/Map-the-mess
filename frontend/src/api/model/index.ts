@@ -7,6 +7,9 @@
  */
 
 export * from './badgeRead';
+export * from './binCreate';
+export * from './binRead';
+export * from './binUpdate';
 export * from './bodyAddImageApiReportsReportIdImagesPost';
 export * from './bodyCreateReportApiReportsPost';
 export * from './bodyMarkUnresolvedApiReportsReportIdUnresolvePatch';
@@ -28,6 +31,7 @@ export * from './forgotPassword';
 export * from './hTTPValidationError';
 export * from './leaderboardApiVolunteersLeaderboardGetParams';
 export * from './leaderboardEntry';
+export * from './listBinsApiBinsGetParams';
 export * from './listCommunitiesApiCommunitiesGetParams';
 export * from './listEventsApiCommunitiesCommunityIdEventsGetParams';
 export * from './listFavouritesApiVolunteersFavouritesGetParams';
@@ -36,6 +40,7 @@ export * from './listReportsApiReportsGetParams';
 export * from './membershipAction';
 export * from './membershipRead';
 export * from './myCommunities';
+export * from './planBinRead';
 export * from './planCreate';
 export * from './planListRead';
 export * from './planRead';
