@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import GoogleSignInButton from '../components/GoogleSignInButton'
 import PageMeta from '../components/PageMeta'
 import CityAutocomplete from '../components/CityAutocomplete'
 import { useAuth } from '../context/AuthContext'
@@ -16,7 +17,27 @@ export default function Register() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [registered, setRegistered] = useState(false)
-  const { register } = useAuth()
+  const { register, loginWithProvider } = useAuth()
+  const navigate = useNavigate()
+
+  const handleGoogleCredential = useCallback(
+    async (credential: string) => {
+      if (!acceptedTerms) {
+        setError('Please accept the disclaimer and privacy policy before continuing.')
+        return
+      }
+      setError('')
+      try {
+        await loginWithProvider('google', credential)
+        navigate('/admin')
+      } catch (err: unknown) {
+        const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail
+        setError(typeof detail === 'string' ? detail : 'Google sign-up failed.')
+      }
+    },
+    [acceptedTerms, loginWithProvider, navigate]
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -181,6 +202,14 @@ export default function Register() {
           {loading ? 'Creating account...' : 'Register'}
         </button>
       </form>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-gray-400">
+        <span className="flex-1 border-t border-gray-200" />
+        <span>or</span>
+        <span className="flex-1 border-t border-gray-200" />
+      </div>
+
+      <GoogleSignInButton onCredential={handleGoogleCredential} text="signup_with" />
 
       <p className="mt-6 text-center text-sm text-gray-500">
         Already have an account?{' '}

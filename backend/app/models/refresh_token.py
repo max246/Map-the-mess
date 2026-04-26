@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean, Uuid
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.database import Base
 
@@ -19,4 +19,7 @@ class RefreshToken(Base):
     revoked = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User", backref="refresh_tokens")
+    user = relationship(
+        "User",
+        backref=backref("refresh_tokens", cascade="all, delete-orphan", passive_deletes=True),
+    )

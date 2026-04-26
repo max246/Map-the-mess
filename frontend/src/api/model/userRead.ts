@@ -18,4 +18,6 @@ export interface UserRead {
   city_longitude: number;
   created_at: string;
   badges?: BadgeRead[];
+  linked_providers?: string[];
+  has_password?: boolean;
 }

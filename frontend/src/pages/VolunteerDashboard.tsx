@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import PageMeta from '../components/PageMeta'
 import CityAutocomplete from '../components/CityAutocomplete'
+import GoogleSignInButton from '../components/GoogleSignInButton'
 import { getAuth } from '../api/endpoints/auth/auth'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
@@ -112,7 +113,7 @@ function avatarSrc(avatarUrl: string | null | undefined): string {
 }
 
 function ProfileSection() {
-  const { user, logout } = useAuth()
+  const { user, logout, linkProvider, unlinkProvider } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [avatar, setAvatar] = useState(WOMBLE_AVATARS[0])
@@ -147,12 +148,19 @@ function ProfileSection() {
   const [pwLoading, setPwLoading] = useState(false)
   const [pwMsg, setPwMsg] = useState('')
 
+  // Connected accounts
+  const [linkedProviders, setLinkedProviders] = useState<string[]>([])
+  const [hasPassword, setHasPassword] = useState<boolean>(true)
+  const [providerMsg, setProviderMsg] = useState('')
+
   // Load profile from backend
   useEffect(() => {
     getProfileApiAuthMeGet()
       .then((profile) => {
         setFullName(profile.full_name || '')
         setAvatar(avatarSrc(profile.avatar_url))
+        setLinkedProviders(profile.linked_providers || [])
+        setHasPassword(profile.has_password ?? true)
         // Reverse-geocode to show current city name
         if (
           profile.city_latitude &&
@@ -253,6 +261,42 @@ function ProfileSection() {
       setPwMsg('Failed to change password. Please try again later.')
     }
     setPwLoading(false)
+  }
+
+  const handleLinkGoogle = useCallback(
+    async (credential: string) => {
+      setProviderMsg('')
+      try {
+        const updated = (await linkProvider('google', credential)) as {
+          linked_providers?: string[]
+          has_password?: boolean
+        }
+        setLinkedProviders(updated.linked_providers || [])
+        setHasPassword(updated.has_password ?? true)
+        setProviderMsg('Google account connected.')
+      } catch (err: unknown) {
+        const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail
+        setProviderMsg(detail || 'Failed to connect Google account.')
+      }
+    },
+    [linkProvider]
+  )
+
+  const handleUnlinkGoogle = async () => {
+    setProviderMsg('')
+    try {
+      const updated = (await unlinkProvider('google')) as {
+        linked_providers?: string[]
+        has_password?: boolean
+      }
+      setLinkedProviders(updated.linked_providers || [])
+      setHasPassword(updated.has_password ?? true)
+      setProviderMsg('Google account disconnected.')
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setProviderMsg(detail || 'Failed to disconnect Google account.')
+    }
   }
 
   const handleDeleteUser = async () => {
@@ -465,6 +509,48 @@ function ProfileSection() {
                 className={`text-xs mt-1 ${pwMsg.includes('Failed') || pwMsg.includes('must') || pwMsg.includes('match') ? 'text-red-500' : 'text-green-600'}`}
               >
                 {pwMsg}
+              </p>
+            )}
+          </div>
+
+          {/* Connected accounts */}
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-1">Connected accounts</h3>
+            <div className="flex items-center justify-between max-w-sm">
+              <span className="text-sm text-gray-600">
+                Google{' '}
+                <span className="text-xs text-gray-400">
+                  {linkedProviders.includes('google') ? '— Connected' : '— Not connected'}
+                </span>
+              </span>
+              {linkedProviders.includes('google') ? (
+                <button
+                  onClick={handleUnlinkGoogle}
+                  disabled={!hasPassword && linkedProviders.length === 1}
+                  title={
+                    !hasPassword && linkedProviders.length === 1
+                      ? 'Set a password before disconnecting your only sign-in method'
+                      : undefined
+                  }
+                  className="text-xs text-red-600 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                >
+                  Disconnect
+                </button>
+              ) : (
+                <GoogleSignInButton onCredential={handleLinkGoogle} text="continue_with" />
+              )}
+            </div>
+            {providerMsg && (
+              <p
+                className={`text-xs mt-1 ${
+                  providerMsg.toLowerCase().includes('failed') ||
+                  providerMsg.toLowerCase().includes('locked') ||
+                  providerMsg.toLowerCase().includes('already')
+                    ? 'text-red-500'
+                    : 'text-green-600'
+                }`}
+              >
+                {providerMsg}
               </p>
             )}
           </div>

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, UniqueConstraint, Uuid
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.database import Base
 
@@ -19,4 +19,8 @@ class UserBadge(Base):
     awarded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     acknowledged_at = Column(DateTime, nullable=True)
 
-    user = relationship("User", backref="badge_awards", lazy="joined")
+    user = relationship(
+        "User",
+        backref=backref("badge_awards", cascade="all, delete-orphan", passive_deletes=True),
+        lazy="joined",
+    )

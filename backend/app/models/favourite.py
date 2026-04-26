@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, UniqueConstraint, Uuid
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.database import Base
 
@@ -20,5 +20,13 @@ class Favourite(Base):
     )
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User", backref="favourites", lazy="joined")
-    report = relationship("Report", backref="favourites", lazy="joined")
+    user = relationship(
+        "User",
+        backref=backref("favourites", cascade="all, delete-orphan", passive_deletes=True),
+        lazy="joined",
+    )
+    report = relationship(
+        "Report",
+        backref=backref("favourites", cascade="all, delete-orphan", passive_deletes=True),
+        lazy="joined",
+    )

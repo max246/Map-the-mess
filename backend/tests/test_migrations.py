@@ -570,6 +570,29 @@ def _check_plan_bins(conn):
     assert {"plan_id", "bin_id"} in unique_col_sets
 
 
+@_check("e6f7a8b9c0d1")
+def _check_oauth_accounts(conn):
+    assert "oauth_accounts" in _table_names(conn)
+    cols = _column_names(conn, "oauth_accounts")
+    assert {"id", "user_id", "provider", "provider_account_id", "created_at"} <= cols
+
+    user_cols = {c["name"]: c for c in inspect(conn).get_columns("users")}
+    assert user_cols["hashed_password"]["nullable"] is True
+
+    indexes = {idx["name"] for idx in inspect(conn).get_indexes("oauth_accounts")}
+    assert "ix_oauth_accounts_id" in indexes
+    assert "ix_oauth_accounts_user_id" in indexes
+    assert "ix_oauth_accounts_provider" in indexes
+
+    fks = inspect(conn).get_foreign_keys("oauth_accounts")
+    fk_cols = {fk["constrained_columns"][0] for fk in fks}
+    assert "user_id" in fk_cols
+
+    uniques = inspect(conn).get_unique_constraints("oauth_accounts")
+    unique_col_sets = [set(u["column_names"]) for u in uniques]
+    assert {"provider", "provider_account_id"} in unique_col_sets
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -600,6 +623,7 @@ MIGRATION_CHAIN = [
     "d5e6f7a8b9c0",
     "c353677dd88c",
     "d463788ee99d",
+    "e6f7a8b9c0d1",
 ]
 
 # ---------------------------------------------------------------------------

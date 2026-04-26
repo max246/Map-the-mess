@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, UniqueConstraint, Uuid
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.database import Base
 
@@ -30,4 +30,10 @@ class CommunityMembership(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     community = relationship("Community", backref="memberships", lazy="joined")
-    user = relationship("User", backref="community_memberships", lazy="joined")
+    user = relationship(
+        "User",
+        backref=backref(
+            "community_memberships", cascade="all, delete-orphan", passive_deletes=True
+        ),
+        lazy="joined",
+    )

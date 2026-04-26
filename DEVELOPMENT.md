@@ -237,6 +237,58 @@ Notes on the flags:
 - The single-quoted `sh -c '...'` keeps `$ADMIN_TASK_SECRET` unexpanded by the host shell so it gets resolved *inside* the container.
 - Adjust `/opt/map-the-mess/docker-compose.prod.yml` to wherever the compose file lives on your host.
 
+## Social login (Google)
+
+Sign in with Google sits alongside the password flow at `/login` and `/register`. The button uses Google Identity Services (GIS) on the client to obtain a signed ID token; the backend verifies the token's signature, audience, and `email_verified` claim before issuing the same `{access_token, refresh_token}` pair as password login.
+
+### Architecture
+
+- Provider-agnostic: `app/services/oauth/{base.py, google.py, __init__.py}` registers verifiers in a `PROVIDERS` dict. Add a new provider by writing a class that returns an `OAuthIdentity` and registering it — no changes to the route or merge logic.
+- One route handles every provider: `POST /api/auth/{provider}/login` with body `{credential}`.
+
+### Account merging rules
+
+When a verified Google identity arrives for email `X`:
+
+| Existing state | Behaviour |
+|---|---|
+| Already linked (oauth row matches `provider` + `provider_account_id`) | Sign in. |
+| No oauth row, no user with email `X` | Create a new verified, password-less user and link it. |
+| No oauth row, verified password user with email `X` | Auto-link. The user can now sign in either way. |
+| No oauth row, **unverified** password user with email `X` | **409 Conflict.** Prevents account takeover via an unverified registration. |
+
+Tested in `backend/tests/api/test_social_login.py`.
+
+### Configure
+
+One Client ID, one place — root `.env`:
+
+```env
+GOOGLE_CLIENT_ID=123456789-abcxyz.apps.googleusercontent.com
+```
+
+The compose files plumb it through:
+
+- Backend (runtime env var): `GOOGLE_CLIENT_ID` — used by the verifier to check the ID token's `aud` claim.
+- Frontend (Vite **build arg** `VITE_GOOGLE_CLIENT_ID`) — Vite inlines it into the bundled JS, so it must be present at `docker build` time, not runtime. The dev compose passes it via `build.args`; the prod and develop CI workflows pass it via `--build-arg` from the GitHub secret `VITE_GOOGLE_CLIENT_ID`.
+
+### Get the Client ID
+
+1. https://console.cloud.google.com → create project (e.g. `Map the Mess`).
+2. **APIs & Services → OAuth consent screen** — User type: **External**. App name, support email, developer email. Authorised domains: `mapthemess.uk` (apex domain covers all subdomains). Scopes: `openid`, `email`, `profile` (all non-sensitive — no verification review). Add yourself as a test user; click **Publish App** when ready for the public.
+3. **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
+   - Application type: **Web application**
+   - Authorised JavaScript origins (exact match, scheme included):
+     - `https://mapthemess.uk`
+     - `https://www.mapthemess.uk`
+     - `https://dev.mapthemess.uk`
+     - `http://localhost:5173`
+   - Authorised redirect URIs: leave empty (GIS uses postMessage).
+4. Copy the Client ID (looks like `123456789-abcxyz.apps.googleusercontent.com`). Ignore the Client Secret — the ID-token flow doesn't need it.
+5. Add the same value to GitHub Actions: **Settings → Secrets and variables → Actions → New repository secret** named `VITE_GOOGLE_CLIENT_ID`.
+
+If `GOOGLE_CLIENT_ID` is empty the backend route returns `400` and the frontend hides the Google button — password login still works.
+
 Verify the line works before relying on the schedule:
 
 ```bash
