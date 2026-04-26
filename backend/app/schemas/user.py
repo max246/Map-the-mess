@@ -30,6 +30,8 @@ class UserRead(BaseModel):
     city_longitude: float
     created_at: datetime
     badges: list["BadgeRead"] = []
+    linked_providers: list[str] = []
+    has_password: bool = True
 
     model_config = {"from_attributes": True}
 
@@ -67,6 +69,10 @@ class Token(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class SocialLoginRequest(BaseModel):
+    credential: str
 
 
 class LeaderboardEntry(BaseModel):

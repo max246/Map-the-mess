@@ -68,6 +68,7 @@ Because clean streets shouldn't depend on the council noticing.
 
 ### Auth & Admin
 - 🔐 Registration with email verification, password reset, JWT auth with refresh tokens
+- 🟦 Sign in with Google — auto-merges with an existing verified password account on the same email; new social-only users are created verified and can later add a password
 - 👮 Role-based access — superuser, admin, moderator, volunteer
 - 🛠️ Admin panel for managing reports, users, and communities
 - 🆔 UUID-based IDs to prevent enumeration

@@ -21,6 +21,7 @@ from app.models.user import User, UserType
 from app.models.community import Community
 from app.models.report import Report
 from app.models.refresh_token import RefreshToken
+from app.models.oauth_account import OAuthAccount
 from app.schemas.user import (
     ChangePassword,
     ProfileUpdate,
@@ -31,8 +32,10 @@ from app.schemas.user import (
     ForgotPassword,
     ResetPassword,
     RefreshRequest,
+    SocialLoginRequest,
     Token,
 )
+from app.services.oauth import get_verifier, OAuthIdentity, OAuthVerifyError
 
 router = APIRouter()
 
@@ -84,15 +87,24 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
+def _user_read(db: Session, user: User) -> UserRead:
+    data = UserRead.model_validate(user)
+    data.badges = evaluate_badges(db, user)
+    data.has_password = bool(user.hashed_password)
+    data.linked_providers = sorted(
+        row.provider
+        for row in db.query(OAuthAccount.provider).filter(OAuthAccount.user_id == user.id).all()
+    )
+    return data
+
+
 @router.get("/me", response_model=UserRead)
 def get_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Return the current user's profile."""
-    data = UserRead.model_validate(current_user)
-    data.badges = evaluate_badges(db, current_user)
-    return data
+    return _user_read(db, current_user)
 
 
 @router.patch("/me", response_model=UserRead)
@@ -112,9 +124,7 @@ def update_profile(
         current_user.city_longitude = payload.city_longitude  # type: ignore[assignment]
     db.commit()
     db.refresh(current_user)
-    data = UserRead.model_validate(current_user)
-    data.badges = evaluate_badges(db, current_user)
-    return data
+    return _user_read(db, current_user)
 
 
 @router.delete("/me", status_code=204)
@@ -186,7 +196,9 @@ def change_password(
     current_user: User = Depends(get_current_user),
 ):
     """Change the current user's password. Requires current password."""
-    if not pwd_context.verify(payload.current_password, current_user.hashed_password):
+    if not current_user.hashed_password or not pwd_context.verify(
+        payload.current_password, current_user.hashed_password
+    ):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     if len(payload.new_password) < 6:
         raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
@@ -305,7 +317,11 @@ def resend_verification(payload: ForgotPassword, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 def login(payload: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    if not user or not pwd_context.verify(payload.password, user.hashed_password):
+    if (
+        not user
+        or not user.hashed_password
+        or not pwd_context.verify(payload.password, user.hashed_password)
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -353,6 +369,199 @@ def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
     )
     new_refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
     return {"access_token": access, "refresh_token": new_refresh}
+
+
+def _link_or_create_oauth_user(db: Session, identity: OAuthIdentity) -> User:
+    """Find, link, or create a user from a verified OAuth identity.
+
+    Merge rules (see PR description):
+      - existing oauth row -> sign in that user
+      - no oauth row, no user with this email -> create new (verified) user
+      - no oauth row, user with this email is verified -> auto-link
+      - no oauth row, user with this email is NOT verified -> reject (takeover risk)
+    """
+    if not identity.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email not verified by provider",
+        )
+
+    existing_link = (
+        db.query(OAuthAccount)
+        .filter(
+            OAuthAccount.provider == identity.provider,
+            OAuthAccount.provider_account_id == identity.provider_account_id,
+        )
+        .first()
+    )
+    if existing_link:
+        user = db.query(User).filter(User.id == existing_link.user_id).first()
+        if user is None:
+            # Orphaned link — clean up and fall through to create
+            db.delete(existing_link)
+            db.commit()
+        else:
+            return user
+
+    user = db.query(User).filter(User.email == identity.email).first()
+    if user is not None:
+        if not user.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "An unverified account already exists for this email. "
+                    "Please verify it before linking a social login."
+                ),
+            )
+        db.add(
+            OAuthAccount(
+                user_id=user.id,
+                provider=identity.provider,
+                provider_account_id=identity.provider_account_id,
+            )
+        )
+        db.commit()
+        db.refresh(user)
+        return user
+
+    user = User(
+        email=identity.email,
+        full_name=identity.full_name or identity.email.split("@")[0],
+        hashed_password=None,
+        is_verified=True,
+    )
+    db.add(user)
+    db.flush()
+    db.add(
+        OAuthAccount(
+            user_id=user.id,
+            provider=identity.provider,
+            provider_account_id=identity.provider_account_id,
+        )
+    )
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/{provider}/login", response_model=Token)
+def social_login(
+    provider: str,
+    payload: SocialLoginRequest,
+    db: Session = Depends(get_db),
+):
+    """Sign in (or sign up) using a verified social provider credential."""
+    identity = _verify_provider_credential(provider, payload.credential)
+    user = _link_or_create_oauth_user(db, identity)
+    access = create_access_token(
+        {"sub": user.email, "type": user.user_type.value, "user_id": str(user.id)}
+    )
+    refresh = _create_refresh_token(user.id, db)  # type: ignore[arg-type]
+    return {"access_token": access, "refresh_token": refresh}
+
+
+def _verify_provider_credential(provider: str, credential: str):
+    verifier = get_verifier(provider)
+    if verifier is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported provider: {provider}",
+        )
+    try:
+        identity = verifier.verify(credential)
+    except OAuthVerifyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
+    if not identity.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email not verified by provider",
+        )
+    return identity
+
+
+@router.post("/{provider}/link", response_model=UserRead)
+def link_provider(
+    provider: str,
+    payload: SocialLoginRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Attach a provider identity to the currently authenticated user."""
+    identity = _verify_provider_credential(provider, payload.credential)
+
+    existing = (
+        db.query(OAuthAccount)
+        .filter(
+            OAuthAccount.provider == identity.provider,
+            OAuthAccount.provider_account_id == identity.provider_account_id,
+        )
+        .first()
+    )
+    if existing is not None:
+        if existing.user_id == current_user.id:
+            return _user_read(db, current_user)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This Google account is already linked to a different user.",
+        )
+
+    db.add(
+        OAuthAccount(
+            user_id=current_user.id,
+            provider=identity.provider,
+            provider_account_id=identity.provider_account_id,
+        )
+    )
+    db.commit()
+    db.refresh(current_user)
+    return _user_read(db, current_user)
+
+
+@router.delete("/{provider}/link", response_model=UserRead)
+def unlink_provider(
+    provider: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Detach a provider from the current user. Refuses if it would lock them out."""
+    if get_verifier(provider) is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported provider: {provider}",
+        )
+
+    link = (
+        db.query(OAuthAccount)
+        .filter(OAuthAccount.user_id == current_user.id, OAuthAccount.provider == provider)
+        .first()
+    )
+    if link is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No {provider} account linked.",
+        )
+
+    other_links = (
+        db.query(OAuthAccount)
+        .filter(OAuthAccount.user_id == current_user.id, OAuthAccount.id != link.id)
+        .count()
+    )
+    if not current_user.hashed_password and other_links == 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "You'd be locked out of your account. "
+                "Set a password before disconnecting your only sign-in method."
+            ),
+        )
+
+    db.delete(link)
+    db.commit()
+    db.refresh(current_user)
+    return _user_read(db, current_user)
 
 
 @router.post("/logout", status_code=204)

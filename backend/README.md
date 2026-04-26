@@ -52,4 +52,5 @@ Images are served via `GET /api/reports/images/{filename}`. When a report is del
 | PATCH | `/api/reports/{id}/clean` | Mark as cleaned |
 | POST | `/api/auth/register` | Register (placeholder) |
 | POST | `/api/auth/login` | Login (placeholder) |
+| POST | `/api/auth/{provider}/login` | Social login — verifies a provider credential and signs the user in (auto-merging by verified email). `provider` = `google` for now. See DEVELOPMENT.md → Social login. |
 | GET | `/api/volunteers/` | List volunteers (placeholder) |

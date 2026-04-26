@@ -1170,6 +1170,163 @@
         }
       }
     },
+    "/api/auth/{provider}/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Social Login",
+        "description": "Sign in (or sign up) using a verified social provider credential.",
+        "operationId": "social_login_api_auth__provider__login_post",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/{provider}/link": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Link Provider",
+        "description": "Attach a provider identity to the currently authenticated user.",
+        "operationId": "link_provider_api_auth__provider__link_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Unlink Provider",
+        "description": "Detach a provider from the current user. Refuses if it would lock them out.",
+        "operationId": "unlink_provider_api_auth__provider__link_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/logout": {
       "post": {
         "tags": [
@@ -5844,6 +6001,19 @@
         ],
         "title": "ResetPassword"
       },
+      "SocialLoginRequest": {
+        "properties": {
+          "credential": {
+            "type": "string",
+            "title": "Credential"
+          }
+        },
+        "type": "object",
+        "required": [
+          "credential"
+        ],
+        "title": "SocialLoginRequest"
+      },
       "Token": {
         "properties": {
           "access_token": {
@@ -5974,6 +6144,19 @@
             "type": "array",
             "title": "Badges",
             "default": []
+          },
+          "linked_providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Linked Providers",
+            "default": []
+          },
+          "has_password": {
+            "type": "boolean",
+            "title": "Has Password",
+            "default": true
           }
         },
         "type": "object",

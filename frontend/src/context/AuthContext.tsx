@@ -28,6 +28,9 @@ interface AuthContextType {
   ) => Promise<unknown>
   forgotPassword: (email: string) => Promise<unknown>
   resetPassword: (resetToken: string, newPassword: string) => Promise<unknown>
+  loginWithProvider: (provider: string, credential: string) => Promise<unknown>
+  linkProvider: (provider: string, credential: string) => Promise<unknown>
+  unlinkProvider: (provider: string) => Promise<unknown>
   logout: () => void
 }
 
@@ -136,6 +139,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.data
   }
 
+  const loginWithProvider = async (provider: string, credential: string) => {
+    const res = await api.post(`/api/auth/${provider}/login`, { credential })
+    const { access_token, refresh_token } = res.data
+    localStorage.setItem('token', access_token)
+    localStorage.setItem('refresh_token', refresh_token)
+    setToken(access_token)
+    setSessionExpired(false)
+    void flushOfflineQueue().catch(() => {})
+    return res.data
+  }
+
+  const linkProvider = async (provider: string, credential: string) => {
+    const res = await api.post(`/api/auth/${provider}/link`, { credential })
+    return res.data
+  }
+
+  const unlinkProvider = async (provider: string) => {
+    const res = await api.delete(`/api/auth/${provider}/link`)
+    return res.data
+  }
+
   const logout = () => {
     const refreshToken = localStorage.getItem('refresh_token')
     if (refreshToken) {
@@ -175,6 +199,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         forgotPassword,
         resetPassword,
+        loginWithProvider,
+        linkProvider,
+        unlinkProvider,
         logout,
       }}
     >
