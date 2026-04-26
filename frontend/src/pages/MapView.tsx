@@ -1,8 +1,8 @@
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import 'leaflet.heat'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import PageMeta from '../components/PageMeta'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
@@ -11,12 +11,13 @@ import ReportPopup from '../components/ReportPopup'
 import LocateButton from '../components/LocateButton'
 import BinsLayer from '../components/BinsLayer'
 import BinFormModal from '../components/BinFormModal'
+import { binIcon } from '../components/BinMarker'
 import { getBins } from '../api/endpoints/bins/bins'
 import type { ReportRead, BinRead } from '../api/model'
 
 const { listReportsApiReportsGet } = getReports()
 const { listFavouritesApiVolunteersFavouritesGet } = getVolunteers()
-const { deleteBinApiBinsBinIdDelete } = getBins()
+const { createBinApiBinsPost, deleteBinApiBinsBinIdDelete } = getBins()
 
 const BIN_ZOOM_THRESHOLD = 16
 
@@ -91,6 +92,172 @@ function ZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
   return null
 }
 
+const LONG_PRESS_MS = 500
+
+function LongPressHandler({ onLongPress }: { onLongPress: (latlng: L.LatLng) => void }) {
+  const map = useMap()
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const clear = () => {
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
+    }
+    const onDown = (e: L.LeafletMouseEvent) => {
+      clear()
+      const target = e.originalEvent?.target as Element | null
+      if (
+        target &&
+        (target.closest('.leaflet-marker-icon') ||
+          target.closest('.leaflet-popup') ||
+          target.closest('.leaflet-control'))
+      ) {
+        return
+      }
+      const { latlng } = e
+      timer = setTimeout(() => {
+        timer = null
+        onLongPress(latlng)
+      }, LONG_PRESS_MS)
+    }
+    map.on('mousedown', onDown)
+    map.on('mouseup', clear)
+    map.on('dragstart', clear)
+    map.on('movestart', clear)
+    map.on('zoomstart', clear)
+    return () => {
+      clear()
+      map.off('mousedown', onDown)
+      map.off('mouseup', clear)
+      map.off('dragstart', clear)
+      map.off('movestart', clear)
+      map.off('zoomstart', clear)
+    }
+  }, [map, onLongPress])
+  return null
+}
+
+function PendingBinMarker({
+  position,
+  onSubmit,
+  onDismiss,
+}: {
+  position: { lat: number; lng: number }
+  onSubmit: (description: string) => Promise<void>
+  onDismiss: () => void
+}) {
+  const markerRef = useRef<L.Marker>(null)
+  const [description, setDescription] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    markerRef.current?.openPopup()
+  }, [position])
+
+  const handleSubmit = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      await onSubmit(description)
+    } catch (err) {
+      const message =
+        err instanceof Error && 'response' in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : null
+      setError(message || 'Failed to add bin')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[position.lat, position.lng]}
+      icon={binIcon}
+      zIndexOffset={1000}
+    >
+      <Popup autoClose={false} closeOnClick={false} closeButton={false}>
+        <div style={{ minWidth: '220px' }}>
+          <strong style={{ fontSize: '14px', display: 'block', marginBottom: '4px' }}>
+            🗑️ Add a bin here?
+          </strong>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#6b7280' }}>
+            Tap the map to fine-tune the spot.
+          </p>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            placeholder="Description (optional) e.g. Next to the bus stop"
+            disabled={saving}
+            style={{
+              width: '100%',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              padding: '6px 8px',
+              fontSize: '12px',
+              color: '#374151',
+              resize: 'vertical',
+              marginBottom: '8px',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
+            }}
+          />
+          {error && (
+            <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#dc2626' }}>{error}</p>
+          )}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
+              style={{
+                flex: 1,
+                padding: '6px',
+                backgroundColor: '#0ea5e9',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                fontSize: '13px',
+                fontWeight: 600,
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? 'Adding…' : 'Add bin'}
+            </button>
+            <button
+              onClick={onDismiss}
+              disabled={saving}
+              style={{
+                padding: '6px 10px',
+                backgroundColor: '#f3f4f6',
+                color: '#374151',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                fontSize: '13px',
+                fontWeight: 600,
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  )
+}
+
+function PendingBinClickMover({ onClick }: { onClick: (latlng: L.LatLng) => void }) {
+  useMapEvents({
+    click: (e) => onClick(e.latlng),
+  })
+  return null
+}
+
 function HeatmapLayer({ reports }: { reports: ReportRead[] }) {
   const map = useMap()
 
@@ -124,11 +291,8 @@ export default function MapView() {
   const [showBins, setShowBins] = useState(true)
   const [mapZoom, setMapZoom] = useState(6)
   const [binsRefreshKey, setBinsRefreshKey] = useState(0)
-  const [binForm, setBinForm] = useState<
-    | { mode: 'add'; initialPosition: { lat: number; lng: number } | null }
-    | { mode: 'edit'; bin: BinRead }
-    | null
-  >(null)
+  const [editingBin, setEditingBin] = useState<BinRead | null>(null)
+  const [pendingBin, setPendingBin] = useState<{ lat: number; lng: number } | null>(null)
   const [openPanel, setOpenPanel] = useState<'status' | 'type' | 'layer' | null>(null)
   const togglePanel = (p: 'status' | 'type' | 'layer') =>
     setOpenPanel((prev) => (prev === p ? null : p))
@@ -143,20 +307,28 @@ export default function MapView() {
     }
   }
 
-  const handleAddBinClick = () => {
-    const openWithPosition = (pos: { lat: number; lng: number } | null) => {
+  const handleLongPress = useCallback(
+    (latlng: L.LatLng) => {
+      if (!isLoggedIn) return
       setShowBins(true)
-      setBinForm({ mode: 'add', initialPosition: pos })
-    }
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (p) => openWithPosition({ lat: p.coords.latitude, lng: p.coords.longitude }),
-        () => openWithPosition(null),
-        { timeout: 5000 }
-      )
-    } else {
-      openWithPosition(null)
-    }
+      setPendingBin({ lat: latlng.lat, lng: latlng.lng })
+    },
+    [isLoggedIn]
+  )
+
+  const handleMovePendingBin = useCallback((latlng: L.LatLng) => {
+    setPendingBin({ lat: latlng.lat, lng: latlng.lng })
+  }, [])
+
+  const handleCreateBin = async (description: string) => {
+    if (!pendingBin) return
+    await createBinApiBinsPost({
+      latitude: pendingBin.lat,
+      longitude: pendingBin.lng,
+      description,
+    })
+    setPendingBin(null)
+    setBinsRefreshKey((k) => k + 1)
   }
 
   useEffect(() => {
@@ -345,24 +517,24 @@ export default function MapView() {
         {showBins && (
           <BinsLayer
             refreshKey={binsRefreshKey}
-            onEdit={(bin) => setBinForm({ mode: 'edit', bin })}
+            onEdit={(bin) => setEditingBin(bin)}
             onDelete={handleBinDelete}
           />
         )}
         <LocateButton />
         <ZoomTracker onZoom={setMapZoom} />
+        {isLoggedIn && <LongPressHandler onLongPress={handleLongPress} />}
+        {pendingBin && (
+          <>
+            <PendingBinClickMover onClick={handleMovePendingBin} />
+            <PendingBinMarker
+              position={pendingBin}
+              onSubmit={handleCreateBin}
+              onDismiss={() => setPendingBin(null)}
+            />
+          </>
+        )}
       </MapContainer>
-
-      {isLoggedIn && (
-        <button
-          onClick={handleAddBinClick}
-          className="absolute bottom-3 left-3 z-[1000] bg-brand text-white shadow-lg rounded-lg px-3 h-10 flex items-center gap-1 text-sm font-medium hover:opacity-90 transition"
-          title="Add a bin location"
-        >
-          <span className="text-base leading-none">🗑️</span>
-          <span>Add bin</span>
-        </button>
-      )}
 
       {showBins && mapZoom < BIN_ZOOM_THRESHOLD && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 text-gray-600 text-xs px-3 py-1 rounded-full shadow">
@@ -370,13 +542,13 @@ export default function MapView() {
         </div>
       )}
 
-      {binForm && (
+      {editingBin && (
         <BinFormModal
-          initialPosition={binForm.mode === 'add' ? binForm.initialPosition : null}
-          existing={binForm.mode === 'edit' ? binForm.bin : null}
-          onClose={() => setBinForm(null)}
+          initialPosition={null}
+          existing={editingBin}
+          onClose={() => setEditingBin(null)}
           onSaved={() => {
-            setBinForm(null)
+            setEditingBin(null)
             setBinsRefreshKey((k) => k + 1)
           }}
         />
