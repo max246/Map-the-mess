@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, ForeignKey, Uuid, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.database import Base
 
@@ -21,4 +21,7 @@ class OAuthAccount(Base):
     provider_account_id = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    user = relationship("User", backref="oauth_accounts")
+    user = relationship(
+        "User",
+        backref=backref("oauth_accounts", cascade="all, delete-orphan", passive_deletes=True),
+    )

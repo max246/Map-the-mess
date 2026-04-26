@@ -315,3 +315,37 @@ class TestUserReadIncludesLinkState:
         body = res.json()
         assert body["has_password"] is False
         assert body["linked_providers"] == ["google"]
+
+
+class TestDeleteAccountWithOAuthLink:
+    def test_delete_self_with_linked_oauth_account(self, client, db, volunteer):
+        """Regression: SQLAlchemy used to NULL oauth_accounts.user_id on user delete,
+        violating the NOT NULL constraint. The relationship now cascades."""
+        db.add(
+            OAuthAccount(
+                user_id=volunteer.id,
+                provider="google",
+                provider_account_id="g-delete-me",
+            )
+        )
+        db.commit()
+        user_id = volunteer.id
+
+        res = client.delete("/api/auth/me", headers=auth_header(volunteer))
+        assert res.status_code == 204, res.text
+
+        assert db.query(User).filter(User.id == user_id).first() is None
+        assert db.query(OAuthAccount).filter(OAuthAccount.user_id == user_id).count() == 0
+
+    def test_delete_social_only_user(self, client, db):
+        """Full social-login flow then account deletion — exercises the production path."""
+        identity = _identity(email="bye@example.com", sub="g-bye")
+        _post_google(client, identity)
+        social_user = db.query(User).filter(User.email == "bye@example.com").one()
+        user_id = social_user.id
+
+        res = client.delete("/api/auth/me", headers=auth_header(social_user))
+        assert res.status_code == 204, res.text
+
+        assert db.query(User).filter(User.id == user_id).first() is None
+        assert db.query(OAuthAccount).filter(OAuthAccount.user_id == user_id).count() == 0

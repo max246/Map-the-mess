@@ -15,7 +15,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.database import Base
 
@@ -43,7 +43,11 @@ class Plan(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    user = relationship("User", backref="plans", lazy="joined")
+    user = relationship(
+        "User",
+        backref=backref("plans", cascade="all, delete-orphan", passive_deletes=True),
+        lazy="joined",
+    )
     plan_reports = relationship(
         "PlanReport",
         backref="plan",
