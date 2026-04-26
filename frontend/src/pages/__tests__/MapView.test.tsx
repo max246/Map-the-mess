@@ -1,6 +1,7 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { forwardRef as mockForwardRef } from 'react'
 
 /* ── mock data ─────────────────────────────────────────── */
 const REPORTS = [
@@ -99,35 +100,28 @@ jest.mock('../../api/client', () => ({
 
 // Mock react-leaflet components to render testable HTML
 jest.mock('react-leaflet', () => {
-  const React = require('react')
   return {
     MapContainer: ({ children }: { children: React.ReactNode }) => (
       <div data-testid="map-container">{children}</div>
     ),
     TileLayer: () => <div data-testid="tile-layer" />,
-    Marker: React.forwardRef(
-      (
-        {
-          children,
-          eventHandlers,
-          position,
-        }: {
-          children: React.ReactNode
-          eventHandlers?: { click?: () => void }
-          position: [number, number]
-        },
-        _ref: unknown
-      ) => (
-        <div
-          data-testid="marker"
-          data-lat={position[0]}
-          data-lng={position[1]}
-          onClick={eventHandlers?.click}
-        >
-          {children}
-        </div>
-      )
-    ),
+    Marker: mockForwardRef<
+      HTMLDivElement,
+      {
+        children: React.ReactNode
+        eventHandlers?: { click?: () => void }
+        position: [number, number]
+      }
+    >(({ children, eventHandlers, position }, _ref) => (
+      <div
+        data-testid="marker"
+        data-lat={position[0]}
+        data-lng={position[1]}
+        onClick={eventHandlers?.click}
+      >
+        {children}
+      </div>
+    )),
     Popup: ({ children }: { children: React.ReactNode }) => (
       <div data-testid="popup">{children}</div>
     ),
