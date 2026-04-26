@@ -61,6 +61,7 @@ export * from './reportRead';
 export * from './reportStatusLogRead';
 export * from './reportUpdate';
 export * from './resetPassword';
+export * from './socialLoginRequest';
 export * from './token';
 export * from './userCreate';
 export * from './userLogin';

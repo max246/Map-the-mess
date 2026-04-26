@@ -12,6 +12,7 @@ import type {
   ProfileUpdate,
   RefreshRequest,
   ResetPassword,
+  SocialLoginRequest,
   Token,
   UserCreate,
   UserLogin,
@@ -172,6 +173,48 @@ const refreshTokenApiAuthRefreshPost = (
       );
     }
   /**
+ * Sign in (or sign up) using a verified social provider credential.
+ * @summary Social Login
+ */
+const socialLoginApiAuthProviderLoginPost = (
+    provider: string,
+    socialLoginRequest: SocialLoginRequest,
+ ) => {
+      return customInstance<Token>(
+      {url: `/api/auth/${provider}/login`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: socialLoginRequest
+    },
+      );
+    }
+  /**
+ * Attach a provider identity to the currently authenticated user.
+ * @summary Link Provider
+ */
+const linkProviderApiAuthProviderLinkPost = (
+    provider: string,
+    socialLoginRequest: SocialLoginRequest,
+ ) => {
+      return customInstance<UserRead>(
+      {url: `/api/auth/${provider}/link`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: socialLoginRequest
+    },
+      );
+    }
+  /**
+ * Detach a provider from the current user. Refuses if it would lock them out.
+ * @summary Unlink Provider
+ */
+const unlinkProviderApiAuthProviderLinkDelete = (
+    provider: string,
+ ) => {
+      return customInstance<UserRead>(
+      {url: `/api/auth/${provider}/link`, method: 'DELETE'
+    },
+      );
+    }
+  /**
  * Revoke a refresh token on logout.
  * @summary Logout
  */
@@ -238,7 +281,7 @@ const resetPasswordApiAuthResetPasswordPost = (
     },
       );
     }
-  return {getProfileApiAuthMeGet,deleteProfileApiAuthMeDelete,updateProfileApiAuthMePatch,uploadAvatarApiAuthMeAvatarPut,changePasswordApiAuthMePasswordPatch,listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,refreshTokenApiAuthRefreshPost,logoutApiAuthLogoutPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
+  return {getProfileApiAuthMeGet,deleteProfileApiAuthMeDelete,updateProfileApiAuthMePatch,uploadAvatarApiAuthMeAvatarPut,changePasswordApiAuthMePasswordPatch,listUsersApiAuthUsersGet,registerApiAuthRegisterPost,verifyEmailApiAuthVerifyGet,resendVerificationApiAuthResendVerificationPost,loginApiAuthLoginPost,refreshTokenApiAuthRefreshPost,socialLoginApiAuthProviderLoginPost,linkProviderApiAuthProviderLinkPost,unlinkProviderApiAuthProviderLinkDelete,logoutApiAuthLogoutPost,updateUserTypeApiAuthUsersUserIdTypePatch,deleteUserApiAuthUsersUserIdDelete,forgotPasswordApiAuthForgotPasswordPost,resetPasswordApiAuthResetPasswordPost}};
 export type GetProfileApiAuthMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getProfileApiAuthMeGet']>>>
 export type DeleteProfileApiAuthMeDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deleteProfileApiAuthMeDelete']>>>
 export type UpdateProfileApiAuthMePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['updateProfileApiAuthMePatch']>>>
@@ -250,6 +293,9 @@ export type VerifyEmailApiAuthVerifyGetResult = NonNullable<Awaited<ReturnType<R
 export type ResendVerificationApiAuthResendVerificationPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resendVerificationApiAuthResendVerificationPost']>>>
 export type LoginApiAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginApiAuthLoginPost']>>>
 export type RefreshTokenApiAuthRefreshPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['refreshTokenApiAuthRefreshPost']>>>
+export type SocialLoginApiAuthProviderLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['socialLoginApiAuthProviderLoginPost']>>>
+export type LinkProviderApiAuthProviderLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['linkProviderApiAuthProviderLinkPost']>>>
+export type UnlinkProviderApiAuthProviderLinkDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['unlinkProviderApiAuthProviderLinkDelete']>>>
 export type LogoutApiAuthLogoutPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['logoutApiAuthLogoutPost']>>>
 export type UpdateUserTypeApiAuthUsersUserIdTypePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['updateUserTypeApiAuthUsersUserIdTypePatch']>>>
 export type DeleteUserApiAuthUsersUserIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deleteUserApiAuthUsersUserIdDelete']>>>

@@ -22,7 +22,7 @@ class User(Base):
     id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
     full_name = Column(String, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)
     user_type: Column[UserType] = Column(Enum(UserType), default=UserType.volunteer, nullable=False)
     avatar_url = Column(String, nullable=True)

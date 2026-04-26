@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import GoogleSignInButton from '../components/GoogleSignInButton'
 import PageMeta from '../components/PageMeta'
 import { useAuth } from '../context/AuthContext'
 
@@ -8,8 +9,23 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, loginWithProvider } = useAuth()
   const navigate = useNavigate()
+
+  const handleGoogleCredential = useCallback(
+    async (credential: string) => {
+      setError('')
+      try {
+        await loginWithProvider('google', credential)
+        navigate('/admin')
+      } catch (err: unknown) {
+        const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail
+        setError(typeof detail === 'string' ? detail : 'Google sign-in failed.')
+      }
+    },
+    [loginWithProvider, navigate]
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,6 +95,14 @@ export default function Login() {
           {loading ? 'Logging in...' : 'Log in'}
         </button>
       </form>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-gray-400">
+        <span className="flex-1 border-t border-gray-200" />
+        <span>or</span>
+        <span className="flex-1 border-t border-gray-200" />
+      </div>
+
+      <GoogleSignInButton onCredential={handleGoogleCredential} text="signin_with" />
 
       <div className="mt-6 text-center text-sm text-gray-500 flex flex-col gap-2">
         <Link to="/forgot-password" className="text-brand hover:underline">

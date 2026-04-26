@@ -30,6 +30,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
       FRONTEND_URL: https://mapthemess.uk
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     depends_on:
       - db
 

@@ -28,3 +28,5 @@ OSRM_URL = os.getenv("OSRM_URL", "https://router.project-osrm.org")
 
 REPORT_STALE_DAYS = int(os.getenv("REPORT_STALE_DAYS", "30"))
 ADMIN_TASK_SECRET = os.getenv("ADMIN_TASK_SECRET", "")
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
