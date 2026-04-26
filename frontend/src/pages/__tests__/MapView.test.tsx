@@ -58,12 +58,10 @@ const mockMapOff = jest.fn((event: string) => {
 })
 
 const mockMapEventHandlers: Record<string, (...args: unknown[]) => void> = {}
-const mockUseMapEvents = jest.fn(
-  (handlers: Record<string, (...args: unknown[]) => void>) => {
-    Object.assign(mockMapEventHandlers, handlers)
-    return null
-  }
-)
+const mockUseMapEvents = jest.fn((handlers: Record<string, (...args: unknown[]) => void>) => {
+  Object.assign(mockMapEventHandlers, handlers)
+  return null
+})
 
 jest.mock('../../api/endpoints/reports/reports', () => ({
   getReports: () => ({
@@ -450,10 +448,7 @@ describe('MapView', () => {
         renderMapView()
         triggerLongPress(51.5, -0.12)
 
-        await user.type(
-          screen.getByPlaceholderText(/Description/i),
-          'Next to the bus stop'
-        )
+        await user.type(screen.getByPlaceholderText(/Description/i), 'Next to the bus stop')
         await user.click(screen.getByRole('button', { name: 'Add bin' }))
 
         await waitFor(() => {
