@@ -1,6 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { forwardRef as mockForwardRef } from 'react'
 
 /* ── mock data ─────────────────────────────────────────── */
 const REPORTS = [
@@ -41,9 +42,26 @@ const mockListReports = jest.fn()
 const mockListFavourites = jest.fn()
 const mockListBins = jest.fn()
 const mockDeleteBin = jest.fn()
+const mockCreateBin = jest.fn()
 const mockFlyTo = jest.fn()
 const mockGetZoom = jest.fn()
 const mockGetCenter = jest.fn()
+
+const mockAuthState = { isLoggedIn: false }
+
+const mockMapHandlers: Record<string, (...args: unknown[]) => void> = {}
+const mockMapOn = jest.fn((event: string, fn: (...args: unknown[]) => void) => {
+  mockMapHandlers[event] = fn
+})
+const mockMapOff = jest.fn((event: string) => {
+  delete mockMapHandlers[event]
+})
+
+const mockMapEventHandlers: Record<string, (...args: unknown[]) => void> = {}
+const mockUseMapEvents = jest.fn((handlers: Record<string, (...args: unknown[]) => void>) => {
+  Object.assign(mockMapEventHandlers, handlers)
+  return null
+})
 
 jest.mock('../../api/endpoints/reports/reports', () => ({
   getReports: () => ({
@@ -61,6 +79,7 @@ jest.mock('../../api/endpoints/bins/bins', () => ({
   getBins: () => ({
     listBinsApiBinsGet: (...args: unknown[]) => mockListBins(...args),
     deleteBinApiBinsBinIdDelete: (...args: unknown[]) => mockDeleteBin(...args),
+    createBinApiBinsPost: (...args: unknown[]) => mockCreateBin(...args),
   }),
 }))
 
@@ -68,7 +87,7 @@ jest.mock('../../components/BinsLayer', () => () => null)
 jest.mock('../../components/BinFormModal', () => () => null)
 
 jest.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({ isLoggedIn: false }),
+  useAuth: () => mockAuthState,
 }))
 
 jest.mock('../../api/client', () => ({
@@ -78,40 +97,44 @@ jest.mock('../../api/client', () => ({
 }))
 
 // Mock react-leaflet components to render testable HTML
-jest.mock('react-leaflet', () => ({
-  MapContainer: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="map-container">{children}</div>
-  ),
-  TileLayer: () => <div data-testid="tile-layer" />,
-  Marker: ({
-    children,
-    eventHandlers,
-    position,
-  }: {
-    children: React.ReactNode
-    eventHandlers?: { click?: () => void }
-    position: [number, number]
-  }) => (
-    <div
-      data-testid="marker"
-      data-lat={position[0]}
-      data-lng={position[1]}
-      onClick={eventHandlers?.click}
-    >
-      {children}
-    </div>
-  ),
-  Popup: ({ children }: { children: React.ReactNode }) => <div data-testid="popup">{children}</div>,
-  useMap: () => ({
-    flyTo: mockFlyTo,
-    getZoom: mockGetZoom,
-    getCenter: mockGetCenter,
-    removeLayer: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-  }),
-  useMapEvents: () => null,
-}))
+jest.mock('react-leaflet', () => {
+  return {
+    MapContainer: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="map-container">{children}</div>
+    ),
+    TileLayer: () => <div data-testid="tile-layer" />,
+    Marker: mockForwardRef<
+      HTMLDivElement,
+      {
+        children: React.ReactNode
+        eventHandlers?: { click?: () => void }
+        position: [number, number]
+      }
+    >(({ children, eventHandlers, position }, _ref) => (
+      <div
+        data-testid="marker"
+        data-lat={position[0]}
+        data-lng={position[1]}
+        onClick={eventHandlers?.click}
+      >
+        {children}
+      </div>
+    )),
+    Popup: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="popup">{children}</div>
+    ),
+    useMap: () => ({
+      flyTo: mockFlyTo,
+      getZoom: mockGetZoom,
+      getCenter: mockGetCenter,
+      removeLayer: jest.fn(),
+      on: mockMapOn,
+      off: mockMapOff,
+    }),
+    useMapEvents: (handlers: Record<string, (...args: unknown[]) => void>) =>
+      mockUseMapEvents(handlers),
+  }
+})
 
 jest.mock('react-leaflet-cluster', () => ({
   __esModule: true,
@@ -158,6 +181,9 @@ function renderMapView() {
 describe('MapView', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockAuthState.isLoggedIn = false
+    Object.keys(mockMapHandlers).forEach((k) => delete mockMapHandlers[k])
+    Object.keys(mockMapEventHandlers).forEach((k) => delete mockMapEventHandlers[k])
     mockListReports.mockResolvedValue(REPORTS)
     mockListFavourites.mockResolvedValue([])
     mockListBins.mockResolvedValue([])
@@ -363,6 +389,127 @@ describe('MapView', () => {
     await user.click(screen.getByRole('button', { name: 'Pins' }))
     await waitFor(() => {
       expect(screen.getByTestId('cluster-group')).toBeInTheDocument()
+    })
+  })
+
+  /* ── Bin add via long-press ─────────────────────── */
+
+  describe('Bin add via long-press', () => {
+    const triggerLongPress = (lat = 60.123, lng = -5.678) => {
+      act(() => {
+        mockMapHandlers.mousedown?.({
+          latlng: { lat, lng },
+          originalEvent: { target: null },
+        } as unknown)
+        jest.advanceTimersByTime(500)
+      })
+    }
+
+    it('does not render the standalone "Add bin" button when logged in', () => {
+      mockAuthState.isLoggedIn = true
+      renderMapView()
+      // The popup button only appears after long-press; no standalone button should exist.
+      expect(screen.queryByRole('button', { name: 'Add bin' })).not.toBeInTheDocument()
+    })
+
+    it('does not register a mousedown long-press handler when logged out', () => {
+      mockAuthState.isLoggedIn = false
+      renderMapView()
+      expect(mockMapOn).not.toHaveBeenCalledWith('mousedown', expect.any(Function))
+    })
+
+    it('registers the mousedown long-press handler when logged in', () => {
+      mockAuthState.isLoggedIn = true
+      renderMapView()
+      expect(mockMapOn).toHaveBeenCalledWith('mousedown', expect.any(Function))
+    })
+
+    it('drops a pending bin pin with description form after a 500ms hold', () => {
+      mockAuthState.isLoggedIn = true
+      jest.useFakeTimers()
+      try {
+        renderMapView()
+        triggerLongPress()
+        expect(screen.getByText('🗑️ Add a bin here?')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText(/Description/i)).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Add bin' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    it('submits createBinApiBinsPost with description and coordinates', async () => {
+      mockAuthState.isLoggedIn = true
+      mockCreateBin.mockResolvedValue({ id: 'b1' })
+      jest.useFakeTimers()
+      try {
+        const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+        renderMapView()
+        triggerLongPress(51.5, -0.12)
+
+        await user.type(screen.getByPlaceholderText(/Description/i), 'Next to the bus stop')
+        await user.click(screen.getByRole('button', { name: 'Add bin' }))
+
+        await waitFor(() => {
+          expect(mockCreateBin).toHaveBeenCalledWith({
+            latitude: 51.5,
+            longitude: -0.12,
+            description: 'Next to the bus stop',
+          })
+        })
+        await waitFor(() => {
+          expect(screen.queryByText('🗑️ Add a bin here?')).not.toBeInTheDocument()
+        })
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    it('removes the pending pin without API call when Cancel is clicked', async () => {
+      mockAuthState.isLoggedIn = true
+      jest.useFakeTimers()
+      try {
+        const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+        renderMapView()
+        triggerLongPress()
+        expect(screen.getByText('🗑️ Add a bin here?')).toBeInTheDocument()
+
+        await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+        expect(screen.queryByText('🗑️ Add a bin here?')).not.toBeInTheDocument()
+        expect(mockCreateBin).not.toHaveBeenCalled()
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    it('moves the pending pin when the map is tapped elsewhere', () => {
+      mockAuthState.isLoggedIn = true
+      jest.useFakeTimers()
+      try {
+        renderMapView()
+        triggerLongPress(60.0, -5.0)
+
+        const startMarker = screen
+          .getAllByTestId('marker')
+          .find((m) => m.getAttribute('data-lat') === '60')
+        expect(startMarker).toBeDefined()
+
+        act(() => {
+          mockMapEventHandlers.click?.({ latlng: { lat: 61.5, lng: -4.25 } } as unknown)
+        })
+
+        const movedMarker = screen
+          .getAllByTestId('marker')
+          .find((m) => m.getAttribute('data-lat') === '61.5')
+        expect(movedMarker).toBeDefined()
+        expect(
+          screen.getAllByTestId('marker').find((m) => m.getAttribute('data-lat') === '60')
+        ).toBeUndefined()
+      } finally {
+        jest.useRealTimers()
+      }
     })
   })
 })
