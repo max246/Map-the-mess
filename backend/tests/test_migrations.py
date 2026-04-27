@@ -570,6 +570,20 @@ def _check_plan_bins(conn):
     assert {"plan_id", "bin_id"} in unique_col_sets
 
 
+@_check("e7f8a9b0c1d2")
+def _check_fixmystreet_enum_value(conn):
+    """Verify `fixmystreet` is registered on the reporttype enum."""
+    result = conn.execute(
+        text(
+            "SELECT enumlabel FROM pg_enum "
+            "JOIN pg_type ON pg_enum.enumtypid = pg_type.oid "
+            "WHERE pg_type.typname = 'reporttype'"
+        )
+    )
+    labels = {row[0] for row in result}
+    assert "fixmystreet" in labels
+
+
 @_check("e6f7a8b9c0d1")
 def _check_oauth_accounts(conn):
     assert "oauth_accounts" in _table_names(conn)
@@ -624,6 +638,7 @@ MIGRATION_CHAIN = [
     "c353677dd88c",
     "d463788ee99d",
     "e6f7a8b9c0d1",
+    "e7f8a9b0c1d2",
 ]
 
 # ---------------------------------------------------------------------------

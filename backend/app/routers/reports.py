@@ -19,12 +19,14 @@ from app.config import SECRET_KEY, IMAGES_DIR, IMAGES_DIR_REPORTS
 
 logger = logging.getLogger(__name__)
 from app.database import get_db
+from app.fixmystreet import submit_to_fixmystreet, FixMyStreetError
 from app.models.report import Report, ReportStatus, ReportType
 from app.models.report_image import ReportImage, ImageType
 from app.models.report_comment import ReportComment
 from app.models.report_status_log import ReportStatusLog, ReportStatusAction
 from app.models.user import User
 from app.routers.auth import ALGORITHM, get_current_user, require_moderator_or_admin
+from app.routers.volunteers import _abbreviate_name
 from app.schemas.report import (
     ReportRead,
     ReportImageRead,
@@ -78,6 +80,8 @@ def _validate_report_type(raw: str) -> ReportType:
             status_code=400,
             detail=f"Invalid report_type. Must be one of: {', '.join(t.value for t in ReportType)}",
         )
+
+
 
 
 def _validate_image_type(raw: str) -> ImageType:
@@ -296,6 +300,7 @@ def create_report(
     report_type: str = Form(...),
     description: str = Form(""),
     what3words: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
@@ -305,6 +310,14 @@ def create_report(
 
     if not (UK_LAT_MIN <= latitude <= UK_LAT_MAX and UK_LON_MIN <= longitude <= UK_LON_MAX):
         raise HTTPException(status_code=400, detail="Coordinates must be within the UK")
+
+    if validated_report_type == ReportType.fixmystreet:
+        email = email or (current_user.email if current_user else None)
+        if not email:
+            raise HTTPException(
+                status_code=400, detail="email is required for fixmystreet reports"
+            )
+        fms_name = _abbreviate_name(current_user.full_name) if current_user else ""
 
     address = _reverse_geocode(latitude, longitude)
     report = Report(
@@ -329,8 +342,10 @@ def create_report(
         )
     )
 
+    image_filename: str | None = None
     if image:
         filename, thumb_filename = _save_upload(image)
+        image_filename = filename
         db.add(
             ReportImage(
                 report_id=report.id,
@@ -342,7 +357,60 @@ def create_report(
 
     db.commit()
     db.refresh(report)
+
+    if validated_report_type == ReportType.fixmystreet:
+        try:
+            submit_to_fixmystreet(
+                email=email,
+                name=fms_name,
+                lat=latitude,
+                lon=longitude,
+                title=description,
+                detail=description,
+                category="Flytipping",
+                image_filename=image_filename,
+            )
+        except FixMyStreetError as e:
+            logger.error("FixMyStreet submission failed for report %s: %s", report.id, e)
+            raise HTTPException(status_code=502, detail=f"FixMyStreet submission failed: {e}")
+
     return report
+
+
+@router.post("/{report_id}/fixmystreet", status_code=201)
+def report_to_fixmystreet(
+    report_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Forward an existing report to FixMyStreet as a Flytipping report."""
+    report = db.query(Report).get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    image_filename: str | None = None
+    if report.images:
+        image_filename = report.images[0].url
+
+    try:
+        result = submit_to_fixmystreet(
+            email=current_user.email,
+            name=_abbreviate_name(current_user.full_name),
+            lat=report.latitude,
+            lon=report.longitude,
+            title=report.description,
+            detail=report.description,
+            category="Flytipping",
+            image_filename=image_filename,
+        )
+    except FixMyStreetError as e:
+        logger.error("FixMyStreet submission failed for report %s: %s", report.id, e)
+        raise HTTPException(status_code=502, detail=f"FixMyStreet submission failed: {e}")
+
+    report.report_type = ReportType.fixmystreet
+    db.commit()
+
+    return result
 
 
 @router.post("/{report_id}/images", response_model=ReportImageRead, status_code=201)

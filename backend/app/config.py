@@ -30,3 +30,7 @@ REPORT_STALE_DAYS = int(os.getenv("REPORT_STALE_DAYS", "30"))
 ADMIN_TASK_SECRET = os.getenv("ADMIN_TASK_SECRET", "")
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+# FixMyStreet integration
+FMS_URL = os.getenv("FMS_URL", "https://www.fixmystreet.com")
+FMS_SERVICE = os.getenv("FMS_SERVICE", "MapTheMess")
