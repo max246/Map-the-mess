@@ -130,8 +130,8 @@ export default function ReportCollection() {
       />
       <h1 className="text-2xl font-bold mb-2">📨 Report Collection</h1>
       <p className="text-sm text-gray-600 mb-6">
-        Forward a fly-tipping or large-waste collection request to FixMyStreet. They'll email you
-        to confirm before the report goes live.
+        Forward a fly-tipping or large-waste collection request to FixMyStreet. They'll email you to
+        confirm before the report goes live.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">

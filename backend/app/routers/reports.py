@@ -82,8 +82,6 @@ def _validate_report_type(raw: str) -> ReportType:
         )
 
 
-
-
 def _validate_image_type(raw: str) -> ImageType:
     try:
         return ImageType(raw)
@@ -314,9 +312,7 @@ def create_report(
     if validated_report_type == ReportType.fixmystreet:
         email = email or (current_user.email if current_user else None)
         if not email:
-            raise HTTPException(
-                status_code=400, detail="email is required for fixmystreet reports"
-            )
+            raise HTTPException(status_code=400, detail="email is required for fixmystreet reports")
         fms_name = _abbreviate_name(current_user.full_name) if current_user else ""
 
     address = _reverse_geocode(latitude, longitude)

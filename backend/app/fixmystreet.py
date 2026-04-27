@@ -73,7 +73,9 @@ def _resolve_fms_categorisation(
 
     haystack = "".join(v for v in payload.values() if isinstance(v, str))
     candidates = [
-        v for v in _FMS_OPTION_VALUE_RE.findall(haystack) if v.lower() not in _FMS_NON_CATEGORY_VALUES
+        v
+        for v in _FMS_OPTION_VALUE_RE.findall(haystack)
+        if v.lower() not in _FMS_NON_CATEGORY_VALUES
     ]
     if not candidates:
         logger.warning("FMS category lookup returned no candidates for %s, %s", lat, lon)
@@ -89,9 +91,7 @@ def _resolve_fms_categorisation(
 
     best = min(candidates, key=cat_score)
     if cat_score(best)[0] >= len(_FMS_CATEGORY_KEYWORDS):
-        logger.warning(
-            "FMS category lookup found no fly-tipping match at %s, %s", lat, lon
-        )
+        logger.warning("FMS category lookup found no fly-tipping match at %s, %s", lat, lon)
         return None
 
     # The `G|` prefix is a UI-only group marker — FMS's mobile endpoint expects
@@ -106,18 +106,14 @@ def _resolve_fms_categorisation(
         )
         fieldset_match = fieldset_re.search(payload.get("subcategories", ""))
         if not fieldset_match:
-            logger.warning(
-                "FMS group %r at %s, %s has no subcategory fieldset", best, lat, lon
-            )
+            logger.warning("FMS group %r at %s, %s has no subcategory fieldset", best, lat, lon)
             return None
         sub_values = re.findall(
             rf'name="category\.{re.escape(bare_key)}"[^>]*value=[\'"]([^\'"]+)[\'"]',
             fieldset_match.group(1),
         )
         if not sub_values:
-            logger.warning(
-                "FMS group %r at %s, %s has empty subcategory list", best, lat, lon
-            )
+            logger.warning("FMS group %r at %s, %s has empty subcategory list", best, lat, lon)
             return None
 
         def sub_score(s: str) -> tuple[int, int]:
@@ -173,14 +169,15 @@ def _resolve_fms_extras(
         if resp.status_code != 200:
             logger.warning(
                 "FMS extras lookup non-200 for %s, %s, %s: status %s",
-                lat, lon, category, resp.status_code,
+                lat,
+                lon,
+                category,
+                resp.status_code,
             )
             return {}
         payload = resp.json()
     except Exception:
-        logger.warning(
-            "FMS extras lookup failed for %s, %s, %s", lat, lon, category, exc_info=True
-        )
+        logger.warning("FMS extras lookup failed for %s, %s, %s", lat, lon, category, exc_info=True)
         return {}
 
     fields: dict[str, str] = {}
