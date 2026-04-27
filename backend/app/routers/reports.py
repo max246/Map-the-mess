@@ -309,11 +309,13 @@ def create_report(
     if not (UK_LAT_MIN <= latitude <= UK_LAT_MAX and UK_LON_MIN <= longitude <= UK_LON_MAX):
         raise HTTPException(status_code=400, detail="Coordinates must be within the UK")
 
+    fms_email: str | None = None
+    fms_name = ""
     if validated_report_type == ReportType.fixmystreet:
-        email = email or (current_user.email if current_user else None)
-        if not email:
+        fms_email = email or (str(current_user.email) if current_user else None)
+        if not fms_email:
             raise HTTPException(status_code=400, detail="email is required for fixmystreet reports")
-        fms_name = _abbreviate_name(current_user.full_name) if current_user else ""
+        fms_name = _abbreviate_name(str(current_user.full_name)) if current_user else ""
 
     address = _reverse_geocode(latitude, longitude)
     report = Report(
@@ -354,10 +356,10 @@ def create_report(
     db.commit()
     db.refresh(report)
 
-    if validated_report_type == ReportType.fixmystreet:
+    if validated_report_type == ReportType.fixmystreet and fms_email is not None:
         try:
             submit_to_fixmystreet(
-                email=email,
+                email=fms_email,
                 name=fms_name,
                 lat=latitude,
                 lon=longitude,
@@ -390,8 +392,8 @@ def report_to_fixmystreet(
 
     try:
         result = submit_to_fixmystreet(
-            email=current_user.email,
-            name=_abbreviate_name(current_user.full_name),
+            email=str(current_user.email),
+            name=_abbreviate_name(str(current_user.full_name)),
             lat=report.latitude,
             lon=report.longitude,
             title=report.description,

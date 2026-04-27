@@ -134,7 +134,12 @@ def _resolve_fms_categorisation(
 
 def _pick_extra_default(code: str, values: list[dict]) -> str | None:
     """Pick a safe default value for a required FMS category-extra field."""
-    keys = [v.get("key") for v in values if isinstance(v, dict) and v.get("key")]
+    keys: list[str] = []
+    for v in values:
+        if isinstance(v, dict):
+            k = v.get("key")
+            if isinstance(k, str) and k:
+                keys.append(k)
     if not keys:
         return None
     by_lower = {k.lower(): k for k in keys}
