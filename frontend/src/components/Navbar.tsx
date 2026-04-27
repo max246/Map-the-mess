@@ -31,11 +31,10 @@ export default function Navbar() {
   const navigate = useNavigate()
   const [hasPending, setHasPending] = useState(false)
 
-  const isVolunteer = isLoggedIn && !canManageUsers
-
   const volunteerLinks = [
     { to: '/volunteers', label: 'Dashboard' },
     { to: '/planner', label: 'Planner' },
+    { to: '/report-collection', label: 'Report Collection' },
   ]
 
   // Close dropdown on route change
@@ -152,7 +151,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {isLoggedIn && isVolunteer && (
+          {isLoggedIn && (
             <div ref={volunteerRef} className="relative">
               <button
                 onClick={() => setVolunteerOpen(!volunteerOpen)}
@@ -189,26 +188,12 @@ export default function Navbar() {
             </div>
           )}
           {isLoggedIn && canManageUsers && (
-            <>
-              <Link
-                to="/volunteers"
-                className={`hover:underline ${isActive('/volunteers') ? 'font-semibold underline' : ''}`}
-              >
-                Volunteers
-              </Link>
-              <Link
-                to="/planner"
-                className={`hover:underline ${isActive('/planner') ? 'font-semibold underline' : ''}`}
-              >
-                Planner
-              </Link>
-              <Link
-                to="/admin"
-                className={`hover:underline ${isActive('/admin') ? 'font-semibold underline' : ''}`}
-              >
-                Admin
-              </Link>
-            </>
+            <Link
+              to="/admin"
+              className={`hover:underline ${isActive('/admin') ? 'font-semibold underline' : ''}`}
+            >
+              Admin
+            </Link>
           )}
           {isLoggedIn ? (
             <button
@@ -270,7 +255,7 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {isLoggedIn && isVolunteer && (
+          {isLoggedIn && (
             <>
               <div className="py-1 px-3 text-xs uppercase tracking-wide text-white text-opacity-50">
                 Volunteer
@@ -287,26 +272,12 @@ export default function Navbar() {
             </>
           )}
           {isLoggedIn && canManageUsers && (
-            <>
-              <Link
-                to="/volunteers"
-                className={`block py-2 px-3 rounded ${isActive('/volunteers') ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
-              >
-                Volunteers
-              </Link>
-              <Link
-                to="/planner"
-                className={`block py-2 px-3 rounded ${isActive('/planner') ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
-              >
-                Planner
-              </Link>
-              <Link
-                to="/admin"
-                className={`block py-2 px-3 rounded ${isActive('/admin') ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
-              >
-                Admin
-              </Link>
-            </>
+            <Link
+              to="/admin"
+              className={`block py-2 px-3 rounded ${isActive('/admin') ? 'bg-brand-dark font-semibold' : 'hover:bg-brand-dark'}`}
+            >
+              Admin
+            </Link>
           )}
           {isLoggedIn ? (
             <button

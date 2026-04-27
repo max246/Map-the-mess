@@ -14,6 +14,7 @@ import { usePwaUpdate } from './pwa/usePwaUpdate'
 import api from './api/client'
 
 const ReportLitter = lazy(() => import('./pages/ReportLitter'))
+const ReportCollection = lazy(() => import('./pages/ReportCollection'))
 const MapView = lazy(() => import('./pages/MapView'))
 const VolunteerDashboard = lazy(() => import('./pages/VolunteerDashboard'))
 const ReportDetail = lazy(() => import('./pages/ReportDetail'))
@@ -92,6 +93,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/report" element={<ReportLitter />} />
+                  <Route path="/report-collection" element={<ReportCollection />} />
                   <Route path="/map" element={<MapView />} />
                   <Route path="/report/:id" element={<ReportDetail />} />
                   <Route path="/volunteers" element={<VolunteerDashboard />} />

@@ -12,6 +12,7 @@ from app.database import Base
 class ReportType(str, enum.Enum):
     litter = "litter"
     gas_canister = "gas_canister"
+    fixmystreet = "fixmystreet"
 
 
 class ReportStatus(str, enum.Enum):
