@@ -63,6 +63,12 @@ const mockUseMapEvents = jest.fn((handlers: Record<string, (...args: unknown[]) 
   return null
 })
 
+const mockMapContainer = document.createElement('div')
+const mockMouseEventToLatLng = jest.fn((e: { clientX: number; clientY: number }) => ({
+  lat: e.clientY,
+  lng: e.clientX,
+}))
+
 jest.mock('../../api/endpoints/reports/reports', () => ({
   getReports: () => ({
     listReportsApiReportsGet: (...args: unknown[]) => mockListReports(...args),
@@ -130,6 +136,8 @@ jest.mock('react-leaflet', () => {
       removeLayer: jest.fn(),
       on: mockMapOn,
       off: mockMapOff,
+      getContainer: () => mockMapContainer,
+      mouseEventToLatLng: mockMouseEventToLatLng,
     }),
     useMapEvents: (handlers: Record<string, (...args: unknown[]) => void>) =>
       mockUseMapEvents(handlers),
@@ -164,6 +172,7 @@ jest.mock('leaflet', () => ({
   divIcon: () => ({}),
   marker: () => ({ addTo: jest.fn() }),
   heatLayer: (...args: unknown[]) => mockHeatLayerFn(...args),
+  DomEvent: { preventDefault: jest.fn() },
 }))
 
 jest.mock('leaflet.heat', () => ({}))
@@ -482,6 +491,67 @@ describe('MapView', () => {
       } finally {
         jest.useRealTimers()
       }
+    })
+
+    it('drops a pending bin via touchstart after a 500ms hold', () => {
+      mockAuthState.isLoggedIn = true
+      jest.useFakeTimers()
+      try {
+        renderMapView()
+        const touch = { clientX: 120, clientY: 240 } as unknown as Touch
+        const event = new Event('touchstart') as unknown as TouchEvent
+        Object.defineProperties(event, {
+          touches: { value: [touch] },
+          target: { value: null },
+        })
+        act(() => {
+          mockMapContainer.dispatchEvent(event)
+          jest.advanceTimersByTime(500)
+        })
+        expect(screen.getByText('🗑️ Add a bin here?')).toBeInTheDocument()
+        // mock returns lat=clientY, lng=clientX
+        expect(mockMouseEventToLatLng).toHaveBeenCalled()
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    it('cancels touch long-press when finger moves beyond tolerance', () => {
+      mockAuthState.isLoggedIn = true
+      jest.useFakeTimers()
+      try {
+        renderMapView()
+        const start = new Event('touchstart') as unknown as TouchEvent
+        Object.defineProperties(start, {
+          touches: { value: [{ clientX: 100, clientY: 100 }] },
+          target: { value: null },
+        })
+        const move = new Event('touchmove') as unknown as TouchEvent
+        Object.defineProperties(move, {
+          touches: { value: [{ clientX: 200, clientY: 200 }] },
+        })
+        act(() => {
+          mockMapContainer.dispatchEvent(start)
+          mockMapContainer.dispatchEvent(move)
+          jest.advanceTimersByTime(500)
+        })
+        expect(screen.queryByText('🗑️ Add a bin here?')).not.toBeInTheDocument()
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    it('drops a pending bin immediately on contextmenu (right-click / mobile Safari tap-hold)', () => {
+      mockAuthState.isLoggedIn = true
+      renderMapView()
+      const preventDefault = jest.fn()
+      act(() => {
+        mockMapHandlers.contextmenu?.({
+          latlng: { lat: 12.34, lng: 56.78 },
+          originalEvent: { target: null, preventDefault },
+        } as unknown)
+      })
+      expect(screen.getByText('🗑️ Add a bin here?')).toBeInTheDocument()
     })
 
     it('moves the pending pin when the map is tapped elsewhere', () => {
