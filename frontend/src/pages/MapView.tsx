@@ -93,46 +93,122 @@ function ZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
 }
 
 const LONG_PRESS_MS = 500
+const TOUCH_MOVE_TOLERANCE_PX = 15
 
 function LongPressHandler({ onLongPress }: { onLongPress: (latlng: L.LatLng) => void }) {
   const map = useMap()
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
-    const clear = () => {
+    let firedForGesture = false
+    let touchStart: { x: number; y: number } | null = null
+
+    const cancelTimer = () => {
       if (timer) {
         clearTimeout(timer)
         timer = null
       }
     }
-    const onDown = (e: L.LeafletMouseEvent) => {
-      clear()
+
+    const fire = (latlng: L.LatLng) => {
+      if (firedForGesture) return
+      firedForGesture = true
+      onLongPress(latlng)
+    }
+
+    const startGesture = () => {
+      cancelTimer()
+      firedForGesture = false
+    }
+
+    const isInteractiveTarget = (target: Element | null) =>
+      !!target &&
+      !!(
+        target.closest('.leaflet-marker-icon') ||
+        target.closest('.leaflet-popup') ||
+        target.closest('.leaflet-control')
+      )
+
+    const onMouseDown = (e: L.LeafletMouseEvent) => {
+      startGesture()
       const target = e.originalEvent?.target as Element | null
-      if (
-        target &&
-        (target.closest('.leaflet-marker-icon') ||
-          target.closest('.leaflet-popup') ||
-          target.closest('.leaflet-control'))
-      ) {
-        return
-      }
+      if (isInteractiveTarget(target)) return
       const { latlng } = e
       timer = setTimeout(() => {
         timer = null
-        onLongPress(latlng)
+        fire(latlng)
       }, LONG_PRESS_MS)
     }
-    map.on('mousedown', onDown)
-    map.on('mouseup', clear)
-    map.on('dragstart', clear)
-    map.on('movestart', clear)
-    map.on('zoomstart', clear)
+
+    // Right-click on desktop, and Leaflet's TapHold on mobile Safari, both
+    // emit `contextmenu`. Fire immediately and suppress the native menu.
+    const onContextMenu = (e: L.LeafletMouseEvent) => {
+      cancelTimer()
+      const target = e.originalEvent?.target as Element | null
+      if (isInteractiveTarget(target)) return
+      fire(e.latlng)
+      L.DomEvent.preventDefault(e.originalEvent)
+    }
+
+    map.on('mousedown', onMouseDown)
+    map.on('mouseup', cancelTimer)
+    map.on('dragstart', cancelTimer)
+    map.on('movestart', cancelTimer)
+    map.on('zoomstart', cancelTimer)
+    map.on('contextmenu', onContextMenu)
+
+    // Touch path: on most touch browsers Leaflet's synthetic `mousedown`
+    // doesn't arrive until touchend, so we run our own timer off touchstart.
+    const container = map.getContainer()
+
+    const onTouchStart = (ev: TouchEvent) => {
+      startGesture()
+      if (ev.touches.length !== 1) return
+      const target = ev.target as Element | null
+      if (isInteractiveTarget(target)) return
+      const touch = ev.touches[0]
+      touchStart = { x: touch.clientX, y: touch.clientY }
+      const latlng = map.mouseEventToLatLng({
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+      } as unknown as MouseEvent)
+      timer = setTimeout(() => {
+        timer = null
+        fire(latlng)
+      }, LONG_PRESS_MS)
+    }
+
+    const onTouchMove = (ev: TouchEvent) => {
+      if (!timer || !touchStart || ev.touches.length === 0) return
+      const touch = ev.touches[0]
+      const dx = touch.clientX - touchStart.x
+      const dy = touch.clientY - touchStart.y
+      if (dx * dx + dy * dy > TOUCH_MOVE_TOLERANCE_PX * TOUCH_MOVE_TOLERANCE_PX) {
+        cancelTimer()
+      }
+    }
+
+    const onTouchEnd = () => {
+      cancelTimer()
+      touchStart = null
+    }
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true })
+    container.addEventListener('touchmove', onTouchMove, { passive: true })
+    container.addEventListener('touchend', onTouchEnd)
+    container.addEventListener('touchcancel', onTouchEnd)
+
     return () => {
-      clear()
-      map.off('mousedown', onDown)
-      map.off('mouseup', clear)
-      map.off('dragstart', clear)
-      map.off('movestart', clear)
-      map.off('zoomstart', clear)
+      cancelTimer()
+      map.off('mousedown', onMouseDown)
+      map.off('mouseup', cancelTimer)
+      map.off('dragstart', cancelTimer)
+      map.off('movestart', cancelTimer)
+      map.off('zoomstart', cancelTimer)
+      map.off('contextmenu', onContextMenu)
+      container.removeEventListener('touchstart', onTouchStart)
+      container.removeEventListener('touchmove', onTouchMove)
+      container.removeEventListener('touchend', onTouchEnd)
+      container.removeEventListener('touchcancel', onTouchEnd)
     }
   }, [map, onLongPress])
   return null
