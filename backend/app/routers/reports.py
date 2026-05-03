@@ -298,7 +298,6 @@ def create_report(
     report_type: str = Form(...),
     description: str = Form(""),
     what3words: Optional[str] = Form(None),
-    email: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User | None = Depends(_get_optional_user),
@@ -308,14 +307,6 @@ def create_report(
 
     if not (UK_LAT_MIN <= latitude <= UK_LAT_MAX and UK_LON_MIN <= longitude <= UK_LON_MAX):
         raise HTTPException(status_code=400, detail="Coordinates must be within the UK")
-
-    fms_email: str | None = None
-    fms_name = ""
-    if validated_report_type == ReportType.fixmystreet:
-        fms_email = email or (str(current_user.email) if current_user else None)
-        if not fms_email:
-            raise HTTPException(status_code=400, detail="email is required for fixmystreet reports")
-        fms_name = _abbreviate_name(str(current_user.full_name)) if current_user else ""
 
     address = _reverse_geocode(latitude, longitude)
     report = Report(
@@ -340,10 +331,8 @@ def create_report(
         )
     )
 
-    image_filename: str | None = None
     if image:
         filename, thumb_filename = _save_upload(image)
-        image_filename = filename
         db.add(
             ReportImage(
                 report_id=report.id,
@@ -355,60 +344,55 @@ def create_report(
 
     db.commit()
     db.refresh(report)
-
-    if validated_report_type == ReportType.fixmystreet and fms_email is not None:
-        try:
-            submit_to_fixmystreet(
-                email=fms_email,
-                name=fms_name,
-                lat=latitude,
-                lon=longitude,
-                title=description,
-                detail=description,
-                category="Flytipping",
-                image_filename=image_filename,
-            )
-        except FixMyStreetError as e:
-            logger.error("FixMyStreet submission failed for report %s: %s", report.id, e)
-            raise HTTPException(status_code=502, detail=f"FixMyStreet submission failed: {e}")
-
     return report
 
 
-@router.post("/{report_id}/fixmystreet", status_code=201)
-def report_to_fixmystreet(
-    report_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+@router.post("/fixmystreet", status_code=201)
+def submit_fixmystreet(
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    description: str = Form(""),
+    email: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    current_user: User | None = Depends(_get_optional_user),
 ):
-    """Forward an existing report to FixMyStreet as a Flytipping report."""
-    report = db.query(Report).get(report_id)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+    """Forward a report directly to FixMyStreet without persisting it locally."""
+    if not (UK_LAT_MIN <= latitude <= UK_LAT_MAX and UK_LON_MIN <= longitude <= UK_LON_MAX):
+        raise HTTPException(status_code=400, detail="Coordinates must be within the UK")
+
+    fms_email = email or (str(current_user.email) if current_user else None)
+    if not fms_email:
+        raise HTTPException(status_code=400, detail="email is required for fixmystreet reports")
+    fms_name = _abbreviate_name(str(current_user.full_name)) if current_user else ""
 
     image_filename: str | None = None
-    if report.images:
-        image_filename = report.images[0].url
+    thumb_filename: str | None = None
+    if image:
+        image_filename, thumb_filename = _save_upload(image)
 
     try:
-        result = submit_to_fixmystreet(
-            email=str(current_user.email),
-            name=_abbreviate_name(str(current_user.full_name)),
-            lat=report.latitude,
-            lon=report.longitude,
-            title=report.description,
-            detail=report.description,
+        return submit_to_fixmystreet(
+            email=fms_email,
+            name=fms_name,
+            lat=latitude,
+            lon=longitude,
+            title=description,
+            detail=description,
             category="Flytipping",
             image_filename=image_filename,
         )
     except FixMyStreetError as e:
-        logger.error("FixMyStreet submission failed for report %s: %s", report.id, e)
+        logger.error("FixMyStreet submission failed: %s", e)
         raise HTTPException(status_code=502, detail=f"FixMyStreet submission failed: {e}")
-
-    report.report_type = ReportType.fixmystreet
-    db.commit()
-
-    return result
+    finally:
+        for fname in (image_filename, thumb_filename):
+            if fname:
+                path = os.path.join(IMAGES_DIR_REPORTS, fname)
+                if os.path.isfile(path):
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        logger.warning("Failed to remove temp FMS image %s", path)
 
 
 @router.post("/{report_id}/images", response_model=ReportImageRead, status_code=201)
