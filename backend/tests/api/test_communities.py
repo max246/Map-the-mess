@@ -1,6 +1,6 @@
 """Tests for community endpoints (/api/communities)."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from unittest.mock import patch
 
@@ -1023,7 +1023,7 @@ class TestVisibility:
             CommunityEvent(
                 community_id=c.id,
                 title="Public event",
-                date=datetime(2026, 5, 1, 10, 0, tzinfo=timezone.utc),
+                date=datetime.now(timezone.utc) + timedelta(days=7),
                 meeting_latitude=UK_LAT,
                 meeting_longitude=UK_LON,
             )
