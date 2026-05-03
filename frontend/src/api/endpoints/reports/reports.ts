@@ -9,6 +9,7 @@ import type {
   BodyAddImageApiReportsReportIdImagesPost,
   BodyCreateReportApiReportsPost,
   BodyMarkUnresolvedApiReportsReportIdUnresolvePatch,
+  BodySubmitFixmystreetApiReportsFixmystreetPost,
   ListReportsApiReportsGetParams,
   ReportCommentCreate,
   ReportCommentRead,
@@ -124,6 +125,31 @@ const deleteReportApiReportsReportIdDelete = (
       );
     }
   /**
+ * Forward a report directly to FixMyStreet without persisting it locally.
+ * @summary Submit Fixmystreet
+ */
+const submitFixmystreetApiReportsFixmystreetPost = (
+    bodySubmitFixmystreetApiReportsFixmystreetPost: BodySubmitFixmystreetApiReportsFixmystreetPost,
+ ) => {const formData = new FormData();
+formData.append(`latitude`, bodySubmitFixmystreetApiReportsFixmystreetPost.latitude.toString())
+formData.append(`longitude`, bodySubmitFixmystreetApiReportsFixmystreetPost.longitude.toString())
+if(bodySubmitFixmystreetApiReportsFixmystreetPost.description !== undefined) {
+ formData.append(`description`, bodySubmitFixmystreetApiReportsFixmystreetPost.description);
+ }
+if(bodySubmitFixmystreetApiReportsFixmystreetPost.email !== undefined && bodySubmitFixmystreetApiReportsFixmystreetPost.email !== null) {
+ formData.append(`email`, bodySubmitFixmystreetApiReportsFixmystreetPost.email);
+ }
+if(bodySubmitFixmystreetApiReportsFixmystreetPost.image !== undefined && bodySubmitFixmystreetApiReportsFixmystreetPost.image !== null) {
+ formData.append(`image`, bodySubmitFixmystreetApiReportsFixmystreetPost.image);
+ }
+
+      return customInstance<unknown>(
+      {url: `/api/reports/fixmystreet`, method: 'POST',
+       data: formData
+    },
+      );
+    }
+  /**
  * Upload an image and attach it to an existing report.
  * @summary Add Image
  */
@@ -234,7 +260,7 @@ const deleteCommentApiReportsReportIdCommentsCommentIdDelete = (
     },
       );
     }
-  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,updateReportApiReportsReportIdPatch,deleteReportApiReportsReportIdDelete,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnstaleApiReportsReportIdUnstalePost,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete,listCommentsApiReportsReportIdCommentsGet,addCommentApiReportsReportIdCommentsPost,deleteCommentApiReportsReportIdCommentsCommentIdDelete}};
+  return {serveImageApiReportsImagesFilenameGet,exportReportsApiReportsExportGet,listReportsApiReportsGet,createReportApiReportsPost,getReportApiReportsReportIdGet,updateReportApiReportsReportIdPatch,deleteReportApiReportsReportIdDelete,submitFixmystreetApiReportsFixmystreetPost,addImageApiReportsReportIdImagesPost,markCleanedApiReportsReportIdCleanPatch,markUnstaleApiReportsReportIdUnstalePost,markUnresolvedApiReportsReportIdUnresolvePatch,deleteImageApiReportsImagesImageIdDelete,listCommentsApiReportsReportIdCommentsGet,addCommentApiReportsReportIdCommentsPost,deleteCommentApiReportsReportIdCommentsCommentIdDelete}};
 export type ServeImageApiReportsImagesFilenameGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['serveImageApiReportsImagesFilenameGet']>>>
 export type ExportReportsApiReportsExportGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['exportReportsApiReportsExportGet']>>>
 export type ListReportsApiReportsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['listReportsApiReportsGet']>>>
@@ -242,6 +268,7 @@ export type CreateReportApiReportsPostResult = NonNullable<Awaited<ReturnType<Re
 export type GetReportApiReportsReportIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['getReportApiReportsReportIdGet']>>>
 export type UpdateReportApiReportsReportIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['updateReportApiReportsReportIdPatch']>>>
 export type DeleteReportApiReportsReportIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['deleteReportApiReportsReportIdDelete']>>>
+export type SubmitFixmystreetApiReportsFixmystreetPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['submitFixmystreetApiReportsFixmystreetPost']>>>
 export type AddImageApiReportsReportIdImagesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['addImageApiReportsReportIdImagesPost']>>>
 export type MarkCleanedApiReportsReportIdCleanPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markCleanedApiReportsReportIdCleanPatch']>>>
 export type MarkUnstaleApiReportsReportIdUnstalePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['markUnstaleApiReportsReportIdUnstalePost']>>>

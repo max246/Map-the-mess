@@ -43,6 +43,10 @@ const VolunteerProfile = lazy(() => import('./pages/VolunteerProfile'))
 const PlannerList = lazy(() => import('./pages/PlannerList'))
 const CreatePlan = lazy(() => import('./pages/CreatePlan'))
 const PlanDetail = lazy(() => import('./pages/PlanDetail'))
+const RafflesList = lazy(() => import('./pages/RafflesList'))
+const CreateRaffle = lazy(() => import('./pages/CreateRaffle'))
+const RaffleDetail = lazy(() => import('./pages/RaffleDetail'))
+const RaffleWinners = lazy(() => import('./pages/RaffleWinners'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 const RouteFallback = () => (
@@ -122,6 +126,10 @@ function App() {
                   <Route path="/planner" element={<PlannerList />} />
                   <Route path="/planner/new" element={<CreatePlan />} />
                   <Route path="/planner/:id" element={<PlanDetail />} />
+                  <Route path="/raffles" element={<RafflesList />} />
+                  <Route path="/raffles/new" element={<CreateRaffle />} />
+                  <Route path="/raffles/:id" element={<RaffleDetail />} />
+                  <Route path="/raffles/:id/winners" element={<RaffleWinners />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

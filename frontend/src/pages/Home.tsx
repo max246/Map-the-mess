@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import PageMeta from '../components/PageMeta'
+import CurrentRaffleBanner from '../components/CurrentRaffleBanner'
 import { getReports } from '../api/endpoints/reports/reports'
 import { getVolunteers } from '../api/endpoints/volunteers/volunteers'
 import type { ReportRead, LeaderboardEntry } from '../api/model'
@@ -62,6 +63,8 @@ export default function Home() {
           🗺️ View Map
         </Link>
       </div>
+
+      <CurrentRaffleBanner />
 
       {/* Recent reports */}
       {reports.length > 0 && (

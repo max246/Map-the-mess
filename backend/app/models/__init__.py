@@ -8,3 +8,4 @@ from app.models.planner import Plan, PlanReport, PlanBin  # noqa: F401
 from app.models.user_badge import UserBadge  # noqa: F401
 from app.models.bin import Bin  # noqa: F401
 from app.models.oauth_account import OAuthAccount  # noqa: F401
+from app.models.raffle import Raffle, RafflePrize, RafflePrizeImage  # noqa: F401

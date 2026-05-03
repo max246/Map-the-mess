@@ -622,6 +622,64 @@ def _check_oauth_accounts(conn):
     assert {"provider", "provider_account_id"} in unique_col_sets
 
 
+@_check("a9b8c7d6e5f4")
+def _check_raffles(conn):
+    tables = _table_names(conn)
+    assert {"raffles", "raffle_prizes", "raffle_prize_images"} <= tables
+
+    raffle_cols = _column_names(conn, "raffles")
+    assert {
+        "id",
+        "title",
+        "description",
+        "end_date",
+        "created_by",
+        "drawn_at",
+        "created_at",
+        "updated_at",
+    } <= raffle_cols
+
+    prize_cols = _column_names(conn, "raffle_prizes")
+    assert {
+        "id",
+        "raffle_id",
+        "title",
+        "description",
+        "position",
+        "winner_user_id",
+        "created_at",
+    } <= prize_cols
+
+    image_cols = _column_names(conn, "raffle_prize_images")
+    assert {"id", "prize_id", "url", "created_at"} <= image_cols
+
+    raffle_indexes = {idx["name"] for idx in inspect(conn).get_indexes("raffles")}
+    assert "ix_raffles_id" in raffle_indexes
+    assert "ix_raffles_created_by" in raffle_indexes
+
+    prize_indexes = {idx["name"] for idx in inspect(conn).get_indexes("raffle_prizes")}
+    assert "ix_raffle_prizes_id" in prize_indexes
+    assert "ix_raffle_prizes_raffle_id" in prize_indexes
+    assert "ix_raffle_prizes_winner_user_id" in prize_indexes
+
+    image_indexes = {idx["name"] for idx in inspect(conn).get_indexes("raffle_prize_images")}
+    assert "ix_raffle_prize_images_id" in image_indexes
+    assert "ix_raffle_prize_images_prize_id" in image_indexes
+
+    raffle_fks = {fk["constrained_columns"][0] for fk in inspect(conn).get_foreign_keys("raffles")}
+    assert "created_by" in raffle_fks
+
+    prize_fks = {
+        fk["constrained_columns"][0] for fk in inspect(conn).get_foreign_keys("raffle_prizes")
+    }
+    assert {"raffle_id", "winner_user_id"} <= prize_fks
+
+    image_fks = {
+        fk["constrained_columns"][0] for fk in inspect(conn).get_foreign_keys("raffle_prize_images")
+    }
+    assert "prize_id" in image_fks
+
+
 # ---------------------------------------------------------------------------
 # Ordered chain (base → head)
 # ---------------------------------------------------------------------------
@@ -655,6 +713,7 @@ MIGRATION_CHAIN = [
     "e6f7a8b9c0d1",
     "e7f8a9b0c1d2",
     "f8a9b0c1d2e3",
+    "a9b8c7d6e5f4",
 ]
 
 # ---------------------------------------------------------------------------
