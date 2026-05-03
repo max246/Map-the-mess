@@ -147,6 +147,10 @@ function renderDashboard() {
   )
 }
 
+async function openSecurityTab(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /^security$/i }))
+}
+
 describe('VolunteerDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -395,8 +399,10 @@ describe('VolunteerDashboard', () => {
   })
 
   it('shows change password link', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
+    await openSecurityTab(user)
     expect(screen.getByRole('button', { name: /change password/i })).toBeInTheDocument()
   })
 
@@ -405,6 +411,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /change password/i }))
 
     expect(screen.getByPlaceholderText('Current password')).toBeInTheDocument()
@@ -417,6 +424,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /change password/i }))
     await user.type(screen.getByPlaceholderText('Current password'), 'oldpass')
     await user.type(screen.getByPlaceholderText(/new password \(min/i), '12345')
@@ -432,6 +440,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /change password/i }))
     await user.type(screen.getByPlaceholderText('Current password'), 'oldpass')
     await user.type(screen.getByPlaceholderText(/new password \(min/i), 'newpass123')
@@ -447,6 +456,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /change password/i }))
     await user.type(screen.getByPlaceholderText('Current password'), 'oldpass')
     await user.type(screen.getByPlaceholderText(/new password \(min/i), 'newpass123')
@@ -466,6 +476,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /change password/i }))
     await user.type(screen.getByPlaceholderText('Current password'), 'wrong')
     await user.type(screen.getByPlaceholderText(/new password \(min/i), 'newpass123')
@@ -615,8 +626,10 @@ describe('VolunteerDashboard', () => {
   /* ── Delete account ──────────────────────────────── */
 
   it('shows delete account button', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
     renderDashboard()
     await screen.findByText('Test User')
+    await openSecurityTab(user)
     expect(screen.getByRole('button', { name: /delete my account/i })).toBeInTheDocument()
   })
 
@@ -625,6 +638,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /delete my account/i }))
 
     expect(screen.getByText('Delete your account?')).toBeInTheDocument()
@@ -638,6 +652,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /delete my account/i }))
     await user.click(screen.getByRole('button', { name: /yes, delete my account/i }))
 
@@ -657,6 +672,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /delete my account/i }))
     await user.click(screen.getByRole('button', { name: /yes, delete my account/i }))
 
@@ -674,6 +690,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /delete my account/i }))
     await user.click(screen.getByRole('button', { name: /yes, delete my account/i }))
 
@@ -687,6 +704,7 @@ describe('VolunteerDashboard', () => {
     renderDashboard()
     await screen.findByText('Test User')
 
+    await openSecurityTab(user)
     await user.click(screen.getByRole('button', { name: /delete my account/i }))
     expect(screen.getByText('Delete your account?')).toBeInTheDocument()
 

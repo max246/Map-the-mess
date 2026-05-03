@@ -35,6 +35,12 @@ const WOMBLE_AVATARS = [
 ]
 
 type Tab = 'favourites' | 'unresolved' | 'resolved'
+type ProfileSubTab = 'connections' | 'security'
+
+const PROFILE_SUB_TABS: { key: ProfileSubTab; label: string }[] = [
+  { key: 'connections', label: 'Connections' },
+  { key: 'security', label: 'Security' },
+]
 
 function ReportCard({
   report,
@@ -152,6 +158,9 @@ function ProfileSection() {
   const [linkedProviders, setLinkedProviders] = useState<string[]>([])
   const [hasPassword, setHasPassword] = useState<boolean>(true)
   const [providerMsg, setProviderMsg] = useState('')
+
+  // Active profile sub-tab
+  const [profileSubTab, setProfileSubTab] = useState<ProfileSubTab>('connections')
 
   // Load profile from backend
   useEffect(() => {
@@ -448,74 +457,29 @@ function ProfileSection() {
               </p>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Password */}
-          <div className="mt-3">
-            {editingPassword ? (
-              <div className="space-y-2 max-w-sm">
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
-                  placeholder="Current password"
-                />
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
-                  placeholder="New password (min 6 characters)"
-                />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
-                  placeholder="Confirm new password"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleChangePassword}
-                    disabled={pwLoading || !currentPassword || !newPassword || !confirmPassword}
-                    className="px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
-                  >
-                    {pwLoading ? 'Changing...' : 'Change Password'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingPassword(false)
-                      setPwMsg('')
-                      setCurrentPassword('')
-                      setNewPassword('')
-                      setConfirmPassword('')
-                    }}
-                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setEditingPassword(true)}
-                className="text-xs text-brand hover:underline"
-              >
-                Change password
-              </button>
-            )}
-            {pwMsg && (
-              <p
-                className={`text-xs mt-1 ${pwMsg.includes('Failed') || pwMsg.includes('must') || pwMsg.includes('match') ? 'text-red-500' : 'text-green-600'}`}
-              >
-                {pwMsg}
-              </p>
-            )}
-          </div>
+      {/* Profile sub-tabs */}
+      <div className="mt-6 pt-5 border-t border-gray-100">
+        <div className="flex border-b mb-4">
+          {PROFILE_SUB_TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setProfileSubTab(t.key)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition -mb-px ${
+                profileSubTab === t.key
+                  ? 'border-brand text-brand'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-          {/* Connected accounts */}
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Connected accounts</h3>
+        {profileSubTab === 'connections' && (
+          <div>
             <div className="flex items-center justify-between max-w-sm">
               <span className="text-sm text-gray-600">
                 Google{' '}
@@ -542,7 +506,7 @@ function ProfileSection() {
             </div>
             {providerMsg && (
               <p
-                className={`text-xs mt-1 ${
+                className={`text-xs mt-2 ${
                   providerMsg.toLowerCase().includes('failed') ||
                   providerMsg.toLowerCase().includes('locked') ||
                   providerMsg.toLowerCase().includes('already')
@@ -554,53 +518,122 @@ function ProfileSection() {
               </p>
             )}
           </div>
+        )}
 
-          <div className="mt-3">
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 transition"
-            >
-              Delete my account
-            </button>
-          </div>
-
-          {/* Delete confirmation modal */}
-          {showDeleteConfirm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete your account?</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  This action is permanent and cannot be undone. All your data will be deleted.
-                </p>
-                {deleteError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                    {deleteError}
+        {profileSubTab === 'security' && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Password</h3>
+              {editingPassword ? (
+                <div className="space-y-2 max-w-sm">
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                    placeholder="Current password"
+                  />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                    placeholder="New password (min 6 characters)"
+                  />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                    placeholder="Confirm new password"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={pwLoading || !currentPassword || !newPassword || !confirmPassword}
+                      className="px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+                    >
+                      {pwLoading ? 'Changing...' : 'Change Password'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingPassword(false)
+                        setPwMsg('')
+                        setCurrentPassword('')
+                        setNewPassword('')
+                        setConfirmPassword('')
+                      }}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                )}
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => {
-                      setShowDeleteConfirm(false)
-                      setDeleteError('')
-                    }}
-                    disabled={deleteLoading}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteUser}
-                    disabled={deleteLoading}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50"
-                  >
-                    {deleteLoading ? 'Deleting...' : 'Yes, delete my account'}
-                  </button>
                 </div>
-              </div>
+              ) : (
+                <button
+                  onClick={() => setEditingPassword(true)}
+                  className="text-xs text-brand hover:underline"
+                >
+                  Change password
+                </button>
+              )}
+              {pwMsg && (
+                <p
+                  className={`text-xs mt-1 ${pwMsg.includes('Failed') || pwMsg.includes('must') || pwMsg.includes('match') ? 'text-red-500' : 'text-green-600'}`}
+                >
+                  {pwMsg}
+                </p>
+              )}
             </div>
-          )}
-        </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Danger zone</h3>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 transition"
+              >
+                Delete my account
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete your account?</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              This action is permanent and cannot be undone. All your data will be deleted.
+            </p>
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {deleteError}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false)
+                  setDeleteError('')
+                }}
+                disabled={deleteLoading}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deleteLoading ? 'Deleting...' : 'Yes, delete my account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Badges */}
       <div id="badges" className="mt-6 pt-5 border-t border-gray-100 scroll-mt-20">
