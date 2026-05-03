@@ -1,13 +1,19 @@
 import { useMap } from 'react-leaflet'
 import { useState, useEffect } from 'react'
 import L from 'leaflet'
+import { saveLocatedPosition } from '../utils/savedLocation'
 
 interface LocateButtonProps {
   onLocate?: (pos: { lat: number; lng: number }) => void
   showMarker?: boolean
+  persist?: boolean
 }
 
-export default function LocateButton({ onLocate, showMarker = true }: LocateButtonProps) {
+export default function LocateButton({
+  onLocate,
+  showMarker = true,
+  persist = false,
+}: LocateButtonProps) {
   const map = useMap()
   const [locating, setLocating] = useState(false)
   const locationLayerRef = useState<L.LayerGroup>(() => L.layerGroup())[0]
@@ -47,6 +53,9 @@ export default function LocateButton({ onLocate, showMarker = true }: LocateButt
           )
         }
         map.flyTo([latitude, longitude], 18, { duration: 0.8 })
+        if (persist) {
+          saveLocatedPosition({ lat: latitude, lng: longitude })
+        }
         onLocate?.({ lat: latitude, lng: longitude })
         setLocating(false)
       },
