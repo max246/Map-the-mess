@@ -137,7 +137,7 @@ class TestUpdateRaffle:
 
     def test_cannot_update_after_draw(self, client, db, admin):
         r = _create_raffle(db)
-        r.drawn_at = datetime.utcnow()
+        r.drawn_at = datetime.utcnow()  # type: ignore[assignment]
         db.commit()
         res = client.patch(
             f"/api/raffles/{r.id}",
@@ -224,7 +224,7 @@ class TestPrizes:
 
     def test_cannot_add_prize_after_draw(self, client, db, admin):
         r = _create_raffle(db)
-        r.drawn_at = datetime.utcnow()
+        r.drawn_at = datetime.utcnow()  # type: ignore[assignment]
         db.commit()
         res = client.post(
             f"/api/raffles/{r.id}/prizes",
