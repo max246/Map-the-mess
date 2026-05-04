@@ -13,9 +13,7 @@ const {
 } = getRaffles()
 
 function extractDetail(err: unknown, fallback: string): string {
-  return (
-    (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || fallback
-  )
+  return (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || fallback
 }
 
 export default function RaffleWinners() {
@@ -142,8 +140,8 @@ export default function RaffleWinners() {
       )}
 
       <p className="text-xs text-gray-400 mt-4">
-        Redrawing replaces the winner. Anyone who has already held a prize in this raffle is excluded
-        from the new pick.
+        Redrawing replaces the winner. Anyone who has already held a prize in this raffle is
+        excluded from the new pick.
       </p>
     </div>
   )

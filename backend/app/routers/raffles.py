@@ -330,7 +330,7 @@ def draw_raffle(
     for prize, winner in zip(shuffled_prizes, winners):
         prize.winner_user_id = winner.id
 
-    raffle.drawn_at = datetime.utcnow()
+    raffle.drawn_at = datetime.utcnow()  # type: ignore[assignment]
     db.commit()
     db.refresh(raffle)
     return raffle

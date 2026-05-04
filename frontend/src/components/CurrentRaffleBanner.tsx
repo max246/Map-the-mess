@@ -40,9 +40,7 @@ export default function CurrentRaffleBanner() {
   const prizes = raffle.prizes ?? []
   const firstImage = prizes
     .flatMap((p) => p.images ?? [])
-    .sort(
-      (a, b) => parseUtcDate(a.created_at).getTime() - parseUtcDate(b.created_at).getTime()
-    )[0]
+    .sort((a, b) => parseUtcDate(a.created_at).getTime() - parseUtcDate(b.created_at).getTime())[0]
 
   return (
     <Link

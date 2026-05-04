@@ -19,9 +19,7 @@ const {
 } = getRaffles()
 
 function extractDetail(err: unknown, fallback: string): string {
-  return (
-    (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || fallback
-  )
+  return (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || fallback
 }
 
 export default function RaffleDetail() {
@@ -219,11 +217,7 @@ function PrizeCard({
     setBusy(true)
     setErr('')
     try {
-      await uploadPrizeImageApiRafflesRaffleIdPrizesPrizeIdImagesPost(
-        raffleId,
-        prize.id,
-        { file }
-      )
+      await uploadPrizeImageApiRafflesRaffleIdPrizesPrizeIdImagesPost(raffleId, prize.id, { file })
       await onChanged()
     } catch (e) {
       setErr(extractDetail(e, 'Failed to upload image'))
