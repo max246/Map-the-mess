@@ -20,7 +20,9 @@ function DiscountBanner() {
   return (
     <div className="mb-6 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
       <div className="flex-1 text-sm text-gray-700">
-        <p className="font-semibold text-gray-900 mb-0.5">Volunteer perk: 10% off at HH Environmental</p>
+        <p className="font-semibold text-gray-900 mb-0.5">
+          Volunteer perk: 10% off at HH Environmental
+        </p>
         <p className="text-gray-600">
           Use code at checkout on{' '}
           <a
@@ -46,11 +48,23 @@ function DiscountBanner() {
           className="p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
         >
           {copied ? (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
