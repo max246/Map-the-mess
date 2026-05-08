@@ -1,4 +1,82 @@
+import { useState } from 'react'
 import PageMeta from '../components/PageMeta'
+import { useAuth } from '../context/AuthContext'
+
+const DISCOUNT_CODE = '10OFFCHECKOUT'
+
+function DiscountBanner() {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(DISCOUNT_CODE)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* clipboard blocked — ignore */
+    }
+  }
+
+  return (
+    <div className="mb-6 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      <div className="flex-1 text-sm text-gray-700">
+        <p className="font-semibold text-gray-900 mb-0.5">
+          Volunteer perk: 10% off at HH Environmental
+        </p>
+        <p className="text-gray-600">
+          Use code at checkout on{' '}
+          <a
+            href="https://www.hhenvironmental.co.uk/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-700 font-medium underline hover:no-underline"
+          >
+            hhenvironmental.co.uk
+          </a>
+          .
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <code className="px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-sm font-mono font-semibold text-emerald-700 tracking-wider">
+          {DISCOUNT_CODE}
+        </code>
+        <button
+          type="button"
+          onClick={handleCopy}
+          aria-label={copied ? 'Copied' : 'Copy discount code'}
+          title={copied ? 'Copied!' : 'Copy code'}
+          className="p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
+        >
+          {copied ? (
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 const TOOLS = [
   {
@@ -57,12 +135,15 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function Tools() {
+  const { isLoggedIn } = useAuth()
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
       <PageMeta
         title="Best Litter Picking Tools"
         description="Tried and tested by our volunteers — here are the tools we recommend for keeping your community clean."
       />
+      {isLoggedIn && <DiscountBanner />}
       <div className="text-center mb-8 md:mb-12">
         <h1 className="text-3xl md:text-4xl font-bold mb-3">Best Litter Picking Tools</h1>
         <p className="text-gray-500 max-w-2xl mx-auto">

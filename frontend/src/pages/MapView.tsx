@@ -14,6 +14,7 @@ import BinFormModal from '../components/BinFormModal'
 import { binIcon } from '../components/BinMarker'
 import { getBins } from '../api/endpoints/bins/bins'
 import type { ReportRead, BinRead } from '../api/model'
+import { getSavedLocatedPosition } from '../utils/savedLocation'
 
 const { listReportsApiReportsGet } = getReports()
 const { listFavouritesApiVolunteersFavouritesGet } = getVolunteers()
@@ -365,7 +366,12 @@ export default function MapView() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [layer, setLayer] = useState<'pins' | 'heatmap'>('pins')
   const [showBins, setShowBins] = useState(true)
-  const [mapZoom, setMapZoom] = useState(6)
+  const [initialView] = useState<{ center: [number, number]; zoom: number }>(() => {
+    const saved = getSavedLocatedPosition()
+    if (saved) return { center: [saved.lat, saved.lng], zoom: 18 }
+    return { center: UK_CENTER, zoom: 6 }
+  })
+  const [mapZoom, setMapZoom] = useState(initialView.zoom)
   const [binsRefreshKey, setBinsRefreshKey] = useState(0)
   const [editingBin, setEditingBin] = useState<BinRead | null>(null)
   const [pendingBin, setPendingBin] = useState<{ lat: number; lng: number } | null>(null)
@@ -576,7 +582,7 @@ export default function MapView() {
         </div>
       </div>
 
-      <MapContainer center={UK_CENTER} zoom={6} className="h-full w-full">
+      <MapContainer center={initialView.center} zoom={initialView.zoom} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -597,7 +603,7 @@ export default function MapView() {
             onDelete={handleBinDelete}
           />
         )}
-        <LocateButton />
+        <LocateButton persist />
         <ZoomTracker onZoom={setMapZoom} />
         {isLoggedIn && <LongPressHandler onLongPress={handleLongPress} />}
         {pendingBin && (

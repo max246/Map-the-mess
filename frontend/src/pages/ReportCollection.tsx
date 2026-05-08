@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import PageMeta from '../components/PageMeta'
 import LocationPicker from '../components/LocationPicker'
 import api from '../api/client'
@@ -14,7 +14,7 @@ export default function ReportCollection() {
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [submitting, setSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [submittedReportId, setSubmittedReportId] = useState<number | null>(null)
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -59,11 +59,10 @@ export default function ReportCollection() {
       const formData = new FormData()
       formData.append('latitude', location.lat.toString())
       formData.append('longitude', location.lng.toString())
-      formData.append('report_type', 'fixmystreet')
       formData.append('description', description)
       if (photo) formData.append('image', photo)
 
-      const res = await api.post('/api/reports/', formData, {
+      await api.post('/api/reports/fixmystreet', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000,
         onUploadProgress: (ev) => {
@@ -72,7 +71,7 @@ export default function ReportCollection() {
       })
 
       setUploadProgress(100)
-      setSubmittedReportId(res.data.id)
+      setSubmitted(true)
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status
       if (status === 400) {
@@ -89,9 +88,9 @@ export default function ReportCollection() {
     }
   }
 
-  if (submittedReportId) {
+  if (submitted) {
     const resetForm = () => {
-      setSubmittedReportId(null)
+      setSubmitted(false)
       setDescription('')
       setPhoto(null)
       setPhotoPreview(null)
@@ -106,14 +105,6 @@ export default function ReportCollection() {
           email to finalise the submission.
         </p>
         <div className="flex flex-col gap-3 items-center">
-          {submittedReportId > 0 && (
-            <Link
-              to={`/report/${submittedReportId}`}
-              className="bg-brand hover:bg-brand-dark text-white font-semibold py-3 px-6 rounded-lg transition inline-block"
-            >
-              View your report
-            </Link>
-          )}
           <button onClick={resetForm} className="text-brand underline text-sm">
             Submit another report
           </button>

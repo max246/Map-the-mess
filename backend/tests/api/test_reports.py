@@ -725,63 +725,63 @@ FMS_SUCCESS = {
 }
 
 
-class TestCreateFixMyStreetReport:
+class TestSubmitFixMyStreet:
     @patch("app.routers.reports.submit_to_fixmystreet", return_value=FMS_SUCCESS)
-    def test_create_fixmystreet_report(self, mock_fms, client, db):
+    def test_submit_anonymous_with_email(self, mock_fms, client, db):
         res = client.post(
-            "/api/reports/",
+            "/api/reports/fixmystreet",
             data={
                 "latitude": UK_LAT,
                 "longitude": UK_LON,
-                "report_type": "fixmystreet",
                 "description": "dumped rubbish",
                 "email": "reporter@example.com",
             },
         )
         assert res.status_code == 201
-        assert res.json()["report_type"] == "fixmystreet"
+        assert res.json() == FMS_SUCCESS
         mock_fms.assert_called_once()
         call_kwargs = mock_fms.call_args.kwargs
         assert call_kwargs["email"] == "reporter@example.com"
         assert call_kwargs["title"] == "dumped rubbish"
         assert call_kwargs["detail"] == "dumped rubbish"
         assert call_kwargs["category"] == "Flytipping"
+        # FMS submissions must never be persisted as reports.
+        assert db.query(Report).count() == 0
 
-    def test_create_fixmystreet_without_email(self, client, db):
+    def test_submit_without_email_or_auth_fails(self, client, db):
         res = client.post(
-            "/api/reports/",
+            "/api/reports/fixmystreet",
             data={
                 "latitude": UK_LAT,
                 "longitude": UK_LON,
-                "report_type": "fixmystreet",
                 "description": "dumped rubbish",
             },
         )
         assert res.status_code == 400
         assert "email" in res.json()["detail"].lower()
+        assert db.query(Report).count() == 0
 
     @patch("app.routers.reports.submit_to_fixmystreet", side_effect=FixMyStreetError("timeout"))
-    def test_create_fixmystreet_fms_failure(self, mock_fms, client, db):
+    def test_submit_fms_failure_returns_502(self, mock_fms, client, db):
         res = client.post(
-            "/api/reports/",
+            "/api/reports/fixmystreet",
             data={
                 "latitude": UK_LAT,
                 "longitude": UK_LON,
-                "report_type": "fixmystreet",
                 "description": "dumped rubbish",
                 "email": "reporter@example.com",
             },
         )
         assert res.status_code == 502
+        assert db.query(Report).count() == 0
 
     @patch("app.routers.reports.submit_to_fixmystreet", return_value=FMS_SUCCESS)
-    def test_create_fixmystreet_uses_logged_in_user(self, mock_fms, client, db, volunteer):
+    def test_submit_uses_logged_in_user(self, mock_fms, client, db, volunteer):
         res = client.post(
-            "/api/reports/",
+            "/api/reports/fixmystreet",
             data={
                 "latitude": UK_LAT,
                 "longitude": UK_LON,
-                "report_type": "fixmystreet",
                 "description": "dumped rubbish",
             },
             headers=auth_header(volunteer),
@@ -790,80 +790,40 @@ class TestCreateFixMyStreetReport:
         call_kwargs = mock_fms.call_args.kwargs
         assert call_kwargs["email"] == volunteer.email
         assert call_kwargs["name"] == _abbreviate_name(volunteer.full_name)
+        assert db.query(Report).count() == 0
 
     @patch("app.routers.reports.submit_to_fixmystreet", return_value=FMS_SUCCESS)
-    def test_create_fixmystreet_with_image(self, mock_fms, client, db):
+    def test_submit_with_image_cleans_up_temp_file(self, mock_fms, client, db, tmp_path):
+        import os
+        from app.config import IMAGES_DIR_REPORTS
+
+        before = set(os.listdir(IMAGES_DIR_REPORTS)) if os.path.isdir(IMAGES_DIR_REPORTS) else set()
         res = client.post(
-            "/api/reports/",
+            "/api/reports/fixmystreet",
             data={
                 "latitude": UK_LAT,
                 "longitude": UK_LON,
-                "report_type": "fixmystreet",
                 "description": "dumped rubbish",
                 "email": "reporter@example.com",
             },
             files={"image": ("test.jpg", _make_image_buf(), "image/jpeg")},
         )
         assert res.status_code == 201
-        assert len(res.json()["images"]) == 1
         assert mock_fms.call_args.kwargs["image_filename"] is not None
+        assert db.query(Report).count() == 0
+        # Temp image and thumbnail must be cleaned up after submission.
+        after = set(os.listdir(IMAGES_DIR_REPORTS)) if os.path.isdir(IMAGES_DIR_REPORTS) else set()
+        assert after == before
 
-
-class TestReportToFixMyStreet:
-    @patch("app.routers.reports.submit_to_fixmystreet", return_value=FMS_SUCCESS)
-    def test_forward_existing_report(self, mock_fms, client, db, volunteer):
-        report = _create_report(db)
+    def test_submit_outside_uk_rejected(self, client, db):
         res = client.post(
-            f"/api/reports/{report.id}/fixmystreet",
-            headers=auth_header(volunteer),
+            "/api/reports/fixmystreet",
+            data={
+                "latitude": 40.0,
+                "longitude": -74.0,
+                "description": "dumped rubbish",
+                "email": "reporter@example.com",
+            },
         )
-        assert res.status_code == 201
-        assert res.json()["success"] is True
-        call_kwargs = mock_fms.call_args.kwargs
-        assert call_kwargs["email"] == volunteer.email
-        assert call_kwargs["name"] == _abbreviate_name(volunteer.full_name)
-        assert call_kwargs["lat"] == UK_LAT
-        assert call_kwargs["category"] == "Flytipping"
-        db.refresh(report)
-        assert report.report_type == ReportType.fixmystreet
-
-    @patch("app.routers.reports.submit_to_fixmystreet", return_value=FMS_SUCCESS)
-    def test_forward_report_with_image(self, mock_fms, client, db, volunteer):
-        report = _create_report(db)
-        img = ReportImage(
-            report_id=report.id,
-            url="photo.jpg",
-            thumbnail_url="photo_thumb.jpg",
-            image_type=ImageType.report,
-        )
-        db.add(img)
-        db.commit()
-        res = client.post(
-            f"/api/reports/{report.id}/fixmystreet",
-            headers=auth_header(volunteer),
-        )
-        assert res.status_code == 201
-        assert mock_fms.call_args.kwargs["image_filename"] == "photo.jpg"
-
-    def test_forward_nonexistent_report(self, client, db, volunteer):
-        res = client.post(
-            "/api/reports/00000000-0000-0000-0000-000000009999/fixmystreet",
-            headers=auth_header(volunteer),
-        )
-        assert res.status_code == 404
-
-    def test_forward_requires_auth(self, client, db):
-        report = _create_report(db)
-        res = client.post(f"/api/reports/{report.id}/fixmystreet")
-        assert res.status_code == 401
-
-    @patch("app.routers.reports.submit_to_fixmystreet", side_effect=FixMyStreetError("timeout"))
-    def test_forward_fms_failure_does_not_update_type(self, mock_fms, client, db, volunteer):
-        report = _create_report(db)
-        res = client.post(
-            f"/api/reports/{report.id}/fixmystreet",
-            headers=auth_header(volunteer),
-        )
-        assert res.status_code == 502
-        db.refresh(report)
-        assert report.report_type != ReportType.fixmystreet
+        assert res.status_code == 400
+        assert db.query(Report).count() == 0

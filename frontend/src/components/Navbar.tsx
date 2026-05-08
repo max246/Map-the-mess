@@ -14,6 +14,7 @@ const topLinks = [
 
 const discoverLinks = [
   { to: '/communities', label: 'Communities' },
+  { to: '/raffles', label: 'Raffles' },
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/tools', label: 'Tools' },
   { to: '/litter-facts', label: 'Litter Facts' },
