@@ -149,6 +149,14 @@ async function mockApi(page: Page) {
     })
   })
 
+  await page.route('**/api/bins**', async (route: Route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    })
+  })
+
   await page.route('**/api/auth/me', async (route: Route) => {
     return route.fulfill({
       status: 200,
