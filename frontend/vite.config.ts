@@ -142,10 +142,16 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8000',
+      '/api': {
+        target: 'http://localhost:8000',
+        timeout: 2000,
+        proxyTimeout: 2000,
+      },
       '/backend': {
         target: 'http://localhost:8000',
         rewrite: (path) => path.replace(/^\/backend/, ''),
+        timeout: 2000,
+        proxyTimeout: 2000,
       },
     },
   },
