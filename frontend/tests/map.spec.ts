@@ -62,6 +62,14 @@ async function mockApi(page: Page) {
       })
     }
 
+    if (/^\/api\/bins/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      })
+    }
+
     await route.continue()
   })
 
