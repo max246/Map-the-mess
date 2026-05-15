@@ -91,10 +91,9 @@ describe('PlannerList', () => {
   it('shows status badges', async () => {
     renderPlannerList()
     await waitFor(() => {
-      // Status badges inside plan cards (there are also tab buttons with the same text)
-      const badges = screen.getAllByText('Planned')
-      expect(badges.length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByText('Morning cleanup')).toBeInTheDocument()
     })
+    expect(screen.getAllByText('Planned').length).toBeGreaterThanOrEqual(2) // tab + badge
     expect(screen.getAllByText('In Progress').length).toBeGreaterThanOrEqual(2) // tab + badge
     expect(screen.getAllByText('Completed').length).toBeGreaterThanOrEqual(2) // tab + badge
   })
