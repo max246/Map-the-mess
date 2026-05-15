@@ -109,6 +109,14 @@ async function mockApi(page: Page, report: Record<string, unknown>) {
     })
   })
 
+  await page.route(/\/api\/reports\/[0-9a-f-]+\/comments/, async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    })
+  })
+
   await page.route(/\/api\/volunteers/, async (route: Route) => {
     await route.fulfill({
       status: 200,
