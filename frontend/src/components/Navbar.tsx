@@ -10,6 +10,7 @@ const topLinks = [
   { to: '/', label: 'Home' },
   { to: '/map', label: 'Map' },
   { to: '/report', label: 'Report Litter' },
+  { to: '/report-trolley', label: 'Report Trolley' },
 ]
 
 const discoverLinks = [
