@@ -179,7 +179,9 @@ test.describe('Register flow', () => {
     await expect(page.getByPlaceholder('Re-enter your password')).toBeVisible()
   })
 
-  test('register button is disabled until terms are accepted and city is selected', async ({ page }) => {
+  test('register button is disabled until terms are accepted and city is selected', async ({
+    page,
+  }) => {
     await page.goto('/register')
     const registerBtn = page.getByRole('button', { name: /register/i })
     await expect(registerBtn).toBeDisabled()
@@ -355,7 +357,10 @@ test.describe('Forgot password flow', () => {
 
   test('has back to login link', async ({ page }) => {
     await page.goto('/forgot-password')
-    await expect(page.getByRole('link', { name: /back to login/i })).toHaveAttribute('href', '/login')
+    await expect(page.getByRole('link', { name: /back to login/i })).toHaveAttribute(
+      'href',
+      '/login'
+    )
   })
 })
 

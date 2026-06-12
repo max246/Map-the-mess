@@ -21,20 +21,20 @@ export default function ReportComments({ reportId, reportStatus, reportOwnerId }
   const { user, isLoggedIn, canManageUsers } = useAuth()
 
   const [comments, setComments] = useState<ReportCommentRead[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [body, setBody] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const isOpen = reportStatus === 'pending'
+  const loading = loadedKey !== reportId
 
   const fetchComments = () => {
-    setLoading(true)
     listCommentsApiReportsReportIdCommentsGet(reportId)
       .then((data) => setComments([...data].reverse()))
       .catch(() => setComments([]))
-      .finally(() => setLoading(false))
+      .finally(() => setLoadedKey(reportId))
   }
 
   useEffect(() => {
@@ -53,6 +53,7 @@ export default function ReportComments({ reportId, reportStatus, reportOwnerId }
     try {
       await addCommentApiReportsReportIdCommentsPost(reportId, { body: body.trim() })
       setBody('')
+      setLoadedKey(null)
       fetchComments()
       setPage(1)
     } catch {
@@ -67,6 +68,7 @@ export default function ReportComments({ reportId, reportStatus, reportOwnerId }
     setDeletingId(commentId)
     try {
       await deleteCommentApiReportsReportIdCommentsCommentIdDelete(reportId, commentId)
+      setLoadedKey(null)
       fetchComments()
     } catch {
       alert('Failed to delete comment.')

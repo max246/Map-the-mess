@@ -28,11 +28,14 @@ export default function BinsLayer({ onEdit, onDelete, refreshKey }: BinsLayerPro
 
   const visible = zoom >= BIN_ZOOM_THRESHOLD
 
+  const [wasVisible, setWasVisible] = useState(visible)
+  if (visible !== wasVisible) {
+    setWasVisible(visible)
+    if (!visible) setBins([])
+  }
+
   useEffect(() => {
-    if (!visible) {
-      setBins([])
-      return
-    }
+    if (!visible) return
     let cancelled = false
     listBinsApiBinsGet({
       latitude: center.lat,

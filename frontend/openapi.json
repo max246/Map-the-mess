@@ -8,9 +8,7 @@
   "paths": {
     "/api/reports/images/{filename}": {
       "get": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Serve Image",
         "description": "Serve an uploaded image by filename.",
         "operationId": "serve_image_api_reports_images__filename__get",
@@ -49,9 +47,7 @@
     },
     "/api/reports/export": {
       "get": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Export Reports",
         "description": "Export all reports as a downloadable JSON file. Requires authentication.",
         "operationId": "export_reports_api_reports_export_get",
@@ -74,9 +70,7 @@
     },
     "/api/reports/": {
       "get": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "List Reports",
         "description": "List all reports, optionally filtered by status, report type, or staleness. Authenticated users with city coordinates get nearby reports.",
         "operationId": "list_reports_api_reports__get",
@@ -168,9 +162,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Create Report",
         "description": "Create a new litter report with an optional image. Use POST /{report_id}/images for additional images.",
         "operationId": "create_report_api_reports__post",
@@ -210,9 +202,7 @@
     },
     "/api/reports/{report_id}": {
       "get": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Get Report",
         "operationId": "get_report_api_reports__report_id__get",
         "parameters": [
@@ -251,9 +241,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Update Report",
         "description": "Edit a report's text or remove images. Allowed for the report owner, moderator, admin, or superuser.",
         "operationId": "update_report_api_reports__report_id__patch",
@@ -308,9 +296,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Delete Report",
         "description": "Delete a report. Requires moderator or admin role.",
         "operationId": "delete_report_api_reports__report_id__delete",
@@ -350,9 +336,7 @@
     },
     "/api/reports/fixmystreet": {
       "post": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Submit Fixmystreet",
         "description": "Forward a report directly to FixMyStreet without persisting it locally.",
         "operationId": "submit_fixmystreet_api_reports_fixmystreet_post",
@@ -390,9 +374,7 @@
     },
     "/api/reports/{report_id}/images": {
       "post": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Add Image",
         "description": "Upload an image and attach it to an existing report.",
         "operationId": "add_image_api_reports__report_id__images_post",
@@ -444,9 +426,7 @@
     },
     "/api/reports/{report_id}/clean": {
       "patch": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Mark Cleaned",
         "description": "Mark a report as cleaned. Attaches the user id if authenticated.",
         "operationId": "mark_cleaned_api_reports__report_id__clean_patch",
@@ -488,9 +468,7 @@
     },
     "/api/reports/{report_id}/unstale": {
       "post": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Mark Unstale",
         "description": "Clear the stale marker on a report \u2014 \"I'm on it.\" Resets the inactivity clock.",
         "operationId": "mark_unstale_api_reports__report_id__unstale_post",
@@ -537,9 +515,7 @@
     },
     "/api/reports/{report_id}/unresolve": {
       "patch": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Mark Unresolved",
         "description": "Reopen a report. Anyone can reopen with an optional photo.",
         "operationId": "mark_unresolved_api_reports__report_id__unresolve_patch",
@@ -595,9 +571,7 @@
     },
     "/api/reports/images/{image_id}": {
       "delete": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Delete Image",
         "description": "Delete an image. If it was a resolved image, re-open the report to pending.",
         "operationId": "delete_image_api_reports_images__image_id__delete",
@@ -637,9 +611,7 @@
     },
     "/api/reports/{report_id}/comments": {
       "get": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "List Comments",
         "description": "List all comments for a report.",
         "operationId": "list_comments_api_reports__report_id__comments_get",
@@ -683,9 +655,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Add Comment",
         "description": "Add a comment to an open report. Requires authentication.",
         "operationId": "add_comment_api_reports__report_id__comments_post",
@@ -742,9 +712,7 @@
     },
     "/api/reports/{report_id}/comments/{comment_id}": {
       "delete": {
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "summary": "Delete Comment",
         "description": "Delete a comment. Allowed for the comment author, moderator, admin, or superuser.",
         "operationId": "delete_comment_api_reports__report_id__comments__comment_id__delete",
@@ -794,9 +762,7 @@
     },
     "/api/auth/me": {
       "get": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Get Profile",
         "description": "Return the current user's profile.",
         "operationId": "get_profile_api_auth_me_get",
@@ -819,9 +785,7 @@
         ]
       },
       "delete": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Delete Profile",
         "description": "Delete current user profile",
         "operationId": "delete_profile_api_auth_me_delete",
@@ -837,9 +801,7 @@
         ]
       },
       "patch": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Update Profile",
         "description": "Update the current user's profile (name, avatar_url).",
         "operationId": "update_profile_api_auth_me_patch",
@@ -884,9 +846,7 @@
     },
     "/api/auth/me/avatar": {
       "put": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Upload Avatar",
         "description": "Upload a custom avatar image. Resized to 300x300 max.",
         "operationId": "upload_avatar_api_auth_me_avatar_put",
@@ -931,9 +891,7 @@
     },
     "/api/auth/me/password": {
       "patch": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Change Password",
         "description": "Change the current user's password. Requires current password.",
         "operationId": "change_password_api_auth_me_password_patch",
@@ -976,9 +934,7 @@
     },
     "/api/auth/users": {
       "get": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "List Users",
         "description": "List all users. Requires admin access.",
         "operationId": "list_users_api_auth_users_get",
@@ -1007,9 +963,7 @@
     },
     "/api/auth/register": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Register",
         "operationId": "register_api_auth_register_post",
         "requestBody": {
@@ -1048,9 +1002,7 @@
     },
     "/api/auth/verify": {
       "get": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Verify Email",
         "description": "Verify a user's email address using the token from the verification email.",
         "operationId": "verify_email_api_auth_verify_get",
@@ -1089,9 +1041,7 @@
     },
     "/api/auth/resend-verification": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Resend Verification",
         "description": "Resend the verification email. Uses ForgotPassword schema (just an email field).",
         "operationId": "resend_verification_api_auth_resend_verification_post",
@@ -1129,9 +1079,7 @@
     },
     "/api/auth/login": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Login",
         "operationId": "login_api_auth_login_post",
         "requestBody": {
@@ -1170,9 +1118,7 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Refresh Token",
         "description": "Exchange a valid refresh token for a new access token + refresh token (rotation).",
         "operationId": "refresh_token_api_auth_refresh_post",
@@ -1212,9 +1158,7 @@
     },
     "/api/auth/{provider}/login": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Social Login",
         "description": "Sign in (or sign up) using a verified social provider credential.",
         "operationId": "social_login_api_auth__provider__login_post",
@@ -1265,9 +1209,7 @@
     },
     "/api/auth/{provider}/link": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Link Provider",
         "description": "Attach a provider identity to the currently authenticated user.",
         "operationId": "link_provider_api_auth__provider__link_post",
@@ -1321,9 +1263,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Unlink Provider",
         "description": "Detach a provider from the current user. Refuses if it would lock them out.",
         "operationId": "unlink_provider_api_auth__provider__link_delete",
@@ -1369,9 +1309,7 @@
     },
     "/api/auth/logout": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Logout",
         "description": "Revoke a refresh token on logout.",
         "operationId": "logout_api_auth_logout_post",
@@ -1404,9 +1342,7 @@
     },
     "/api/auth/users/{user_id}/type": {
       "patch": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Update User Type",
         "operationId": "update_user_type_api_auth_users__user_id__type_patch",
         "security": [
@@ -1462,9 +1398,7 @@
     },
     "/api/auth/users/{user_id}": {
       "delete": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Delete User",
         "operationId": "delete_user_api_auth_users__user_id__delete",
         "security": [
@@ -1503,9 +1437,7 @@
     },
     "/api/auth/forgot-password": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Forgot Password",
         "description": "Generate a password reset token for the given email.",
         "operationId": "forgot_password_api_auth_forgot_password_post",
@@ -1543,9 +1475,7 @@
     },
     "/api/auth/reset-password": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Reset Password",
         "description": "Reset a user's password using a valid reset token.",
         "operationId": "reset_password_api_auth_reset_password_post",
@@ -1583,9 +1513,7 @@
     },
     "/api/volunteers/count": {
       "get": {
-        "tags": [
-          "Volunteers"
-        ],
+        "tags": ["Volunteers"],
         "summary": "Volunteer Count",
         "description": "Return the total number of registered volunteers.",
         "operationId": "volunteer_count_api_volunteers_count_get",
@@ -1603,9 +1531,7 @@
     },
     "/api/volunteers/leaderboard": {
       "get": {
-        "tags": [
-          "Volunteers"
-        ],
+        "tags": ["Volunteers"],
         "summary": "Leaderboard",
         "description": "Return the top volunteers ranked by number of reports cleaned within the given period.",
         "operationId": "leaderboard_api_volunteers_leaderboard_get",
@@ -1669,9 +1595,7 @@
     },
     "/api/volunteers/{user_id}/profile": {
       "get": {
-        "tags": [
-          "Volunteers"
-        ],
+        "tags": ["Volunteers"],
         "summary": "Public Profile",
         "description": "Return a volunteer's public profile.",
         "operationId": "public_profile_api_volunteers__user_id__profile_get",
@@ -1713,9 +1637,7 @@
     },
     "/api/volunteers/favourites": {
       "get": {
-        "tags": [
-          "Volunteers"
-        ],
+        "tags": ["Volunteers"],
         "summary": "List Favourites",
         "description": "List the current user's favourite reports, optionally filtered by status.",
         "operationId": "list_favourites_api_volunteers_favourites_get",
@@ -1774,9 +1696,7 @@
     },
     "/api/volunteers/favourites/{report_id}": {
       "post": {
-        "tags": [
-          "Volunteers"
-        ],
+        "tags": ["Volunteers"],
         "summary": "Add Favourite",
         "description": "Star a report to add it to the user's planned cleanups.",
         "operationId": "add_favourite_api_volunteers_favourites__report_id__post",
@@ -1819,9 +1739,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Volunteers"
-        ],
+        "tags": ["Volunteers"],
         "summary": "Remove Favourite",
         "description": "Remove a report from the user's planned cleanups.",
         "operationId": "remove_favourite_api_volunteers_favourites__report_id__delete",
@@ -1861,9 +1779,7 @@
     },
     "/api/communities/": {
       "post": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Create Community",
         "description": "Create a new community. The current user becomes the owner.",
         "operationId": "create_community_api_communities__post",
@@ -1906,9 +1822,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "List Communities",
         "description": "List communities with optional search and location filters.\n\nVisibility: anon/volunteer see active only. Owner also sees own under_review.\nModerator+ sees all.",
         "operationId": "list_communities_api_communities__get",
@@ -2016,9 +1930,7 @@
     },
     "/api/communities/mine": {
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "My Communities",
         "description": "Return the current user's owned and joined (approved) communities.",
         "operationId": "my_communities_api_communities_mine_get",
@@ -2043,9 +1955,7 @@
     },
     "/api/communities/{community_id}": {
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Get Community",
         "description": "Get a single community. Posts and events are only visible to members, owner, or moderator+.",
         "operationId": "get_community_api_communities__community_id__get",
@@ -2085,9 +1995,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Delete Community",
         "description": "Delete a community. Owner, moderator, or admin only.",
         "operationId": "delete_community_api_communities__community_id__delete",
@@ -2127,9 +2035,7 @@
     },
     "/api/communities/{community_id}/image": {
       "put": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Upload Profile Image",
         "description": "Upload or replace the community profile image. Owner only.",
         "operationId": "upload_profile_image_api_communities__community_id__image_put",
@@ -2186,9 +2092,7 @@
     },
     "/api/communities/{community_id}/status": {
       "patch": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Update Community Status",
         "description": "Set community status to active or under_review. Moderator+ only.",
         "operationId": "update_community_status_api_communities__community_id__status_patch",
@@ -2245,9 +2149,7 @@
     },
     "/api/communities/{community_id}/visibility": {
       "patch": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Update Community Visibility",
         "description": "Toggle community visibility between public and private. Owner only.",
         "operationId": "update_community_visibility_api_communities__community_id__visibility_patch",
@@ -2304,9 +2206,7 @@
     },
     "/api/communities/{community_id}/owner": {
       "patch": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Update Community Owner",
         "description": "Transfer community ownership. Allowed for the current owner or moderator+.",
         "operationId": "update_community_owner_api_communities__community_id__owner_patch",
@@ -2363,9 +2263,7 @@
     },
     "/api/communities/{community_id}/posts": {
       "post": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Create Post",
         "description": "Create a post on a community page. Owner only.",
         "operationId": "create_post_api_communities__community_id__posts_post",
@@ -2422,9 +2320,7 @@
     },
     "/api/communities/{community_id}/posts/{post_id}": {
       "patch": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Update Post",
         "description": "Edit a post. Owner only.",
         "operationId": "update_post_api_communities__community_id__posts__post_id__patch",
@@ -2489,9 +2385,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Delete Post",
         "description": "Delete a post. Owner or moderator+ only.",
         "operationId": "delete_post_api_communities__community_id__posts__post_id__delete",
@@ -2541,9 +2435,7 @@
     },
     "/api/communities/{community_id}/events": {
       "post": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Create Event",
         "description": "Create a cleanup event. Owner only.",
         "operationId": "create_event_api_communities__community_id__events_post",
@@ -2598,9 +2490,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "List Events",
         "description": "List expanded event occurrences for a community within a date range.",
         "operationId": "list_events_api_communities__community_id__events_get",
@@ -2680,9 +2570,7 @@
     },
     "/api/communities/{community_id}/events/{occurrence_id}": {
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Get Event",
         "description": "Get a single event or occurrence.",
         "operationId": "get_event_api_communities__community_id__events__occurrence_id__get",
@@ -2731,9 +2619,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Update Event",
         "description": "Edit an event. Owner only. Supports scoped updates for recurring events.",
         "operationId": "update_event_api_communities__community_id__events__occurrence_id__patch",
@@ -2797,9 +2683,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Delete Event",
         "description": "Delete an event or occurrence. Owner or moderator+ only.\n\nFor recurring events, ``scope`` controls what is deleted:\n- ``this``: cancel this single occurrence.\n- ``this_and_future``: end the series before this date.\n- ``all``: delete the entire series (parent + exceptions).",
         "operationId": "delete_event_api_communities__community_id__events__occurrence_id__delete",
@@ -2858,9 +2742,7 @@
     },
     "/api/communities/{community_id}/events/{occurrence_id}/attend": {
       "post": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Attend Event",
         "description": "Mark current user as attending an event. Must be a community member or owner.",
         "operationId": "attend_event_api_communities__community_id__events__occurrence_id__attend_post",
@@ -2914,9 +2796,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Unattend Event",
         "description": "Remove current user's attendance from an event.",
         "operationId": "unattend_event_api_communities__community_id__events__occurrence_id__attend_delete",
@@ -2972,9 +2852,7 @@
     },
     "/api/communities/{community_id}/join": {
       "post": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Join Community",
         "description": "Request to join a community. Status starts as pending until owner approves.",
         "operationId": "join_community_api_communities__community_id__join_post",
@@ -3021,9 +2899,7 @@
     },
     "/api/communities/{community_id}/memberships": {
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "List Memberships",
         "description": "List memberships. Only the community owner, admin, or superuser can access.",
         "operationId": "list_memberships_api_communities__community_id__memberships_get",
@@ -3074,9 +2950,7 @@
     },
     "/api/communities/{community_id}/memberships/{membership_id}": {
       "patch": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Update Membership",
         "description": "Approve or reject a membership request. Owner only.",
         "operationId": "update_membership_api_communities__community_id__memberships__membership_id__patch",
@@ -3143,9 +3017,7 @@
     },
     "/api/communities/{community_id}/leave": {
       "delete": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Leave Community",
         "description": "Leave a community. Owner cannot leave \u2014 they must delete the community.",
         "operationId": "leave_community_api_communities__community_id__leave_delete",
@@ -3185,9 +3057,7 @@
     },
     "/api/communities/{community_id}/members": {
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "List Public Members",
         "description": "List approved members of a community. Only the community owner or an admin can access.",
         "operationId": "list_public_members_api_communities__community_id__members_get",
@@ -3238,9 +3108,7 @@
     },
     "/api/communities/{community_id}/leaderboard": {
       "get": {
-        "tags": [
-          "Communities"
-        ],
+        "tags": ["Communities"],
         "summary": "Community Leaderboard",
         "description": "Return community members ranked by number of reports cleaned globally. Only members and the owner can access.",
         "operationId": "community_leaderboard_api_communities__community_id__leaderboard_get",
@@ -3319,9 +3187,7 @@
     },
     "/api/planner/": {
       "post": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "Create Plan",
         "description": "Create a new walking plan with OSRM-optimised route.\n\nBoth reports and optional bin drop-offs are treated as OSRM waypoints and\ninterleaved in the optimised order.",
         "operationId": "create_plan_api_planner__post",
@@ -3364,9 +3230,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "List Plans",
         "description": "List the current user's plans.",
         "operationId": "list_plans_api_planner__get",
@@ -3425,9 +3289,7 @@
     },
     "/api/planner/{plan_id}": {
       "get": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "Get Plan",
         "description": "Get a single plan with full route details.",
         "operationId": "get_plan_api_planner__plan_id__get",
@@ -3472,9 +3334,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "Update Plan",
         "description": "Update a plan's details (e.g. name).",
         "operationId": "update_plan_api_planner__plan_id__patch",
@@ -3529,9 +3389,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "Delete Plan",
         "description": "Delete a plan.",
         "operationId": "delete_plan_api_planner__plan_id__delete",
@@ -3571,9 +3429,7 @@
     },
     "/api/planner/{plan_id}/start": {
       "patch": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "Start Plan",
         "description": "Mark a plan as in-progress.",
         "operationId": "start_plan_api_planner__plan_id__start_patch",
@@ -3620,9 +3476,7 @@
     },
     "/api/planner/{plan_id}/complete": {
       "patch": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "Complete Plan",
         "description": "Mark a plan as completed.",
         "operationId": "complete_plan_api_planner__plan_id__complete_patch",
@@ -3669,9 +3523,7 @@
     },
     "/api/planner/{plan_id}/export.gpx": {
       "get": {
-        "tags": [
-          "Planner"
-        ],
+        "tags": ["Planner"],
         "summary": "Export Gpx",
         "description": "Export a plan as a downloadable GPX file.",
         "operationId": "export_gpx_api_planner__plan_id__export_gpx_get",
@@ -3716,9 +3568,7 @@
     },
     "/api/admin/tasks/mark-stale": {
       "post": {
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "summary": "Trigger Mark Stale",
         "description": "Scan pending reports and append a `stale` log entry to those inactive for the configured window.",
         "operationId": "trigger_mark_stale_api_admin_tasks_mark_stale_post",
@@ -3764,9 +3614,7 @@
     },
     "/api/badges/{badge_id}/acknowledge": {
       "post": {
-        "tags": [
-          "Badges"
-        ],
+        "tags": ["Badges"],
         "summary": "Acknowledge Badge",
         "description": "Mark a badge as seen by the current user.\n\nRe-running evaluate_badges first ensures the row exists even if the user\nhits this endpoint before their next profile fetch.",
         "operationId": "acknowledge_badge_api_badges__badge_id__acknowledge_post",
@@ -3812,9 +3660,7 @@
     },
     "/api/bins/": {
       "get": {
-        "tags": [
-          "Bins"
-        ],
+        "tags": ["Bins"],
         "summary": "List Bins",
         "description": "List bins, optionally filtered to those within ``radius_km`` of (latitude, longitude).\n\nThe map only shows bins at high zoom, so the default radius is small (1 km).",
         "operationId": "list_bins_api_bins__get",
@@ -3896,9 +3742,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Bins"
-        ],
+        "tags": ["Bins"],
         "summary": "Create Bin",
         "description": "Create a new bin location. Requires authentication.",
         "operationId": "create_bin_api_bins__post",
@@ -3943,9 +3787,7 @@
     },
     "/api/bins/{bin_id}": {
       "get": {
-        "tags": [
-          "Bins"
-        ],
+        "tags": ["Bins"],
         "summary": "Get Bin",
         "operationId": "get_bin_api_bins__bin_id__get",
         "parameters": [
@@ -3984,9 +3826,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Bins"
-        ],
+        "tags": ["Bins"],
         "summary": "Update Bin",
         "description": "Edit a bin. Allowed for the owner, moderator, admin, or superuser.",
         "operationId": "update_bin_api_bins__bin_id__patch",
@@ -4041,9 +3881,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Bins"
-        ],
+        "tags": ["Bins"],
         "summary": "Delete Bin",
         "description": "Delete a bin. Allowed for the owner, moderator, admin, or superuser.",
         "operationId": "delete_bin_api_bins__bin_id__delete",
@@ -4083,9 +3921,7 @@
     },
     "/api/raffles/": {
       "get": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "List Raffles",
         "description": "List all raffles. Public.",
         "operationId": "list_raffles_api_raffles__get",
@@ -4107,9 +3943,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Create Raffle",
         "operationId": "create_raffle_api_raffles__post",
         "requestBody": {
@@ -4153,9 +3987,7 @@
     },
     "/api/raffles/{raffle_id}": {
       "get": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Get Raffle",
         "description": "Get a raffle by id. Public.",
         "operationId": "get_raffle_api_raffles__raffle_id__get",
@@ -4195,9 +4027,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Update Raffle",
         "operationId": "update_raffle_api_raffles__raffle_id__patch",
         "security": [
@@ -4251,9 +4081,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Delete Raffle",
         "operationId": "delete_raffle_api_raffles__raffle_id__delete",
         "security": [
@@ -4292,9 +4120,7 @@
     },
     "/api/raffles/{raffle_id}/prizes": {
       "post": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Add Prize",
         "operationId": "add_prize_api_raffles__raffle_id__prizes_post",
         "security": [
@@ -4350,9 +4176,7 @@
     },
     "/api/raffles/{raffle_id}/prizes/{prize_id}": {
       "patch": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Update Prize",
         "operationId": "update_prize_api_raffles__raffle_id__prizes__prize_id__patch",
         "security": [
@@ -4416,9 +4240,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Delete Prize",
         "operationId": "delete_prize_api_raffles__raffle_id__prizes__prize_id__delete",
         "security": [
@@ -4467,9 +4289,7 @@
     },
     "/api/raffles/{raffle_id}/prizes/{prize_id}/images": {
       "post": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Upload Prize Image",
         "operationId": "upload_prize_image_api_raffles__raffle_id__prizes__prize_id__images_post",
         "security": [
@@ -4535,9 +4355,7 @@
     },
     "/api/raffles/{raffle_id}/prizes/{prize_id}/images/{image_id}": {
       "delete": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Delete Prize Image",
         "operationId": "delete_prize_image_api_raffles__raffle_id__prizes__prize_id__images__image_id__delete",
         "security": [
@@ -4596,9 +4414,7 @@
     },
     "/api/raffles/images/{filename}": {
       "get": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Serve Prize Image",
         "description": "Serve a raffle prize image by filename. Public.",
         "operationId": "serve_prize_image_api_raffles_images__filename__get",
@@ -4637,9 +4453,7 @@
     },
     "/api/raffles/{raffle_id}/draw": {
       "post": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Draw Raffle",
         "description": "Draw winners for the raffle. One random user per prize, no duplicates.\n\nEligible pool: verified users with user_type in (volunteer, moderator) \u2014 i.e.\neveryone except admins/superusers.",
         "operationId": "draw_raffle_api_raffles__raffle_id__draw_post",
@@ -4686,9 +4500,7 @@
     },
     "/api/raffles/{raffle_id}/winners": {
       "get": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "List Winner Contacts",
         "description": "Admin-only winner contact details for a drawn raffle.",
         "operationId": "list_winner_contacts_api_raffles__raffle_id__winners_get",
@@ -4739,9 +4551,7 @@
     },
     "/api/raffles/{raffle_id}/prizes/{prize_id}/redraw": {
       "post": {
-        "tags": [
-          "Raffles"
-        ],
+        "tags": ["Raffles"],
         "summary": "Redraw Prize",
         "description": "Pick a fresh winner for a single prize (e.g. when the original winner\nisn't responding). Excludes anyone already holding a prize in this raffle \u2014\nincluding the prize's current winner \u2014 so they cannot be re-picked.",
         "operationId": "redraw_prize_api_raffles__raffle_id__prizes__prize_id__redraw_post",
@@ -4855,11 +4665,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description"
-        ],
+        "required": ["id", "name", "description"],
         "title": "BadgeRead"
       },
       "BinCreate": {
@@ -4879,10 +4685,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "latitude",
-          "longitude"
-        ],
+        "required": ["latitude", "longitude"],
         "title": "BinCreate"
       },
       "BinRead": {
@@ -4946,13 +4749,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "latitude",
-          "longitude",
-          "description",
-          "created_at"
-        ],
+        "required": ["id", "latitude", "longitude", "description", "created_at"],
         "title": "BinRead"
       },
       "BinUpdate": {
@@ -5007,10 +4804,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "image_type",
-          "file"
-        ],
+        "required": ["image_type", "file"],
         "title": "Body_add_image_api_reports__report_id__images_post"
       },
       "Body_create_report_api_reports__post": {
@@ -5057,11 +4851,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "latitude",
-          "longitude",
-          "report_type"
-        ],
+        "required": ["latitude", "longitude", "report_type"],
         "title": "Body_create_report_api_reports__post"
       },
       "Body_mark_unresolved_api_reports__report_id__unresolve_patch": {
@@ -5122,10 +4912,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "latitude",
-          "longitude"
-        ],
+        "required": ["latitude", "longitude"],
         "title": "Body_submit_fixmystreet_api_reports_fixmystreet_post"
       },
       "Body_upload_avatar_api_auth_me_avatar_put": {
@@ -5137,9 +4924,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "file"
-        ],
+        "required": ["file"],
         "title": "Body_upload_avatar_api_auth_me_avatar_put"
       },
       "Body_upload_prize_image_api_raffles__raffle_id__prizes__prize_id__images_post": {
@@ -5151,9 +4936,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "file"
-        ],
+        "required": ["file"],
         "title": "Body_upload_prize_image_api_raffles__raffle_id__prizes__prize_id__images_post"
       },
       "Body_upload_profile_image_api_communities__community_id__image_put": {
@@ -5165,9 +4948,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "file"
-        ],
+        "required": ["file"],
         "title": "Body_upload_profile_image_api_communities__community_id__image_put"
       },
       "ChangePassword": {
@@ -5182,10 +4963,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "current_password",
-          "new_password"
-        ],
+        "required": ["current_password", "new_password"],
         "title": "ChangePassword"
       },
       "CommunityCreate": {
@@ -5229,12 +5007,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "name",
-          "latitude",
-          "longitude",
-          "radius_km"
-        ],
+        "required": ["name", "latitude", "longitude", "radius_km"],
         "title": "CommunityCreate"
       },
       "CommunityDetail": {
@@ -5345,9 +5118,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "user_id"
-        ],
+        "required": ["user_id"],
         "title": "CommunityOwnerUpdate"
       },
       "CommunityRead": {
@@ -5441,9 +5212,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "CommunityStatusUpdate"
       },
       "CommunityVisibilityUpdate": {
@@ -5454,9 +5223,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "visibility"
-        ],
+        "required": ["visibility"],
         "title": "CommunityVisibilityUpdate"
       },
       "EventCreate": {
@@ -5523,12 +5290,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "title",
-          "date",
-          "meeting_latitude",
-          "meeting_longitude"
-        ],
+        "required": ["title", "date", "meeting_latitude", "meeting_longitude"],
         "title": "EventCreate"
       },
       "EventOccurrenceRead": {
@@ -5771,9 +5533,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "title": "ForgotPassword"
       },
       "HTTPValidationError": {
@@ -5810,12 +5570,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "user_id",
-          "rank",
-          "name",
-          "cleaned_count"
-        ],
+        "required": ["user_id", "rank", "name", "cleaned_count"],
         "title": "LeaderboardEntry"
       },
       "MembershipAction": {
@@ -5826,9 +5581,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "MembershipAction",
         "description": "Body for approve/reject."
       },
@@ -5877,13 +5630,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "community_id",
-          "user_id",
-          "status",
-          "created_at"
-        ],
+        "required": ["id", "community_id", "user_id", "status", "created_at"],
         "title": "MembershipRead"
       },
       "MyCommunities": {
@@ -5967,12 +5714,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "bin_id",
-          "visit_order",
-          "bin"
-        ],
+        "required": ["id", "bin_id", "visit_order", "bin"],
         "title": "PlanBinRead"
       },
       "PlanCreate": {
@@ -6015,11 +5757,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "report_ids",
-          "start_latitude",
-          "start_longitude"
-        ],
+        "required": ["report_ids", "start_latitude", "start_longitude"],
         "title": "PlanCreate"
       },
       "PlanListRead": {
@@ -6209,14 +5947,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "user_id",
-          "start_latitude",
-          "start_longitude",
-          "status",
-          "created_at"
-        ],
+        "required": ["id", "user_id", "start_latitude", "start_longitude", "status", "created_at"],
         "title": "PlanRead"
       },
       "PlanReportRead": {
@@ -6262,12 +5993,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "report_id",
-          "visit_order",
-          "report"
-        ],
+        "required": ["id", "report_id", "visit_order", "report"],
         "title": "PlanReportRead"
       },
       "PlanUpdate": {
@@ -6295,9 +6021,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "content"
-        ],
+        "required": ["content"],
         "title": "PostCreate"
       },
       "PostRead": {
@@ -6323,12 +6047,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "community_id",
-          "content",
-          "created_at"
-        ],
+        "required": ["id", "community_id", "content", "created_at"],
         "title": "PostRead"
       },
       "PostUpdate": {
@@ -6339,9 +6058,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "content"
-        ],
+        "required": ["content"],
         "title": "PostUpdate"
       },
       "ProfileUpdate": {
@@ -6426,10 +6143,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "name",
-          "member_since"
-        ],
+        "required": ["name", "member_since"],
         "title": "PublicProfile"
       },
       "RaffleCreate": {
@@ -6450,10 +6164,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "title",
-          "end_date"
-        ],
+        "required": ["title", "end_date"],
         "title": "RaffleCreate"
       },
       "RafflePrizeCreate": {
@@ -6474,9 +6185,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "title"
-        ],
+        "required": ["title"],
         "title": "RafflePrizeCreate"
       },
       "RafflePrizeImageRead": {
@@ -6502,12 +6211,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "prize_id",
-          "url",
-          "created_at"
-        ],
+        "required": ["id", "prize_id", "url", "created_at"],
         "title": "RafflePrizeImageRead"
       },
       "RafflePrizeRead": {
@@ -6571,14 +6275,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "raffle_id",
-          "title",
-          "description",
-          "position",
-          "created_at"
-        ],
+        "required": ["id", "raffle_id", "title", "description", "position", "created_at"],
         "title": "RafflePrizeRead"
       },
       "RafflePrizeUpdate": {
@@ -6633,10 +6330,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "full_name"
-        ],
+        "required": ["id", "full_name"],
         "title": "RafflePrizeWinner"
       },
       "RaffleRead": {
@@ -6710,13 +6404,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "title",
-          "description",
-          "end_date",
-          "created_at"
-        ],
+        "required": ["id", "title", "description", "end_date", "created_at"],
         "title": "RaffleRead"
       },
       "RaffleUpdate": {
@@ -6789,14 +6477,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "prize_id",
-          "prize_title",
-          "prize_position",
-          "user_id",
-          "full_name",
-          "email"
-        ],
+        "required": ["prize_id", "prize_title", "prize_position", "user_id", "full_name", "email"],
         "title": "RaffleWinnerContact",
         "description": "Admin-only winner detail with full contact info."
       },
@@ -6808,9 +6489,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "refresh_token"
-        ],
+        "required": ["refresh_token"],
         "title": "RefreshRequest"
       },
       "RejectedCommunity": {
@@ -6832,9 +6511,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "community"
-        ],
+        "required": ["community"],
         "title": "RejectedCommunity"
       },
       "ReportCommentCreate": {
@@ -6845,9 +6522,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "body"
-        ],
+        "required": ["body"],
         "title": "ReportCommentCreate"
       },
       "ReportCommentRead": {
@@ -6878,13 +6553,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "report_id",
-          "user_id",
-          "body",
-          "created_at"
-        ],
+        "required": ["id", "report_id", "user_id", "body", "created_at"],
         "title": "ReportCommentRead"
       },
       "ReportImageRead": {
@@ -6925,12 +6594,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "url",
-          "image_type",
-          "created_at"
-        ],
+        "required": ["id", "url", "image_type", "created_at"],
         "title": "ReportImageRead"
       },
       "ReportRead": {
@@ -7104,12 +6768,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "action",
-          "cycle",
-          "created_at"
-        ],
+        "required": ["id", "action", "cycle", "created_at"],
         "title": "ReportStatusLogRead"
       },
       "ReportUpdate": {
@@ -7178,10 +6837,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "token",
-          "new_password"
-        ],
+        "required": ["token", "new_password"],
         "title": "ResetPassword"
       },
       "SocialLoginRequest": {
@@ -7192,9 +6848,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "credential"
-        ],
+        "required": ["credential"],
         "title": "SocialLoginRequest"
       },
       "Token": {
@@ -7214,10 +6868,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "access_token",
-          "refresh_token"
-        ],
+        "required": ["access_token", "refresh_token"],
         "title": "Token"
       },
       "UserCreate": {
@@ -7245,13 +6896,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "email",
-          "full_name",
-          "password",
-          "city_latitude",
-          "city_longitude"
-        ],
+        "required": ["email", "full_name", "password", "city_latitude", "city_longitude"],
         "title": "UserCreate"
       },
       "UserLogin": {
@@ -7267,10 +6912,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "title": "UserLogin"
       },
       "UserRead": {
@@ -7363,9 +7005,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "user_type"
-        ],
+        "required": ["user_type"],
         "title": "UserUpdateType"
       },
       "ValidationError": {
@@ -7394,11 +7034,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
+        "required": ["loc", "msg", "type"],
         "title": "ValidationError"
       }
     },

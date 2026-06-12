@@ -26,29 +26,33 @@ const BadgesContext = createContext<BadgesCtx | null>(null)
 
 export function BadgesProvider({ children }: { children: ReactNode }) {
   const { isLoggedIn } = useAuth()
-  const [badges, setBadges] = useState<BadgeRead[]>([])
+  const [fetchedBadges, setFetchedBadges] = useState<BadgeRead[]>([])
+  // Logged-out users have no badges; derive that during render instead of
+  // synchronously clearing state inside the effect.
+  const badges = useMemo(() => (isLoggedIn ? fetchedBadges : []), [isLoggedIn, fetchedBadges])
 
   const refresh = useCallback(async () => {
     if (!isLoggedIn) {
-      setBadges([])
       return
     }
     try {
       const profile = await getProfileApiAuthMeGet()
-      setBadges(profile.badges || [])
+      setFetchedBadges(profile.badges || [])
     } catch {
       /* ignore — stale state is fine */
     }
   }, [isLoggedIn])
 
   useEffect(() => {
-    void refresh()
+    void (async () => {
+      await refresh()
+    })()
   }, [refresh])
 
   const acknowledge = useCallback(async (badgeId: string) => {
     try {
       const updated = await acknowledgeBadgeApiBadgesBadgeIdAcknowledgePost(badgeId)
-      setBadges((prev) => prev.map((b) => (b.id === badgeId ? { ...b, ...updated } : b)))
+      setFetchedBadges((prev) => prev.map((b) => (b.id === badgeId ? { ...b, ...updated } : b)))
     } catch {
       /* ignore */
     }
