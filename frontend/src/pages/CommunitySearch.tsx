@@ -167,7 +167,7 @@ export default function CommunitySearch() {
             {t.count != null && (
               <span
                 className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
-                  tab === t.key ? 'bg-white bg-opacity-25' : 'bg-gray-200 text-gray-500'
+                  tab === t.key ? 'bg-white/25' : 'bg-gray-200 text-gray-500'
                 }`}
               >
                 {t.count}

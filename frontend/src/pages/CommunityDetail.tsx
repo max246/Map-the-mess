@@ -922,7 +922,7 @@ export default function CommunityDetail() {
                             </Link>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <span className="bg-brand bg-opacity-10 text-brand font-semibold px-2 py-0.5 rounded text-sm">
+                            <span className="bg-brand/10 text-brand font-semibold px-2 py-0.5 rounded text-sm">
                               {entry.cleaned_count}
                             </span>
                           </td>

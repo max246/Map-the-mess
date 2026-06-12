@@ -145,7 +145,7 @@ export default function ReportCollection() {
               <button
                 type="button"
                 onClick={removePhoto}
-                className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-opacity-70"
+                className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
               >
                 X
               </button>

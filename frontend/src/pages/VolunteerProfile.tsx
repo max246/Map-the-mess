@@ -59,7 +59,7 @@ export default function VolunteerProfile() {
             className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
           />
         ) : (
-          <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-brand bg-opacity-10 flex items-center justify-center">
+          <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-brand/10 flex items-center justify-center">
             <span className="text-4xl">🧹</span>
           </div>
         )}

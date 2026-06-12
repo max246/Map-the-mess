@@ -72,7 +72,7 @@ export default function RafflesList() {
             {t === 'active' ? 'Active' : 'Ended'}
             <span
               className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
-                tab === t ? 'bg-white bg-opacity-25' : 'bg-gray-200 text-gray-500'
+                tab === t ? 'bg-white/25' : 'bg-gray-200 text-gray-500'
               }`}
             >
               {t === 'active' ? active.length : ended.length}
