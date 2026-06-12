@@ -209,7 +209,7 @@ export default function Navbar() {
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
-              className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm transition"
+              className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm transition"
             >
               Logout
             </button>
@@ -223,7 +223,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/register"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm transition"
+                className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm transition"
               >
                 Register
               </Link>
@@ -250,9 +250,7 @@ export default function Navbar() {
           ))}
 
           {/* Discover section — expanded inline on mobile */}
-          <div className="py-1 px-3 text-xs uppercase tracking-wide text-white text-opacity-50">
-            Discover
-          </div>
+          <div className="py-1 px-3 text-xs uppercase tracking-wide text-white/50">Discover</div>
           {discoverLinks.map((l) => (
             <Link
               key={l.to}
@@ -268,7 +266,7 @@ export default function Navbar() {
 
           {isLoggedIn && (
             <>
-              <div className="py-1 px-3 text-xs uppercase tracking-wide text-white text-opacity-50">
+              <div className="py-1 px-3 text-xs uppercase tracking-wide text-white/50">
                 Volunteer
               </div>
               {volunteerLinks.map((l) => (
