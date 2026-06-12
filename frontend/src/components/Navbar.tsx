@@ -39,12 +39,14 @@ export default function Navbar() {
     { to: '/report-collection', label: 'Report Collection' },
   ]
 
-  // Close dropdown on route change
-  useEffect(() => {
+  // Close dropdown on route change (adjust state during render)
+  const [prevPath, setPrevPath] = useState(pathname)
+  if (pathname !== prevPath) {
+    setPrevPath(pathname)
     setDiscoverOpen(false)
     setVolunteerOpen(false)
     setMobileOpen(false)
-  }, [pathname])
+  }
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -60,10 +62,17 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  // Reset pending flag when auth state changes (adjust state during render)
+  const authed = isLoggedIn && !!user
+  const [prevAuthed, setPrevAuthed] = useState(authed)
+  if (authed !== prevAuthed) {
+    setPrevAuthed(authed)
+    if (!authed) setHasPending(false)
+  }
+
   // Check if any owned community has pending membership requests
   useEffect(() => {
-    if (!isLoggedIn || !user) {
-      setHasPending(false)
+    if (!authed || !user) {
       return
     }
     listCommunitiesApiCommunitiesGet()
@@ -81,7 +90,7 @@ export default function Navbar() {
         })
       })
       .catch(() => {})
-  }, [isLoggedIn, user, pathname])
+  }, [authed, user, pathname])
 
   const handleLogout = () => {
     logout()

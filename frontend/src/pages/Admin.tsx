@@ -13,17 +13,18 @@ const PAGE_SIZE = 10
 export default function Admin() {
   const { isLoggedIn, canManageUsers, user, token } = useAuth()
   const [reports, setReports] = useState<ReportRead[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  const loading = loadedKey !== String(statusFilter)
+
   const fetchReports = () => {
-    setLoading(true)
     listReportsApiReportsGet(statusFilter ? { status: statusFilter } : undefined)
       .then((data) => setReports(data))
       .catch(() => setReports([]))
-      .finally(() => setLoading(false))
+      .finally(() => setLoadedKey(String(statusFilter)))
   }
 
   useEffect(() => {

@@ -48,6 +48,12 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'src/api/endpoints/', 'src/api/model/'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'src/api/endpoints/',
+      'src/api/model/',
+      'src/jest.polyfills.cjs',
+    ],
   },
 ]

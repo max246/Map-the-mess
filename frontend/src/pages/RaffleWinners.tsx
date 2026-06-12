@@ -22,7 +22,8 @@ export default function RaffleWinners() {
   const navigate = useNavigate()
   const [raffle, setRaffle] = useState<RaffleRead | null>(null)
   const [contacts, setContacts] = useState<RaffleWinnerContact[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loadedId, setLoadedId] = useState<string | null>(null)
+  const loading = loadedId !== id
   const [error, setError] = useState('')
   const [redrawing, setRedrawing] = useState<string | null>(null)
 
@@ -32,7 +33,6 @@ export default function RaffleWinners() {
   }, [isLoggedIn, isAdmin, id, navigate])
 
   const reload = useCallback(async () => {
-    setError('')
     try {
       const [r, c] = await Promise.all([
         getRaffleApiRafflesRaffleIdGet(id),
@@ -40,15 +40,25 @@ export default function RaffleWinners() {
       ])
       setRaffle(r)
       setContacts(c)
+      setError('')
     } catch (err) {
       setError(extractDetail(err, 'Failed to load winners'))
     }
   }, [id])
 
   useEffect(() => {
-    setLoading(true)
-    reload().finally(() => setLoading(false))
-  }, [reload])
+    Promise.all([
+      getRaffleApiRafflesRaffleIdGet(id),
+      listWinnerContactsApiRafflesRaffleIdWinnersGet(id),
+    ])
+      .then(([r, c]) => {
+        setRaffle(r)
+        setContacts(c)
+        setError('')
+      })
+      .catch((err) => setError(extractDetail(err, 'Failed to load winners')))
+      .finally(() => setLoadedId(id))
+  }, [id])
 
   const handleRedraw = async (prizeId: string) => {
     if (

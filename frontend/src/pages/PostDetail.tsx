@@ -33,12 +33,14 @@ export default function PostDetail() {
   const [editTab, setEditTab] = useState<'write' | 'preview'>('write')
   const [saving, setSaving] = useState(false)
 
-  const isOwner = !!(user && community && user.id === community.owner_id)
-
   // Reset editing state when postId changes (e.g. after creating a new post)
-  useEffect(() => {
+  const [prevPostId, setPrevPostId] = useState(postId)
+  if (postId !== prevPostId) {
+    setPrevPostId(postId)
     setEditing(isNew || searchParams.get('edit') === 'true')
-  }, [postId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }
+
+  const isOwner = !!(user && community && user.id === community.owner_id)
 
   useEffect(() => {
     getCommunityApiCommunitiesCommunityIdGet(communityId)

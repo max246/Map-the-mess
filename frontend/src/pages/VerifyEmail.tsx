@@ -6,16 +6,16 @@ import api from '../api/client'
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
+    token ? 'loading' : 'error'
+  )
+  const [message, setMessage] = useState(token ? '' : 'No verification token provided.')
   const [resendEmail, setResendEmail] = useState('')
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
 
   useEffect(() => {
     if (!token) {
-      setStatus('error')
-      setMessage('No verification token provided.')
       return
     }
 

@@ -17,18 +17,19 @@ const PAGE_SIZE = 15
 export default function AdminCommunities() {
   const { isLoggedIn, canManageUsers, isAdmin } = useAuth()
   const [communities, setCommunities] = useState<CommunityRead[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loaded, setLoaded] = useState(false)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
   const [actionId, setActionId] = useState<string | null>(null)
 
+  const loading = !loaded
+
   const fetchCommunities = () => {
-    setLoading(true)
     listCommunitiesApiCommunitiesGet(search.trim() ? { search: search.trim() } : undefined)
       .then(setCommunities)
       .catch(() => setCommunities([]))
-      .finally(() => setLoading(false))
+      .finally(() => setLoaded(true))
   }
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function AdminCommunities() {
 
   const handleSearch = () => {
     setPage(1)
+    setLoaded(false)
     fetchCommunities()
   }
 
