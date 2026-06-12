@@ -39,12 +39,14 @@ export default function Navbar() {
     { to: '/report-collection', label: 'Report Collection' },
   ]
 
-  // Close dropdown on route change
-  useEffect(() => {
+  // Close dropdown on route change (adjust state during render)
+  const [prevPath, setPrevPath] = useState(pathname)
+  if (pathname !== prevPath) {
+    setPrevPath(pathname)
     setDiscoverOpen(false)
     setVolunteerOpen(false)
     setMobileOpen(false)
-  }, [pathname])
+  }
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -60,10 +62,17 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  // Reset pending flag when auth state changes (adjust state during render)
+  const authed = isLoggedIn && !!user
+  const [prevAuthed, setPrevAuthed] = useState(authed)
+  if (authed !== prevAuthed) {
+    setPrevAuthed(authed)
+    if (!authed) setHasPending(false)
+  }
+
   // Check if any owned community has pending membership requests
   useEffect(() => {
-    if (!isLoggedIn || !user) {
-      setHasPending(false)
+    if (!authed || !user) {
       return
     }
     listCommunitiesApiCommunitiesGet()
@@ -81,7 +90,7 @@ export default function Navbar() {
         })
       })
       .catch(() => {})
-  }, [isLoggedIn, user, pathname])
+  }, [authed, user, pathname])
 
   const handleLogout = () => {
     logout()
@@ -200,7 +209,7 @@ export default function Navbar() {
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
-              className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm transition"
+              className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm transition"
             >
               Logout
             </button>
@@ -214,7 +223,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/register"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-1 rounded text-sm transition"
+                className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm transition"
               >
                 Register
               </Link>
@@ -241,9 +250,7 @@ export default function Navbar() {
           ))}
 
           {/* Discover section — expanded inline on mobile */}
-          <div className="py-1 px-3 text-xs uppercase tracking-wide text-white text-opacity-50">
-            Discover
-          </div>
+          <div className="py-1 px-3 text-xs uppercase tracking-wide text-white/50">Discover</div>
           {discoverLinks.map((l) => (
             <Link
               key={l.to}
@@ -259,7 +266,7 @@ export default function Navbar() {
 
           {isLoggedIn && (
             <>
-              <div className="py-1 px-3 text-xs uppercase tracking-wide text-white text-opacity-50">
+              <div className="py-1 px-3 text-xs uppercase tracking-wide text-white/50">
                 Volunteer
               </div>
               {volunteerLinks.map((l) => (

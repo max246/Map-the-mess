@@ -58,7 +58,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,ico,woff,woff2}', 'pwa-*.png', 'maskable-*.png', 'apple-touch-*.png'],
+        globPatterns: [
+          '**/*.{js,css,html,svg,ico,woff,woff2}',
+          'pwa-*.png',
+          'maskable-*.png',
+          'apple-touch-*.png',
+        ],
         globIgnores: ['**/badges/**', '**/avatars/**', 'logo.png', 'og-banner.png'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/backend\//],
@@ -66,8 +71,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) =>
-              /^https:\/\/[a-c]\.tile\.openstreetmap\.org\//.test(url.href),
+            urlPattern: ({ url }) => /^https:\/\/[a-c]\.tile\.openstreetmap\.org\//.test(url.href),
             handler: 'CacheFirst',
             options: {
               cacheName: 'osm-tiles',

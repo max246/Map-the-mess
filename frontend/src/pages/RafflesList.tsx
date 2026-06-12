@@ -24,8 +24,9 @@ export default function RafflesList() {
       .finally(() => setLoading(false))
   }, [])
 
+  const [now] = useState(() => Date.now())
+
   const { active, ended } = useMemo(() => {
-    const now = Date.now()
     const activeList: RaffleRead[] = []
     const endedList: RaffleRead[] = []
     for (const r of raffles) {
@@ -39,7 +40,7 @@ export default function RafflesList() {
       (a, b) => parseUtcDate(b.end_date).getTime() - parseUtcDate(a.end_date).getTime()
     )
     return { active: activeList, ended: endedList }
-  }, [raffles])
+  }, [raffles, now])
 
   const visible = tab === 'active' ? active : ended
 
@@ -71,7 +72,7 @@ export default function RafflesList() {
             {t === 'active' ? 'Active' : 'Ended'}
             <span
               className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
-                tab === t ? 'bg-white bg-opacity-25' : 'bg-gray-200 text-gray-500'
+                tab === t ? 'bg-white/25' : 'bg-gray-200 text-gray-500'
               }`}
             >
               {t === 'active' ? active.length : ended.length}
@@ -108,10 +109,11 @@ export default function RafflesList() {
 }
 
 function RaffleRow({ raffle }: { raffle: RaffleRead }) {
+  const [now] = useState(() => Date.now())
   const prizes = raffle.prizes ?? []
   const cover = prizes.flatMap((p) => p.images ?? [])[0]
   const drawn = !!raffle.drawn_at
-  const ended = drawn || parseUtcDate(raffle.end_date).getTime() <= Date.now()
+  const ended = drawn || parseUtcDate(raffle.end_date).getTime() <= now
   return (
     <li>
       <Link

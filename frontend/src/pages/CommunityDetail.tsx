@@ -38,7 +38,8 @@ export default function CommunityDetail() {
   const navigate = useNavigate()
 
   const [community, setCommunity] = useState<CommunityDetailType | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loadedId, setLoadedId] = useState<string | null>(null)
+  const loading = loadedId !== communityId
   const [error, setError] = useState('')
 
   // Membership
@@ -59,8 +60,10 @@ export default function CommunityDetail() {
 
   // Leaderboard
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false)
+  const [leaderboardLoadedKey, setLeaderboardLoadedKey] = useState<string | null>(null)
   const [leaderboardMonths, setLeaderboardMonths] = useState(1)
+  const leaderboardKey = `${communityId}:${leaderboardMonths}`
+  const leaderboardLoading = activeTab === 'leaderboard' && leaderboardLoadedKey !== leaderboardKey
 
   // Transfer ownership
   const [showTransferOwner, setShowTransferOwner] = useState(false)
@@ -75,11 +78,10 @@ export default function CommunityDetail() {
   const isMember = !!(myMembership && myMembership.status === 'approved')
 
   useEffect(() => {
-    setLoading(true)
     getCommunityApiCommunitiesCommunityIdGet(communityId)
       .then(setCommunity)
       .catch(() => setError('Community not found'))
-      .finally(() => setLoading(false))
+      .finally(() => setLoadedId(communityId))
   }, [communityId])
 
   // Fetch memberships + own status
@@ -162,15 +164,14 @@ export default function CommunityDetail() {
   // Fetch leaderboard when tab is active or months change
   useEffect(() => {
     if (activeTab !== 'leaderboard') return
-    setLeaderboardLoading(true)
     communityLeaderboardApiCommunitiesCommunityIdLeaderboardGet(communityId, {
       months: leaderboardMonths,
       limit: 15,
     })
       .then(setLeaderboard)
       .catch(() => {})
-      .finally(() => setLeaderboardLoading(false))
-  }, [communityId, activeTab, leaderboardMonths])
+      .finally(() => setLeaderboardLoadedKey(leaderboardKey))
+  }, [communityId, activeTab, leaderboardMonths, leaderboardKey])
 
   const refresh = () => {
     getCommunityApiCommunitiesCommunityIdGet(communityId).then(setCommunity).catch(console.error)
@@ -921,7 +922,7 @@ export default function CommunityDetail() {
                             </Link>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <span className="bg-brand bg-opacity-10 text-brand font-semibold px-2 py-0.5 rounded text-sm">
+                            <span className="bg-brand/10 text-brand font-semibold px-2 py-0.5 rounded text-sm">
                               {entry.cleaned_count}
                             </span>
                           </td>

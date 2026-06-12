@@ -21,10 +21,16 @@ export default function CityAutocomplete({
   const [suggestions, setSuggestions] = useState<NominatimResult[]>([])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const tooShort = query.length < 2
+  const [wasTooShort, setWasTooShort] = useState(tooShort)
+  if (tooShort !== wasTooShort) {
+    setWasTooShort(tooShort)
+    if (tooShort) setSuggestions([])
+  }
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (query.length < 2) {
-      setSuggestions([])
       return
     }
     debounceRef.current = setTimeout(() => {

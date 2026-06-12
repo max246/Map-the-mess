@@ -717,7 +717,10 @@ export default function VolunteerDashboard() {
   const [favourites, setFavourites] = useState<ReportRead[]>([])
   const [favouriteIds, setFavouriteIds] = useState<Set<string>>(new Set())
   const [reports, setReports] = useState<ReportRead[]>([])
-  const [loading, setLoading] = useState(true)
+  // `loading` is derived: data for the active tab hasn't loaded until
+  // `loadedTab` matches the current `tab` (set in each fetch's `.finally`).
+  const [loadedTab, setLoadedTab] = useState<Tab | null>(null)
+  const loading = loadedTab !== tab
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareData, setShareData] = useState<{
     volunteerName: string
@@ -726,7 +729,6 @@ export default function VolunteerDashboard() {
   } | null>(null)
 
   const fetchFavourites = () => {
-    setLoading(true)
     listFavouritesApiVolunteersFavouritesGet()
       .then((data) => {
         setFavourites(data)
@@ -736,15 +738,14 @@ export default function VolunteerDashboard() {
         setFavourites([])
         setFavouriteIds(new Set())
       })
-      .finally(() => setLoading(false))
+      .finally(() => setLoadedTab('favourites'))
   }
 
-  const fetchReports = (status: string) => {
-    setLoading(true)
+  const fetchReports = (status: string, forTab: Tab) => {
     listReportsApiReportsGet({ status })
       .then((data) => setReports(data))
       .catch(() => setReports([]))
-      .finally(() => setLoading(false))
+      .finally(() => setLoadedTab(forTab))
   }
 
   useEffect(() => {
@@ -758,9 +759,9 @@ export default function VolunteerDashboard() {
     if (tab === 'favourites') {
       fetchFavourites()
     } else if (tab === 'unresolved') {
-      fetchReports('pending')
+      fetchReports('pending', 'unresolved')
     } else if (tab === 'resolved') {
-      fetchReports('cleaned')
+      fetchReports('cleaned', 'resolved')
     }
   }, [tab])
 
@@ -768,9 +769,11 @@ export default function VolunteerDashboard() {
   const [page, setPage] = useState(1)
 
   // Reset page when switching tabs
-  useEffect(() => {
+  const [prevTab, setPrevTab] = useState(tab)
+  if (tab !== prevTab) {
+    setPrevTab(tab)
     setPage(1)
-  }, [tab])
+  }
 
   const handleOpenShare = async () => {
     try {

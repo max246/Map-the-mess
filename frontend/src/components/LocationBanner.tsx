@@ -9,9 +9,14 @@ export default function LocationBanner() {
   const { isLoggedIn } = useAuth()
   const [show, setShow] = useState(false)
 
+  const [wasLoggedIn, setWasLoggedIn] = useState(isLoggedIn)
+  if (isLoggedIn !== wasLoggedIn) {
+    setWasLoggedIn(isLoggedIn)
+    if (!isLoggedIn) setShow(false)
+  }
+
   useEffect(() => {
     if (!isLoggedIn) {
-      setShow(false)
       return
     }
 

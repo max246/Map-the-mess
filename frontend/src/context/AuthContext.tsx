@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from 'react'
 import api from '../api/client'
 import { flush as flushOfflineQueue } from '../offline/reportQueue'
 
@@ -181,8 +189,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canManageUsers = isAdmin || isModerator
 
   // Expose updateToken and handleSessionExpired to the interceptor
-  authBridge.updateToken = updateToken
-  authBridge.handleSessionExpired = handleSessionExpired
+  useEffect(() => {
+    authBridge.updateToken = updateToken
+    authBridge.handleSessionExpired = handleSessionExpired
+  }, [updateToken, handleSessionExpired])
 
   return (
     <AuthContext.Provider

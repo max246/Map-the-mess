@@ -55,9 +55,7 @@ async function installOnlineToggle(page: Page) {
         return onlineState
       },
     })
-    ;(window as unknown as { __setOnline: (v: boolean) => void }).__setOnline = (
-      v: boolean
-    ) => {
+    ;(window as unknown as { __setOnline: (v: boolean) => void }).__setOnline = (v: boolean) => {
       onlineState = v
       window.dispatchEvent(new Event(v ? 'online' : 'offline'))
     }

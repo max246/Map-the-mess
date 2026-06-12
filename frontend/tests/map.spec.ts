@@ -162,7 +162,9 @@ test.describe('Map View', () => {
     // Expand status panel and switch to Resolved filter
     await page.getByTitle('Status filter').click()
     await page.getByRole('button', { name: 'Resolved', exact: true }).click()
-    await expect(page.getByRole('button', { name: 'Resolved', exact: true })).toHaveClass(/bg-brand/)
+    await expect(page.getByRole('button', { name: 'Resolved', exact: true })).toHaveClass(
+      /bg-brand/
+    )
 
     // Expand layer panel and switch to Heatmap
     await page.getByTitle('Layer toggle').click()
@@ -170,6 +172,8 @@ test.describe('Map View', () => {
 
     // Re-expand status panel — Resolved filter should still be active
     await page.getByTitle('Status filter').click()
-    await expect(page.getByRole('button', { name: 'Resolved', exact: true })).toHaveClass(/bg-brand/)
+    await expect(page.getByRole('button', { name: 'Resolved', exact: true })).toHaveClass(
+      /bg-brand/
+    )
   })
 })

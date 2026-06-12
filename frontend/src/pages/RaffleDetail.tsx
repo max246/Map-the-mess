@@ -27,19 +27,23 @@ export default function RaffleDetail() {
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
   const [raffle, setRaffle] = useState<RaffleRead | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loadedId, setLoadedId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [drawing, setDrawing] = useState(false)
+  const [now] = useState(() => Date.now())
+
+  // Loading until the current id has been fetched (re-shows on id change).
+  const loading = loadedId !== id
 
   const reload = useCallback(() => {
     return getRaffleApiRafflesRaffleIdGet(id)
       .then(setRaffle)
       .catch((err) => setError(extractDetail(err, 'Raffle not found')))
+      .finally(() => setLoadedId(id))
   }, [id])
 
   useEffect(() => {
-    setLoading(true)
-    reload().finally(() => setLoading(false))
+    reload()
   }, [reload])
 
   const handleDraw = async () => {
@@ -78,7 +82,7 @@ export default function RaffleDetail() {
     )
 
   const drawn = !!raffle.drawn_at
-  const ended = drawn || parseUtcDate(raffle.end_date).getTime() <= Date.now()
+  const ended = drawn || parseUtcDate(raffle.end_date).getTime() <= now
   const prizes = raffle.prizes ?? []
 
   return (

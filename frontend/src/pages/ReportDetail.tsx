@@ -477,7 +477,7 @@ export default function ReportDetail() {
                 </button>
               )}
               {editData && editData?.remove_image_ids.includes(allPhotos[activePhoto].id) && (
-                <div className="absolute inset-0 bg-red-500 bg-opacity-30 rounded-lg flex items-center justify-center">
+                <div className="absolute inset-0 bg-red-500/30 rounded-lg flex items-center justify-center">
                   <span className="bg-red-600 text-white text-sm font-medium px-3 py-1 rounded">
                     Marked for removal
                   </span>
@@ -512,7 +512,7 @@ export default function ReportDetail() {
                     className="w-full h-full object-cover"
                   />
                   {editData && editData?.remove_image_ids.includes(img.id) && (
-                    <span className="absolute inset-0 bg-red-500 bg-opacity-40 flex items-center justify-center text-white text-lg font-bold">
+                    <span className="absolute inset-0 bg-red-500/40 flex items-center justify-center text-white text-lg font-bold">
                       X
                     </span>
                   )}
@@ -560,7 +560,7 @@ export default function ReportDetail() {
       {/* Lightbox */}
       {lightboxIndex !== null && lightboxPhotos.length > 0 && (
         <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
           onClick={() => setLightboxIndex(null)}
         >
           <button
@@ -936,7 +936,7 @@ export default function ReportDetail() {
                         <button
                           type="button"
                           onClick={() => removeResolvePhoto(i)}
-                          className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-opacity-70"
+                          className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
                         >
                           X
                         </button>
@@ -1079,7 +1079,7 @@ export default function ReportDetail() {
                         setReopenPhoto(null)
                         setReopenPhotoPreview(null)
                       }}
-                      className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-opacity-70"
+                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black/70"
                     >
                       X
                     </button>
