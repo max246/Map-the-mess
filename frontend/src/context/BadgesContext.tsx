@@ -29,10 +29,7 @@ export function BadgesProvider({ children }: { children: ReactNode }) {
   const [fetchedBadges, setFetchedBadges] = useState<BadgeRead[]>([])
   // Logged-out users have no badges; derive that during render instead of
   // synchronously clearing state inside the effect.
-  const badges = useMemo(
-    () => (isLoggedIn ? fetchedBadges : []),
-    [isLoggedIn, fetchedBadges]
-  )
+  const badges = useMemo(() => (isLoggedIn ? fetchedBadges : []), [isLoggedIn, fetchedBadges])
 
   const refresh = useCallback(async () => {
     if (!isLoggedIn) {

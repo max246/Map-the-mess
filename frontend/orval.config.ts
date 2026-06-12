@@ -1,21 +1,20 @@
-import { defineConfig } from "orval";
+import { defineConfig } from 'orval'
 
 export default defineConfig({
   api: {
-    input: "./openapi.json",
+    input: './openapi.json',
     output: {
-      target: "./src/api/endpoints",
-      schemas: "./src/api/model",
-      client: "axios",
-      mode: "tags-split",
+      target: './src/api/endpoints',
+      schemas: './src/api/model',
+      client: 'axios',
+      mode: 'tags-split',
       clean: true,
       override: {
         mutator: {
-          path: "./src/api/client.ts",
-          name: "customInstance",
+          path: './src/api/client.ts',
+          name: 'customInstance',
         },
       },
-
     },
   },
-});
+})

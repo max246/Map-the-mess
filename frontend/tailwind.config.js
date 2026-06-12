@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: { DEFAULT: '#22c55e', dark: '#16a34a' }
+        brand: { DEFAULT: '#22c55e', dark: '#16a34a' },
       },
       keyframes: {
         'fade-in-out': {
@@ -16,8 +16,8 @@ export default {
       },
       animation: {
         'fade-in-out': 'fade-in-out 2.5s ease-in-out forwards',
-      }
-    }
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 }
