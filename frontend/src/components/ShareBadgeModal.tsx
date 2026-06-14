@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import html2canvas from 'html2canvas'
+import html2canvas from 'html2canvas-pro'
 import ShareBadgeCard from './ShareBadgeCard'
 import type { BadgeRead } from '../api/model'
 
@@ -69,7 +69,8 @@ Join me cleaning up our streets 🗺️♻️ → mapthemess.uk
       a.download = `badge-${badge.id}.png`
       a.click()
       URL.revokeObjectURL(url)
-    } catch {
+    } catch (err) {
+      console.error('Failed to generate badge image:', err)
       alert('Failed to generate image.')
     } finally {
       setGenerating(false)

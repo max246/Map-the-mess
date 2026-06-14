@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import html2canvas from 'html2canvas'
+import html2canvas from 'html2canvas-pro'
 import ShareCleanupCard from './ShareCleanupCard'
 
 interface ShareCleanupModalProps {
@@ -62,7 +62,8 @@ export default function ShareCleanupModal({
         a.click()
         URL.revokeObjectURL(url)
       }, 'image/png')
-    } catch {
+    } catch (err) {
+      console.error('Failed to generate cleanup image:', err)
       alert('Failed to generate image.')
     }
     setGenerating(false)
